@@ -35,6 +35,7 @@ def _readings(assessor: "Assessor", as_of: datetime) -> tuple[dict[str, Reading]
             z=base.z(value) if base is not None and meta.has_baseline else None,
             worse_when=meta.worse_when,
             ratio=base.ratio(value) if base is not None and indicator == "radiation_dose" else None,
+            name=meta.name,
         )
     sleep = [
         p.value for p in assessor.series.get("sleep_hours", []) if as_of - timedelta(days=3) < p.t <= as_of

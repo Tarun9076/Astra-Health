@@ -43,6 +43,7 @@ class Reading:
     z: float | None
     worse_when: Literal["high", "low", "both"]
     ratio: float | None = None  # value / baseline median (radiation)
+    name: str | None = None  # display name for the reasons (e.g. 'Resting heart rate')
 
 
 @dataclass(frozen=True)
@@ -90,7 +91,11 @@ def _domain(
     for r in present:
         if r.z is not None and (p := z_penalty(r.z, r.worse_when)) > 0:
             direction = "above" if r.z > 0 else "below"
-            penalties.append(Penalty(round(p, 1), f"{r.indicator} {abs(r.z):.1f}σ {direction} your normal"))
+            penalties.append(
+                Penalty(
+                    round(p, 1), f"{(r.name or r.indicator).lower()} {abs(r.z):.1f}σ {direction} your normal"
+                )
+            )
         if r.indicator == "radiation_dose" and r.ratio is not None:
             if r.ratio >= 3:
                 penalties.append(Penalty(40, f"radiation {r.ratio:.0f}× your normal daily dose"))

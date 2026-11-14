@@ -22,8 +22,10 @@ from astra.core.baselines import (
 from astra.core.enums import AlertStatus, MeasurementQuality
 from astra.core.protocols import ProtocolBundle
 from astra.core.rules.engine import Point, RuleOutcome, evaluate, indicators_used
-from astra.db.models import Astronaut, HealthAlert, HealthBaseline, HealthMeasurement, Mission
+from astra.db.models import Astronaut, HealthAlert, HealthBaseline, HealthMeasurement, Insight, Mission
+from astra.ml.features import FEATURES
 from astra.services.alerts import AlertChanges, apply_outcomes
+from astra.services.insights import InsightRunner
 from astra.services.wellness import WELLNESS_INDICATORS, compute_wellness, store_wellness
 
 HISTORY_MARGIN = timedelta(days=45)  # 28-day window + 3 skipped days + slack
@@ -49,8 +51,10 @@ class _Context:
     def limit(self, indicator: str) -> float | None:
         return self.assessor.limits.get(indicator)
 
-    def has_insight(self, indicator: str, since: datetime) -> bool:
-        return False  # ML insights arrive in Step 6
+    def insight_score(self, kind: str, since: datetime) -> float | None:
+        lo, hi = since.date(), self.as_of.date()
+        scores = [s for (k, day), s in self.assessor.insights.items() if k == kind and lo <= day <= hi]
+        return max(scores) if scores else None
 
 
 @dataclass
@@ -60,12 +64,24 @@ class Assessor:
     series: dict[str, list[Point]]
     limits: dict[str, float] = field(default_factory=dict)
     abnormal_days: dict[str, set[date]] = field(default_factory=lambda: defaultdict(set))
+    insights: dict[tuple[str, date], float] = field(default_factory=dict)  # (kind, day) → best score
 
     def __post_init__(self) -> None:
         self._daily: dict[str, list[DailyValue]] = {
             ind: daily_values((p.t, p.value) for p in pts) for ind, pts in self.series.items()
         }
+        self._daily_map = {ind: {dv.day: dv.value for dv in dvs} for ind, dvs in self._daily.items()}
         self._preflight: dict[str, Baseline | None] = {}
+        self._z: dict[tuple[str, date], float | None] = {}
+
+    def daily_z(self, indicator: str, day: date) -> float | None:
+        """That day's value as a robust z-score vs the baseline the rules used that day (ML features)."""
+        key = (indicator, day)
+        if key not in self._z:
+            value = self._daily_map.get(indicator, {}).get(day)
+            base = self.baseline(indicator, day) if value is not None else None
+            self._z[key] = base.z(value) if base is not None and value is not None else None
+        return self._z[key]
 
     def preflight(self, indicator: str) -> Baseline | None:
         if self.mission_start is None:
@@ -118,6 +134,7 @@ def load_assessor(
     indicators = (
         indicators_used(bundle.rules)
         | WELLNESS_INDICATORS
+        | set(FEATURES)
         | {
             "resting_hr",
             "bp_sys",
@@ -154,6 +171,11 @@ def load_assessor(
             series[r.indicator_code].append(Point(r.measured_at, r.value))
 
     assessor = Assessor(bundle, mission_start, dict(series), limits)
+    for ins in session.exec(
+        select(Insight).where(Insight.astronaut_id == astronaut.id, col(Insight.insight_date) >= since.date())
+    ).all():
+        key = (ins.kind, ins.insight_date)
+        assessor.insights[key] = max(ins.score, assessor.insights.get(key, ins.score))
     rules = {r.id: r for r in bundle.rules}
     alerts = session.exec(
         select(HealthAlert).where(
@@ -186,7 +208,9 @@ def assess(
         return result
     times = sorted(set(eval_times))
     assessor = load_assessor(session, bundle, astronaut, times[0] - HISTORY_MARGIN)
+    ml = InsightRunner.start()
     for at in times:
+        ml.run(session, assessor, astronaut.id, at)  # before the rules: ML-ANOMALY-CORROBORATED reads it
         outcomes = assessor.evaluate_at(at)
         result.changes.extend(apply_outcomes(session, bundle, astronaut, outcomes, at, node_id=node_id))
         result.evaluations += 1

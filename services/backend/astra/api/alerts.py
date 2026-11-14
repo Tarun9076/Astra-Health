@@ -9,6 +9,7 @@ from pydantic import Field
 from sqlmodel import Session, col, select
 
 from astra.api.base import ApiModel
+from astra.api.insights import InsightOut, related_insights
 from astra.core.alerts import ACTIVE_STATUSES, TransitionError
 from astra.core.enums import AlertStatus, Role
 from astra.core.protocols import ProtocolBundle
@@ -63,6 +64,7 @@ class AlertDetail(AlertSummary):
     evidence: dict[str, dict[str, Any]]
     recommendations: list[TaskOut]
     emergency_protocol: ProtocolOut | None
+    insights: list[InsightOut] = []  # what the ML noticed around this alert (advisory)
     acknowledged_at: datetime | None
     acknowledged_by: str | None
     reviewed_by: str | None
@@ -179,6 +181,7 @@ def get_alert(alert_id: str, request: Request, session: SessionDep, user: Curren
         reviewed_by=alert.reviewed_by,
         resolved_at=alert.resolved_at,
         resolution_note=alert.resolution_note,
+        insights=related_insights(session, bundle, alert),
     )
 
 

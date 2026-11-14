@@ -217,3 +217,25 @@ class WellnessScore(SQLModel, table=True):
     cap_reason: str | None = None
     indicators_seen: int = 0
     computed_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+class Insight(SQLModel, table=True):
+    """ML insight (LLD §3.3, §10): an unusual day (Anomaly) or rising recovery strain (Trend).
+
+    Advisory only: insights never set alert severity (TDD ADR-03). Derived data, re-computable
+    from the measurements, so it is not sent through the sync outbox.
+    """
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    kind: str  # Anomaly | Trend
+    insight_date: date = Field(index=True)
+    score: float  # Anomaly: 0–1 anomaly score; Trend: recovery strain today, in σ
+    direction: str | None = None
+    indicator_codes: str  # comma-separated, biggest contributor first
+    contributors_json: str
+    explanation: str
+    window_start: date
+    window_end: date
+    model_version: str
+    created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)

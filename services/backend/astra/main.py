@@ -29,12 +29,16 @@ from astra.api import (
     realtime,
     system,
 )
+from astra.api import (
+    insights as insights_api,
+)
 from astra.api.base import ApiModel
 from astra.config import Settings, settings
 from astra.core.enums import NodeRole
 from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_bundle
 from astra.db.session import init_db, make_engine
 from astra.realtime.hub import hub
+from astra.services import insights
 from astra.services.routine import ensure_routine_tasks
 
 logger = logging.getLogger("astra")
@@ -50,6 +54,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = make_engine(cfg.database_url)
     init_db(engine)
     app.state.engine = engine
+    insights.configure(cfg.models_path)
     routine = None
     if cfg.node_role == NodeRole.HABITAT and cfg.routine_interval_minutes > 0:
         routine = asyncio.create_task(_routine_loop(engine, bundle, cfg.routine_interval_minutes))
@@ -111,6 +116,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(crew.router)
     app.include_router(dashboard.router)
     app.include_router(analytics.router)
+    app.include_router(insights_api.router)
     app.include_router(alerts.router)
     app.include_router(checkins.router)
     app.include_router(measurements.router)
