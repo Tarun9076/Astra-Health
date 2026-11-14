@@ -141,6 +141,18 @@ cd services/backend && .venv/Scripts/python -m ruff check astra tests && .venv/S
 cd apps/web && npm run build
 ```
 
+Browser end-to-end tests (Playwright; starts its own backend on :8100 with a fresh mission database and Vite on :5174, so the demo servers are not touched). Install the browser once with `npx playwright install chromium`:
+
+```bash
+cd apps/web && npm run e2e
+```
+
+Prototype metrics (replays the simulated missions; writes `docs/evaluation/EVALUATION.md`):
+
+```bash
+cd services/backend && .venv/Scripts/python -m astra.evaluate
+```
+
 ## Sources
 
 Hackathon-provided:

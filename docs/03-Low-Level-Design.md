@@ -1095,7 +1095,8 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-A-03 | Alerts | Habitat Acknowledged, Ground InReview concurrently | merged = InReview |
 | T-S-01 | Sync | link down 10 min, 40 items | queued; link up → delivered once |
 | T-S-02 | Sync | duplicateRate = 0.5 | no duplicate rows on Ground |
-| T-S-03 | Sync | tampered envelope | rejected (HMAC) |
+| T-S-03 ✅ | Sync | tampered envelope | rejected (HMAC) |
+| T-S-04 ✅ | Sync | backend restarts with envelopes in the inbox / outbox | delivered after restart, nothing lost, no duplicates |
 | T-AI-01 ✅ | Assistant | "I have chest pain" | mode emergency, no LLM call, Urgent alert created |
 | T-AI-02 ✅ | Assistant | "What dose of ibuprofen should I take?" | no dosage in answer; directs to surgeon/protocol |
 | T-AI-03 ✅ | Assistant | API key missing | template mode answer with citations |
@@ -1103,15 +1104,22 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-ML-01 ✅ | Anomaly | fatigue scenario | anomaly score day 116 > 95th percentile of training (0.56 > 0.5) |
 | T-ML-02 ✅ | Anomaly | ML function raises / times out (monkeypatched) | measurement API still 201, alerts still raised |
 | T-ARCH-01 | Architecture | scan imports of `astra.core` | no fastapi / sqlmodel / sqlalchemy / httpx imports |
-| T-SEC-01 | Security | walk `app.routes` | every `/api` route except auth/status has an auth dependency |
-| T-UI-01 | Check-in | complete wizard | < 60 s, dashboard updates via WebSocket |
-| T-UI-02 | Offline | stop API, submit check-in, restart | outbox flushed, single record |
+| T-SEC-01 ✅ | Security | walk the OpenAPI schema | every `/api` route except auth/status has an auth dependency |
+| T-SEC-02 ✅ | Security | 5 wrong passwords for one user in 5 min | 6th try → 429 + `Retry-After`; other users unaffected; success resets the counter |
+| T-SEC-03 ✅ | Security | any `/api` response; preflight from another origin | `nosniff`, `DENY`, `no-referrer`, `no-store`; foreign origin gets no CORS header |
+| T-SEC-04 ✅ | Security | repository files | `.env`, `*.db` ignored; `.env.example` has no secret values |
+| T-UI-01 ✅ | Check-in | complete wizard (Playwright) | < 60 s, findings shown, same findings in Alerts Center and Overview |
+| T-UI-02 ✅ | Offline | block `/api/checkins`, submit, unblock (Playwright) | "saved on this device", outbox flushed on `online`, exactly one record |
+| T-UI-03 ✅ | Emergency | type "I have chest pain" in the assistant (Playwright) | emergency card at once; Urgent alert in the Alerts Center |
+| T-A11Y-01 ✅ | Accessibility | axe-core WCAG 2.1 A/AA on login, 8 astronaut pages, crew view | no serious or critical violations |
+| T-E-01 ✅ | Edge cases | sparse data; astronaut with no data; µSv / °F inputs; spo2 0.97 %; HR in mmHg; 2,001-char question | baseline or none (no crash); GREEN; converted; rejected; rejected; 422 |
+| T-PERF-01 ✅ | Performance | 150 days × 3 crew (`python -m astra.evaluate`) | dashboard < 1 s (measured 47 ms median) |
 | T-SC-01 | Scenario | healthy crew 120 days | 0 Urgent, ≤ 2 Attention (false-alarm budget). **Measured (Step 3):** AST-001 1, AST-002 1, AST-003 2 Attention; 0 Urgent |
 | T-SC-02 | Scenario | ARES-1 (fatigue + storm + glitch) | **Measured:** sleep deficit from day 111, CV-RHR day 116, BEH-FATIGUE-COMPOSITE day 117 (onset 114); RAD-SPE-EVENT Urgent days 87–91 for all 3 crew (the real May 2024 storm days); glitch Questionable, no alert |
 | T-EXT-01 | Integrations | parse `donki-sep-2024-05.json` fixture | 14 SEP events with onset times; no network call |
-| T-EXT-02 | Integrations | `ASTRA_NASA_API_KEY` empty | app starts; DONKI client disabled; fixtures still replayable |
+| T-EXT-02 ✅ | Integrations | `ASTRA_NASA_API_KEY` empty | app starts; DONKI client disabled; fixtures still replayable |
 | T-EXT-03 | Integrations | Horizons fixture for 2026-11-14 | one-way light time ≈ 11.0 min → link delay set from it |
-| T-EXT-04 | Integrations | replay SEP event on Ground with link UP | Habitat receives notice after the one-way delay → URGENT `RAD-SPE-EVENT` |
+| T-EXT-04 ✅ | Integrations | replay SEP event on Ground with link UP | Habitat receives notice after the one-way delay → URGENT `RAD-SPE-EVENT` |
 
 ---
 

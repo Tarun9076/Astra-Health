@@ -51,7 +51,7 @@ gantt
     Step 9 Offline, Ground node, link sim :done, s9, after s8, 3d
     Step 10 Body Explorer, wellness, env :done, s10, after s9, 3d
     section Ship
-    Step 11 Hardening and tests          :s11, after s10, 3d
+    Step 11 Hardening and tests          :done, s11, after s10, 3d
     Step 12 Demo and pitch               :s12, after s11, 2d
 ```
 
@@ -375,15 +375,27 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
-### Step 11 — Hardening & evaluation (Days 27–28)
+### Step 11 — Hardening & evaluation (Days 27–28) ✅
 
-- [ ] Run the full test catalogue (LLD §19); fix failures. `ruff check`, `mypy astra` clean.
-- [ ] Record prototype metrics: detection rate per scenario, false alarms on the healthy crew, median time-to-detection, check-in time, sync duplicates.
-- [ ] Edge cases: missing days, sensor glitch, unit mix-ups, long chats, backend restart mid-sync.
-- [ ] Accessibility pass (contrast, focus, labels, colour + icon + text).
-- [ ] Security pass: no secrets in git, every route has an auth dependency (T-SEC-01), CORS restricted, login rate-limited.
-- [ ] Playwright e2e for the demo path.
-- [ ] Performance: dashboard < 1 s with 150 days × 3 crew (indexes / daily aggregates if needed).
+- [x] Run the full test catalogue (LLD §19); fix failures. `ruff check`, `ruff format`, `mypy` (strict) clean. New: T-S-03 (tampered envelope), T-EXT-02 (no NASA key), T-EXT-04 (space-weather event reaches the Habitat), restart mid-sync.
+- [x] Record prototype metrics: `python -m astra.evaluate` replays the ARES-1 mission and a healthy crew through the real pipeline and writes [`docs/evaluation/EVALUATION.md`](evaluation/EVALUATION.md) + `metrics.json`.
+- [x] Edge cases: missing days (sparse baseline, astronaut with no data = GREEN), sensor glitch (Questionable, no alert), unit mix-ups (µSv → mSv, °F → °C; a fraction typed as % and HR in mmHg are rejected), long chats (2,000-character limit, at most 6 history turns sent to Claude), backend restart mid-sync (nothing lost, no duplicates).
+- [x] Accessibility pass: axe-core (WCAG 2.1 A/AA) on the login page, all 8 astronaut pages and the crew view: no serious or critical violations. Fixed: Overview had no `<h1>`; the Analytics indicator menus had no name; "button inside a link" replaced by `LinkButton`. Status already uses colour + icon + text.
+- [x] Security pass: `.env` and `*.db` git-ignored and `.env.example` empty (tested); every `/api` route needs sign-in (T-SEC-01); CORS limited to the web origin (tested); login rate-limited (5 failures in 5 min → HTTP 429 + `Retry-After` for 5 min); security headers (`nosniff`, `DENY`, `no-referrer`, `Cache-Control: no-store` on health data); warning at start-up if the JWT secret or sync key is still the dev default.
+- [x] Playwright e2e for the demo path (`npm run e2e`; own backend on :8100 with a fresh mission database, own Vite on :5174): T-UI-01 demo path, T-UI-02 offline check-in, chest pain → emergency card + Urgent alert, 10 axe scans. CI job `e2e`.
+- [x] Performance: dashboard < 1 s with 150 days × 3 crew — measured **47 ms** median (crew summary 270 ms, mission analytics 52 ms); no extra indexes needed.
+
+**Done when:** the test catalogue, the metrics and the e2e demo path all pass. **Done 2026-11-15:**
+- **Metrics** (simulated, seed 42): both scenario events detected (fatigue: rule alerts on day 116, trend insight day 115, onset day 114; solar storm: Urgent for 3/3 crew on day 87); median time to detection 1.0 day; the sensor glitch was marked Questionable and raised nothing. Healthy crew over 150 days: 4 Attention alerts in total (1 / 1 / 2), 0 Urgent, 0 trend insights.
+- **Checks:** 257 backend tests and 13 browser tests pass; ruff, ruff format, mypy, `tsc`, `oxlint` and `vite build` are clean.
+
+**Not covered:**
+- The healthy crew still gets 4 Attention alerts and 20 single-day anomaly insights in 150 days: an acceptable but not zero false-alarm budget for a prototype; thresholds were not tuned to the simulator.
+- Metrics come from the simulator, not real crew data; they show the pipeline works, not clinical accuracy.
+- Screen-reader testing by hand (NVDA / VoiceOver) was not done; only automated checks.
+- The login limiter is in memory per server process.
+
+**Tag `m7-hardened`** (optional).
 
 ---
 

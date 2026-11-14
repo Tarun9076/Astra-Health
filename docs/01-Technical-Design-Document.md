@@ -314,7 +314,7 @@ A transparent weighted index of domain sub-scores (cardiovascular, sleep, behavi
 
 **Prototype evaluation metrics** (report these in the pitch): scenario detection rate, false-alarm count on the healthy crew, median time-to-detection (sim days), check-in completion time, % alerts with full evidence, sync duplicates (target 0).
 
-**Measured so far (Step 3, simulated ARES-1 mission, seed 42):**
+**Measured (simulated ARES-1 mission and healthy crew, seed 42).** Reproduce with `python -m astra.evaluate`; the full report is [`docs/evaluation/EVALUATION.md`](evaluation/EVALUATION.md) (Step 11).
 
 | Metric | Result |
 |---|---|
@@ -325,6 +325,9 @@ A transparent weighted index of domain sub-scores (cardiovascular, sleep, behavi
 | Habitat → Earth latency (Step 9) | Alerts + report on the Ground copy 24.4 s after the link came up (22 s = 11.0 light-minutes × 2 s compression, + ≤ 2 s loop); the instruction back onboard in ≈ 23 s; 0 duplicates after re-delivery |
 | Alerts with full evidence | 100 % (every alert stores rule id + version, values, baseline, σ, z and a rendered reason) |
 | Duplicate readings stored on re-import | 0 of 6,649 |
+| Check-in completion time | 38 s by hand in the browser (target < 60 s); the Playwright demo path asserts < 60 s on every run |
+| API speed, 150 days × 3 crew (Step 11) | Dashboard 47 ms, body systems 49 ms, mission analytics 52 ms, 7-day report 64 ms, crew summary 270 ms (median of 5; target < 1 s) |
+| Accessibility (Step 11) | 0 serious / critical axe-core WCAG 2.1 AA violations on 10 pages |
 
 ---
 
