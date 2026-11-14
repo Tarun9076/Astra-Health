@@ -1,0 +1,70 @@
+{
+  "generatedAt": "2026-11-14T20:29:26+00:00",
+  "data": "simulated ARES-1 mission, seed 42, 150 days (30 pre-flight + 120 in flight), 3 crew",
+  "scenarioDetection": {
+    "fatigue": {
+      "onsetDay": 114,
+      "firstRuleAlertDay": 116,
+      "trendInsightDay": 115,
+      "rules": [
+        "BEH-FATIGUE-COMPOSITE",
+        "CV-RHR-BASELINE",
+        "ML-ANOMALY-CORROBORATED"
+      ]
+    },
+    "solarStorm": {
+      "day": 87,
+      "urgentForCrew": [
+        "AST-001",
+        "AST-002",
+        "AST-003"
+      ]
+    },
+    "sensorGlitch": {
+      "day": 60,
+      "reading": [
+        {
+          "quality": "Questionable",
+          "reason": "low_signal",
+          "day": 60
+        }
+      ],
+      "alertsThatDay": 0
+    }
+  },
+  "detectionRate": "2/2",
+  "medianTimeToDetectionDays": 1.0,
+  "falseAlarmsHealthyCrew": {
+    "AST-001": {
+      "attention": 1,
+      "urgent": 0,
+      "rules": [
+        "SLP-DEFICIT"
+      ]
+    },
+    "AST-002": {
+      "attention": 1,
+      "urgent": 0,
+      "rules": [
+        "CV-RHR-BASELINE"
+      ]
+    },
+    "AST-003": {
+      "attention": 2,
+      "urgent": 0,
+      "rules": [
+        "CV-RHR-BASELINE",
+        "SLP-DEFICIT"
+      ]
+    }
+  },
+  "healthyCrewTrendInsights": 0,
+  "healthyCrewAnomalyInsights": 20,
+  "apiMedianMs": {
+    "dashboard": 47.3,
+    "body_systems": 48.9,
+    "analytics_mission": 51.9,
+    "crew_summary": 269.5,
+    "report_7d": 63.7
+  }
+}
