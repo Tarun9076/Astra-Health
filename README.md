@@ -87,13 +87,35 @@ To try the API in Swagger (http://localhost:8000/docs):
 3. Click **Authorize** and paste it.
 4. Try `GET /api/astronauts/AST-001/dashboard`.
 
-**Web app** — http://localhost:5173 (proxies `/api` and `/ws` to port 8000)
+**Web app** — http://localhost:5173 (proxies `/api` and `/ws` to port 8000). Sign in with a demo account, e.g. `ast1`, then press **Start daily check-in**. Low sleep plus high fatigue and resting heart rate raise the fatigue alerts live.
 
 ```bash
 cd apps/web && npm run dev
 ```
 
 The Ground node (port 8001) is added in Step 9 of the plan; it is the same backend started with `ASTRA_NODE_ROLE=Ground`.
+
+**Demo on any date:** delete `habitat.db*`, start the backend, then load the data:
+
+```bash
+cd services/backend && .venv/Scripts/python -m astra.seed --mission-day-today 121
+```
+
+```bash
+services/backend/.venv/Scripts/python simulator/simulate.py seed
+```
+
+History is loaded up to yesterday, and past alerts are closed by the simulated flight surgeon, so today's check-in raises alerts live.
+
+**After changing backend endpoints**, regenerate the web app's API types:
+
+```bash
+cd services/backend && .venv/Scripts/python -m astra.export_openapi ../../apps/web/openapi.json
+```
+
+```bash
+cd apps/web && npm run gen:api
+```
 
 ## Tests and checks
 

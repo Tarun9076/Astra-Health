@@ -670,7 +670,8 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 |---|---|---|---|
 | POST | `/auth/login` ✅ | public | `{username, password}` → `{accessToken, tokenType: "bearer", expiresIn, user:{userId, username, role, displayName, astronautId, astronautCode}}`. JWT (HS256, `ASTRA_JWT_SECRET`), valid 12 h for demo days. An unknown user and a wrong password give the same 401 and take the same time |
 | POST | `/auth/refresh` | public | deferred (sign in again) |
-| GET | `/me` ✅ | any | the signed-in user |
+| GET | `/me` ✅ | any | the signed-in user, including `missionCode` and `missionStart` (the header shows mission day and Sol) |
+| GET | `/catalog/indicators` ✅ | any | names, units, precision, `worseWhen`, `hasBaseline` from `protocols/indicators.json` |
 
 ### 13.2 Astronaut data
 | Method | Path | Role | Body / Query → Response |
@@ -679,7 +680,7 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/astronauts/{id}/dashboard` ✅ | self, surgeon | → `{astronautCode, displayName, missionCode, missionDay, status: GREEN|YELLOW|RED, statusReason, activeAlerts:[AlertSummary], vitals:[{indicator, name, value, unit, measuredAt, baseline, sigma, z, deviation: normal|above|below|unknown, worseWhen}], tasks:[Task], lastReadingAt, wellnessIndex (Step 5), simulatedData}`. RED = any active Urgent alert; YELLOW = any active Attention alert |
 | POST | `/measurements/batch` ✅ | self, device, admin | `{astronautId (code or id), items:[{id?, indicator, value, unit, measuredAt (with timezone), source, deviceId?, channel?, panelId?, signalQuality?, motionArtifact?}]}`, header `X-Backfill: true` for imports → 201 `{accepted:[id], questionable:[{id,reason}], rejected:[{id,reason}], duplicates:[id], newAlerts:[AlertDto] (Step 3)}`. Max 2,000 items; duplicates (same id, or same indicator/channel/time/device) are not stored again |
 | GET | `/astronauts/{id}/measurements` ✅ | self, surgeon | `?indicator=&start=&end=&bucket=raw|hour|day&channel=` → `{astronautCode, indicator, unit, bucket, points:[{t, value, min?, max?, n, quality?, channel?}]}`. Raw = Valid + Questionable with their quality; buckets average Valid readings only; radiation defaults to the `Total` channel |
-| POST | `/checkins` | self | `{id, date, sleepHours, sleepQuality, mood, stress, fatigue, symptoms:[...], privateNote?}` → `{checkin, newAlerts, recommendations}` |
+| POST | `/checkins` ✅ | self (Astronaut role) | `{id?, sleepHours, sleepQuality, mood, stress, fatigue, vitals:[{indicator: resting_hr|bp_sys|bp_dia|body_temp|spo2|glucose|body_weight, value, unit}], privateNote?, completedInSeconds?}` → 201 `{checkinId, accepted, questionable, rejected, newAlerts, updatedAlerts}`. Stores a WellnessCheckin and its scores and vitals as readings (one batch, one assessment), so a check-in can raise alerts live. Symptoms come later |
 | POST | `/symptoms` | self | `{id, symptomCode, severity, onsetAt, freeText?}` → `{symptom, redFlag, protocolId?, newAlerts}` |
 | POST | `/exercise` | self | `{id, type, durationMin, loadKg?, perceivedExertion}` |
 | GET | `/astronauts/{id}/baselines` | self, surgeon | → per indicator `{median, sigma, samples, source, provisional}` |
@@ -697,7 +698,8 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | POST | `/alerts/{alertId}/resolve` `{note}` ✅ | surgeon (from InReview; note required, else 409) |
 | POST | `/alerts/{alertId}/dismiss` `{note}` ✅ | surgeon |
 | POST | `/alerts/{alertId}/escalate` | self |
-| GET | `/astronauts/{id}/recommendations?status=pending` | self, surgeon |
+| GET | `/astronauts/{id}/recommendations?status=pending` | self, surgeon (pending tasks are part of the dashboard for now) |
+| POST | `/tasks/{taskId}/complete` ✅ | self | marks a recommendation task Done |
 | POST | `/recommendations/{id}/complete` / `/skip` | self |
 | POST | `/instructions` `{astronautId, alertId?, text}` | surgeon |
 | GET | `/astronauts/{id}/instructions` · POST `/instructions/{id}/acknowledge` | self, surgeon |
@@ -737,6 +739,18 @@ As built: a socket without a valid token is closed with code 1008. Connect with 
 ---
 
 ## 15. Frontend low-level design
+
+**As built (Step 4)**, in `apps/web/src`:
+- **`lib/api.ts`:** an `openapi-fetch` client with types generated from the backend (`openapi.json` → `api-types.ts`, refreshed with `npm run gen:api`). The bearer token is added by a middleware, and a 401 signs the user out.
+- **`lib/auth.ts`:** the Zustand store for the token and profile, persisted to localStorage with an in-memory fallback.
+- **`lib/realtime.ts`:** the WebSocket client with back-off reconnect and a live-status store.
+- **`lib/queries.ts`:** query hooks (keys `dashboard`, `alerts`, `alert`, `catalog`).
+- **`lib/mission.ts`:** mission day, Sol (88,775 s) and relative times.
+- **`lib/toasts.ts`:** the notification store.
+- **Pages:** `features/auth`, `overview`, `checkin`, `alerts` and `staff`.
+- **Routing and guards:** in `app/` (`router.tsx`, `Guards.tsx`, `AppLayout.tsx`, `sections.ts`).
+
+Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdates` inside `AppLayout`; Dexie and `persistQueryClient` (Step 9); `BaselineChart` (Step 5); `EmergencyProtocolCard` is rendered inside the alert detail.
 
 ### 15.1 State management
 | Kind | Tool |

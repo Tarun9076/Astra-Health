@@ -24,7 +24,7 @@
 |---|---|---|
 | **M0 — Repo ready** ✅ | 1 | Monorepo scaffolded: FastAPI backend + React shell run together; tests pass |
 | **M1 — Health brain** ✅ | 6 | 120 days of simulated crew data in SQLite; baselines + rules produce the right alerts in unit/scenario tests; Swagger UI shows them |
-| **M2 — Walking skeleton** | 10 | Log in as astronaut → Overview → do a check-in → alert appears live (WebSocket) with explanation |
+| **M2 — Walking skeleton** ✅ | 10 | Log in as astronaut → Overview → do a check-in → alert appears live (WebSocket) with explanation |
 | **M3 — Insightful** | 15 | Analytics charts with baseline bands; recommendations; ML anomaly/trend insights |
 | **M4 — Assistant** | 18 | Chat with citations; red-flag emergency card; works with *and* without internet |
 | **M5 — Earth link** | 23 | Surgeon dashboard on the Ground node; blackout + delay; reports arrive late but exactly once; instructions flow back |
@@ -42,7 +42,7 @@ gantt
     Step 2 DB, simulator, ingestion      :done, s2, after s1, 2d
     Step 3 Baselines, rules, alerts, auth :done, s3, after s2, 2d
     section Product
-    Step 4 Dashboard, check-in, live alerts :s4, after s3, 4d
+    Step 4 Dashboard, check-in, live alerts :done, s4, after s3, 4d
     Step 5 Analytics, recommendations, wellness :s5, after s4, 2d
     Step 6 ML insights                   :s6, after s5, 3d
     Step 7 AI assistant + RAG            :s7, after s6, 3d
@@ -138,20 +138,34 @@ Also done: `services/backend/.env` (git-ignored) with a random `ASTRA_JWT_SECRET
 
 **Tag `m1-health-brain`.**
 
-### Step 4 — Web: login, Overview, check-in, alerts, live updates (Days 7–10) → **M2**
+### Step 4 — Web: login, Overview, check-in, alerts, live updates (Days 7–10) → **M2** ✅
 
 **Tasks**
-- [ ] Generate the typed API client: `npx openapi-typescript http://localhost:8000/openapi.json -o src/lib/api-types.ts` + `openapi-fetch`.
-- [ ] Login page, Zustand `authStore`, route guards per role (`/astronaut`, `/surgeon`, `/mission`, `/admin`).
-- [ ] App chrome: Mission Day / Sol, SIMULATED badge, node/link pill.
-- [ ] **Overview**: `StatusHeader`, `VitalCard` × 8 with "vs your normal" chips, active alerts, today's tasks.
-- [ ] **Check-in wizard** (4 steps, big sliders, timer) → `POST /api/checkins` (add the backend router) → shows new alerts.
-- [ ] **Alerts Center**: active/history, `AlertCard` with evidence table, recommendations checklist, Acknowledge.
-- [ ] `src/lib/realtime.ts` + `useRealtime()` hook: WebSocket to `/ws?token=…`, auto-reconnect, update TanStack Query caches on `AlertRaised` etc.
+- [x] Typed API client: `python -m astra.export_openapi ../../apps/web/openapi.json` then `npm run gen:api` (openapi-typescript via `npx`, because the project is on TypeScript 7 and the generator still declares TS 5) + `openapi-fetch` with an auth middleware.
+- [x] Login page (demo-account shortcuts), Zustand auth store (persisted, falls back to memory), role guards: `/astronaut/*` for astronauts, `/staff/*` for flight surgeon / mission control / admin.
+- [x] App chrome: mission code, mission day and Sol, SIMULATED badge, node + live-socket pill, sign out.
+- [x] **Overview**: status header (GREEN / YELLOW / RED with icon + text), urgent banner, `VitalCard`s with "vs your normal" chips, active alerts, today's tasks (tick to complete).
+- [x] **Check-in wizard** (sleep → how you feel → optional vitals → review; big sliders; 60 s timer) → `POST /api/checkins` (new backend router; scores + vitals become readings and are assessed at once) → result screen with new findings.
+- [x] **Alerts Center**: Active / History tabs, expandable cards with the evidence table, emergency procedure, recommended actions checklist, Acknowledge; `?id=` deep links.
+- [x] `src/lib/realtime.ts`: WebSocket `/ws?token=…`, exponential back-off reconnect, 25 s ping; events refresh the TanStack Query caches and raise toasts.
+- [x] Backend: `POST /api/checkins`, `POST /api/tasks/{id}/complete`, `GET /api/catalog/indicators`, mission info in `/api/me`; `astra.seed --mission-day-today N`; the simulator loads history up to yesterday and closes all past episodes so today's check-in raises alerts live.
+- [x] Minimal staff crew page (status per astronaut, read-only overview for the flight surgeon) so non-astronaut roles don't hit a dead end; the full surgeon dashboard is Step 8.
 
-**Done when:** as `ast1` on day 117 you finish a check-in in < 60 s and watch the YELLOW alert appear without refreshing. **Tag `m2-walking-skeleton`.** From here on you always have a demo.
+**Done when:** as `ast1` you finish a check-in in < 60 s and watch the YELLOW alert appear without refreshing. **Done 2026-11-14 (browser):**
+- **Check-in:** completed in 38 s (sleep 4.5 h, mood 3, stress 8, fatigue 8, resting HR 91). It raised three new findings live: the fatigue pattern, resting heart rate +9.0σ, and sleep deficit.
+- **Live update:** a second, never-reloaded Overview tab switched from *All clear* to *Attention · 3 alert(s)* through the WebSocket.
+- **Alert detail:** shows the full evidence table.
+- **Checks:** 125 backend tests pass; `tsc`, `vite build` and `oxlint` are clean.
+- **Not covered in the browser:** the Acknowledge click wasn't exercised there (it is covered by API tests), and there are no frontend unit tests yet (Step 11).
 
----
+**Tag `m2-walking-skeleton`.** From here on you always have a demo.
+
+**Demo on any date:** use a fresh database, then:
+```
+python -m astra.seed --mission-day-today 121
+simulator/simulate.py seed
+```
+Today is mission day 121; the history covers days −29…120.
 
 ### Step 5 — Analytics, wellness index, full rule set (Days 11–12)
 
