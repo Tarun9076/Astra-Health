@@ -14,7 +14,7 @@ from astra.core.protocols import ProtocolBundle, load_protocol_bundle
 def test_real_protocols_load_with_expected_counts(bundle: ProtocolBundle) -> None:
     counts = bundle.counts()
     assert (counts.indicators, counts.rules, counts.recommendations) == (22, 17, 21)
-    assert (counts.emergency_protocols, counts.mission_profiles) == (8, 1)
+    assert (counts.emergency_protocols, counts.mission_profiles) == (10, 1)
 
 
 def test_starter_rules_and_severities(bundle: ProtocolBundle) -> None:

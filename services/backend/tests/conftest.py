@@ -22,6 +22,8 @@ def test_settings(tmp_path: Path) -> Settings:
         bcrypt_rounds=4,
         routine_interval_minutes=0,
         models_path=tmp_path / "models",
+        anthropic_api_key=None,  # tests never call the real Claude API
+        llm_provider="auto",
     )
 
 
