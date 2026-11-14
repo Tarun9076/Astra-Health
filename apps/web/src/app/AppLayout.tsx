@@ -1,11 +1,14 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { ClipboardCheck, LogOut, Users } from 'lucide-react'
+import { ClipboardCheck, LogOut, SlidersHorizontal, Users } from 'lucide-react'
 import { useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { EarthCopyBanner } from '../components/ui/EarthCopyBanner'
+import { OfflineBanner } from '../components/ui/OfflineBanner'
 import { NodeStatusPill } from '../components/ui/NodeStatusPill'
 import { Toaster } from '../components/ui/Toaster'
 import { useAuth } from '../lib/auth'
 import { missionDay, missionSol } from '../lib/mission'
+import { startOutboxSync } from '../lib/outbox'
 import { RealtimeClient, type LiveEvent } from '../lib/realtime'
 import { useToasts } from '../lib/toasts'
 import { ASTRONAUT_SECTIONS } from './sections'
@@ -32,6 +35,9 @@ function useLiveUpdates() {
       if (['InstructionReceived', 'InstructionAcknowledged'].includes(event.type)) {
         void queryClient.invalidateQueries({ queryKey: ['instructions'] })
         void queryClient.invalidateQueries({ queryKey: ['crew-summary'] })
+      }
+      if (event.type === 'LinkChanged') {
+        void queryClient.invalidateQueries({ queryKey: ['sync-status'] })
       }
       if (event.type === 'ReportGenerated') {
         void queryClient.invalidateQueries({ queryKey: ['reports'] })
@@ -67,9 +73,23 @@ const navCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? 'bg-space-700 text-ink' : 'text-ink-muted hover:bg-space-800 hover:text-ink'
   }`
 
+function useOutboxSync() {
+  const userId = useAuth((s) => s.user?.userId)
+  const queryClient = useQueryClient()
+  const push = useToasts((s) => s.push)
+  useEffect(() => {
+    if (!userId) return
+    return startOutboxSync((count) => {
+      push({ tone: 'success', title: `Sent ${count} saved item(s) to the habitat server` })
+      void queryClient.invalidateQueries()
+    })
+  }, [userId, queryClient, push])
+}
+
 export function AppLayout() {
   const { user, signOut } = useAuth()
   useLiveUpdates()
+  useOutboxSync()
   const start = user?.missionStart
   const isAstronaut = user?.role === 'Astronaut'
 
@@ -107,6 +127,8 @@ export function AppLayout() {
         </div>
       </header>
 
+      <OfflineBanner />
+      {!isAstronaut && <EarthCopyBanner />}
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
         <nav className="no-print flex gap-1 overflow-x-auto border-b border-space-700 bg-space-950 p-2 md:w-60 md:flex-col md:border-r md:border-b-0">
           {isAstronaut ? (
@@ -123,10 +145,18 @@ export function AppLayout() {
               ))}
             </>
           ) : (
-            <NavLink to="/staff" end className={navCls}>
-              <Users className="h-4 w-4 text-accent" aria-hidden />
-              Crew
-            </NavLink>
+            <>
+              <NavLink to="/staff" end className={navCls}>
+                <Users className="h-4 w-4 text-accent" aria-hidden />
+                Crew
+              </NavLink>
+              {user?.role === 'Admin' && (
+                <NavLink to="/staff/sim" className={navCls}>
+                  <SlidersHorizontal className="h-4 w-4 text-accent" aria-hidden />
+                  Demo control
+                </NavLink>
+              )}
+            </>
           )}
         </nav>
 

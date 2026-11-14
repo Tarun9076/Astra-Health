@@ -1221,6 +1221,149 @@
     ]
    }
   },
+  "/api/sync/status": {
+   "get": {
+    "tags": [
+     "sync"
+    ],
+    "summary": "Sync Status",
+    "operationId": "sync_status_api_sync_status_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SyncStatus"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/admin/link": {
+   "get": {
+    "tags": [
+     "sync"
+    ],
+    "summary": "Get Admin Link",
+    "operationId": "get_admin_link_api_admin_link_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LinkOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   },
+   "put": {
+    "tags": [
+     "sync"
+    ],
+    "summary": "Put Admin Link",
+    "operationId": "put_admin_link_api_admin_link_put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LinkIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LinkOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/admin/sim/scenario": {
+   "post": {
+    "tags": [
+     "sync"
+    ],
+    "summary": "Inject Scenario",
+    "description": "Demo Control Panel: start a scenario *now* through the normal intake (rules, alerts, sync).",
+    "operationId": "inject_scenario_api_admin_sim_scenario_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ScenarioIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ScenarioOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
   "/api/checkins": {
    "post": {
     "tags": [
@@ -3223,6 +3366,106 @@
     ],
     "title": "LatestReport"
    },
+   "LinkIn": {
+    "properties": {
+     "status": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "Up",
+         "Down"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status"
+     },
+     "realDelayMinutes": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 60.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Realdelayminutes"
+     },
+     "useHorizons": {
+      "type": "boolean",
+      "title": "Usehorizons",
+      "default": false
+     },
+     "compressionSecondsPerMinute": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 60.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Compressionsecondsperminute"
+     }
+    },
+    "type": "object",
+    "title": "LinkIn"
+   },
+   "LinkOut": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "enum": [
+       "Up",
+       "Down"
+      ],
+      "title": "Status"
+     },
+     "realDelayMinutes": {
+      "type": "number",
+      "title": "Realdelayminutes"
+     },
+     "delaySource": {
+      "type": "string",
+      "title": "Delaysource"
+     },
+     "compressionSecondsPerMinute": {
+      "type": "number",
+      "title": "Compressionsecondsperminute"
+     },
+     "oneWaySeconds": {
+      "type": "number",
+      "title": "Onewayseconds"
+     },
+     "horizonsDelayMinutes": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Horizonsdelayminutes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status",
+     "realDelayMinutes",
+     "delaySource",
+     "compressionSecondsPerMinute",
+     "oneWaySeconds"
+    ],
+    "title": "LinkOut"
+   },
    "LoginIn": {
     "properties": {
      "username": {
@@ -3855,6 +4098,54 @@
     ],
     "title": "Role"
    },
+   "ScenarioIn": {
+    "properties": {
+     "scenario": {
+      "type": "string",
+      "enum": [
+       "fatigue",
+       "solar-storm"
+      ],
+      "title": "Scenario"
+     },
+     "astronautId": {
+      "type": "string",
+      "title": "Astronautid",
+      "default": "AST-001"
+     }
+    },
+    "type": "object",
+    "required": [
+     "scenario"
+    ],
+    "title": "ScenarioIn"
+   },
+   "ScenarioOut": {
+    "properties": {
+     "scenario": {
+      "type": "string",
+      "title": "Scenario"
+     },
+     "readings": {
+      "type": "integer",
+      "title": "Readings"
+     },
+     "newAlerts": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Newalerts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "scenario",
+     "readings",
+     "newAlerts"
+    ],
+    "title": "ScenarioOut"
+   },
    "SeriesOut": {
     "properties": {
      "astronautCode": {
@@ -3965,6 +4256,76 @@
      "value"
     ],
     "title": "SeriesPoint"
+   },
+   "SyncStatus": {
+    "properties": {
+     "nodeId": {
+      "type": "string",
+      "title": "Nodeid"
+     },
+     "nodeRole": {
+      "type": "string",
+      "title": "Noderole"
+     },
+     "link": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/LinkOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "pending": {
+      "type": "integer",
+      "title": "Pending"
+     },
+     "inFlight": {
+      "type": "integer",
+      "title": "Inflight"
+     },
+     "acked": {
+      "type": "integer",
+      "title": "Acked"
+     },
+     "lastReceivedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lastreceivedat"
+     },
+     "lastAckAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lastackat"
+     }
+    },
+    "type": "object",
+    "required": [
+     "nodeId",
+     "nodeRole",
+     "link",
+     "pending",
+     "inFlight",
+     "acked",
+     "lastReceivedAt",
+     "lastAckAt"
+    ],
+    "title": "SyncStatus"
    },
    "SystemStatus": {
     "properties": {

@@ -1,6 +1,7 @@
 // Live events from the Habitat node over WebSocket (LLD §14).
 // The token goes in the query string because browsers can't set headers on WebSockets.
 import { create } from 'zustand'
+import { websocketPath } from './nodes'
 
 export interface LiveEvent {
   type: string
@@ -36,7 +37,7 @@ export class RealtimeClient {
     const status = useLiveStatus.getState()
     status.set(this.attempt === 0 ? 'connecting' : 'reconnecting')
     const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${scheme}://${window.location.host}/ws?token=${encodeURIComponent(this.token)}`)
+    const ws = new WebSocket(`${scheme}://${window.location.host}${websocketPath()}?token=${encodeURIComponent(this.token)}`)
     this.ws = ws
 
     ws.onopen = () => {

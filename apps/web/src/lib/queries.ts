@@ -77,6 +77,16 @@ export function useInstructions(code: string | null | undefined) {
   })
 }
 
+export function useSyncStatus(enabled = true) {
+  return useQuery({
+    queryKey: ['sync-status'],
+    queryFn: () => unwrap(api.GET('/api/sync/status')),
+    refetchInterval: 3_000,
+    retry: false,
+    enabled,
+  })
+}
+
 export function useCrewSummary() {
   return useQuery({ queryKey: ['crew-summary'], queryFn: () => unwrap(api.GET('/api/crew/summary')) })
 }

@@ -452,6 +452,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sync/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sync Status */
+        get: operations["sync_status_api_sync_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Admin Link */
+        get: operations["get_admin_link_api_admin_link_get"];
+        /** Put Admin Link */
+        put: operations["put_admin_link_api_admin_link_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/sim/scenario": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inject Scenario
+         * @description Demo Control Panel: start a scenario *now* through the normal intake (rules, alerts, sync).
+         */
+        post: operations["inject_scenario_api_admin_sim_scenario_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/checkins": {
         parameters: {
             query?: never;
@@ -1141,6 +1196,38 @@ export interface components {
             /** Transmissionstatus */
             transmissionStatus: string;
         };
+        /** LinkIn */
+        LinkIn: {
+            /** Status */
+            status?: ("Up" | "Down") | null;
+            /** Realdelayminutes */
+            realDelayMinutes?: number | null;
+            /**
+             * Usehorizons
+             * @default false
+             */
+            useHorizons: boolean;
+            /** Compressionsecondsperminute */
+            compressionSecondsPerMinute?: number | null;
+        };
+        /** LinkOut */
+        LinkOut: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "Up" | "Down";
+            /** Realdelayminutes */
+            realDelayMinutes: number;
+            /** Delaysource */
+            delaySource: string;
+            /** Compressionsecondsperminute */
+            compressionSecondsPerMinute: number;
+            /** Onewayseconds */
+            oneWaySeconds: number;
+            /** Horizonsdelayminutes */
+            horizonsDelayMinutes?: number | null;
+        };
         /** LoginIn */
         LoginIn: {
             /**
@@ -1410,6 +1497,28 @@ export interface components {
          * @enum {string}
          */
         Role: "Astronaut" | "FlightSurgeon" | "MissionControl" | "Admin";
+        /** ScenarioIn */
+        ScenarioIn: {
+            /**
+             * Scenario
+             * @enum {string}
+             */
+            scenario: "fatigue" | "solar-storm";
+            /**
+             * Astronautid
+             * @default AST-001
+             */
+            astronautId: string;
+        };
+        /** ScenarioOut */
+        ScenarioOut: {
+            /** Scenario */
+            scenario: string;
+            /** Readings */
+            readings: number;
+            /** Newalerts */
+            newAlerts: string[];
+        };
         /** SeriesOut */
         SeriesOut: {
             /** Astronautcode */
@@ -1445,6 +1554,24 @@ export interface components {
             quality?: string | null;
             /** Channel */
             channel?: string | null;
+        };
+        /** SyncStatus */
+        SyncStatus: {
+            /** Nodeid */
+            nodeId: string;
+            /** Noderole */
+            nodeRole: string;
+            link: components["schemas"]["LinkOut"] | null;
+            /** Pending */
+            pending: number;
+            /** Inflight */
+            inFlight: number;
+            /** Acked */
+            acked: number;
+            /** Lastreceivedat */
+            lastReceivedAt: string | null;
+            /** Lastackat */
+            lastAckAt: string | null;
         };
         /** SystemStatus */
         SystemStatus: {
@@ -2342,6 +2469,112 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CrewStatus"][];
+                };
+            };
+        };
+    };
+    sync_status_api_sync_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncStatus"];
+                };
+            };
+        };
+    };
+    get_admin_link_api_admin_link_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"];
+                };
+            };
+        };
+    };
+    put_admin_link_api_admin_link_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inject_scenario_api_admin_sim_scenario_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScenarioOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

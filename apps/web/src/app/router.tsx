@@ -4,11 +4,9 @@ import { AlertsPage } from '../features/alerts/AlertsPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { CheckinPage } from '../features/checkin/CheckinPage'
 import { OverviewPage } from '../features/overview/OverviewPage'
-import { ReportsPage } from '../features/reports/ReportsPage'
-import { CrewPage, StaffAstronautPage } from '../features/staff/CrewPage'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
-import { AnalyticsRoute, AssistantRoute } from './LazyPages'
+import { AnalyticsRoute, AssistantRoute, CrewRoute, DemoControlRoute, ReportsRoute, StaffAstronautRoute } from './LazyPages'
 import { PlaceholderPage } from './PlaceholderPage'
 import { ASTRONAUT_SECTIONS } from './sections'
 
@@ -18,7 +16,7 @@ const BUILT: Record<string, ReactNode> = {
   alerts: <AlertsPage />,
   analytics: <AnalyticsRoute />,
   assistant: <AssistantRoute />,
-  reports: <ReportsPage />,
+  reports: <ReportsRoute />,
 }
 
 export const router = createBrowserRouter([
@@ -48,8 +46,9 @@ export const router = createBrowserRouter([
       </Guard>
     ),
     children: [
-      { index: true, element: <CrewPage /> },
-      { path: 'astronaut/:code', element: <StaffAstronautPage /> },
+      { index: true, element: <CrewRoute /> },
+      { path: 'astronaut/:code', element: <StaffAstronautRoute /> },
+      { path: 'sim', element: <Guard roles={['Admin']}><DemoControlRoute /></Guard> },
     ],
   },
   { path: '*', element: <Home /> },

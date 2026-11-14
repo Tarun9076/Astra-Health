@@ -4,8 +4,9 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { Button, ErrorNote, Panel } from '../../components/ui/Panel'
 import { SeverityBadge } from '../../components/ui/Status'
-import { api, unwrap, type CheckinIn, type CheckinOut, type VitalIn } from '../../lib/api'
+import { type CheckinIn, type CheckinOut, type VitalIn } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { sendOrQueue } from '../../lib/outbox'
 
 const STEPS = ['Sleep', 'How you feel', 'Vitals', 'Review'] as const
 const TARGET_SECONDS = 60
@@ -98,8 +99,11 @@ export function CheckinPage() {
   const [vitals, setVitals] = useState<Vitals>({ restingHr: '', bpSys: '', bpDia: '', bodyTemp: '', spo2: '' })
   const [note, setNote] = useState('')
 
+  const [clientId] = useState(() => crypto.randomUUID())
   const submit = useMutation({
-    mutationFn: (body: CheckinIn) => unwrap(api.POST('/api/checkins', { body })),
+    // Offline-first: if the habitat server is unreachable the check-in is kept on this device and
+    // sent later with the same id, so it is never stored twice.
+    mutationFn: (body: CheckinIn) => sendOrQueue<CheckinOut>('/api/checkins', { ...body, id: clientId }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       void queryClient.invalidateQueries({ queryKey: ['alerts'] })
@@ -122,7 +126,8 @@ export function CheckinPage() {
 
   const bpIncomplete = (vitals.bpSys === '') !== (vitals.bpDia === '')
 
-  if (submit.isSuccess) return <Result result={submit.data} seconds={seconds} />
+  if (submit.isSuccess && submit.data.queued) return <SavedOffline />
+  if (submit.isSuccess && !submit.data.queued) return <Result result={submit.data.data} seconds={seconds} />
 
   const set = (k: keyof Scores) => (v: number) => setScores((s) => ({ ...s, [k]: v }))
   const setV = (k: keyof Vitals) => (v: string) => setVitals((s) => ({ ...s, [k]: v }))
@@ -258,6 +263,20 @@ function Result({ result, seconds }: { result: CheckinOut; seconds: number }) {
         <Link to="/astronaut/overview"><Button>Go to overview</Button></Link>
         {alerts.length > 0 && <Link to="/astronaut/alerts"><Button variant="ghost">Open Alerts Center</Button></Link>}
       </div>
+    </div>
+  )
+}
+
+function SavedOffline() {
+  return (
+    <div className="max-w-xl space-y-4">
+      <Panel>
+        <p className="text-lg font-semibold">Check-in saved on this device</p>
+        <p className="mt-2 text-sm text-ink-muted">
+          The habitat server can't be reached right now. Your answers are stored on this tablet and will be sent
+          automatically as soon as it is back; any alerts are raised then.
+        </p>
+      </Panel>
     </div>
   )
 }

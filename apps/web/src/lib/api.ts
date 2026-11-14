@@ -4,6 +4,7 @@
 import createClient, { type Middleware } from 'openapi-fetch'
 import type { components, paths } from './api-types'
 import { useAuth } from './auth'
+import { routeUrl } from './nodes'
 
 type Schemas = components['schemas']
 export type Me = Schemas['MeOut']
@@ -31,6 +32,8 @@ export type ReportItem = Schemas['ReportListItem']
 export type Report = Schemas['ReportOut']
 export type Instruction = Schemas['InstructionOut']
 export type CrewStatus = Schemas['CrewStatus']
+export type SyncStatus = Schemas['SyncStatus']
+export type LinkState = Schemas['LinkOut']
 
 export class ApiError extends Error {
   readonly status: number
@@ -45,7 +48,8 @@ const auth: Middleware = {
   onRequest({ request }) {
     const token = useAuth.getState().token
     if (token) request.headers.set('Authorization', `Bearer ${token}`)
-    return request
+    const routed = routeUrl(request.url)
+    return routed === request.url ? request : new Request(routed, request)
   },
   onResponse({ response }) {
     // An expired or revoked session: sign out so the app returns to the login page.
