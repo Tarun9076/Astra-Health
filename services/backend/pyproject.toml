@@ -49,5 +49,5 @@ strict = true
 packages = ["astra"]
 
 [[tool.mypy.overrides]]
-module = ["pymannkendall", "joblib", "sklearn.*"]
+module = ["pymannkendall", "joblib", "sklearn.*", "rank_bm25"]
 ignore_missing_imports = true

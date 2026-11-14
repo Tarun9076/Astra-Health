@@ -178,6 +178,71 @@ def apply_outcomes(
     return changes
 
 
+SYMPTOM_TASKS = ["REC-CONTACT-SURGEON"]
+
+
+def raise_symptom_alert(
+    session: Session,
+    bundle: ProtocolBundle,
+    astronaut: Astronaut,
+    *,
+    rule_id: str,
+    rule_version: str,
+    title: str,
+    reason: str,
+    protocol: str,
+    evidence: dict[str, object],
+    at: datetime,
+    node_id: str,
+) -> AlertChanges:
+    """Urgent alert from a reported red-flag symptom (LLD §11.2 step 1), deduplicated per (astronaut, rule).
+
+    Not from the rule engine: the symptom report itself is the evidence. Escalated at once.
+    """
+    changes = AlertChanges()
+    alert = session.exec(
+        select(HealthAlert).where(
+            HealthAlert.astronaut_id == astronaut.id,
+            HealthAlert.rule_id == rule_id,
+            col(HealthAlert.status).in_([s.value for s in ACTIVE_STATUSES]),
+        )
+    ).first()
+    now = datetime.now(UTC)
+    if alert is None:
+        alert = HealthAlert(
+            id=str(uuid7(int(at.timestamp() * 1000))),
+            astronaut_id=astronaut.id,
+            rule_id=rule_id,
+            rule_version=rule_version,
+            category="Symptom",
+            hazard="Distance",
+            severity="Urgent",
+            status=AlertStatus.OPEN.value,
+            title=title,
+            reason=reason,
+            evidence_json=json.dumps(evidence),
+            first_triggered_at=at,
+            last_triggered_at=at,
+            escalation_required=True,
+            protocol=protocol,
+            origin_node_id=node_id,
+            updated_at=now,
+        )
+        session.add(alert)
+        _create_tasks(session, bundle, alert, [c for c in SYMPTOM_TASKS if c in bundle.recommendations], at)
+        _audit(session, alert, "AlertRaised", node_id, details={"source": "symptom"})
+        changes.created.append(alert)
+    else:
+        alert.last_triggered_at, alert.trigger_count = at, alert.trigger_count + 1
+        alert.reason, alert.evidence_json = reason, json.dumps(evidence)
+        alert.version += 1
+        alert.updated_at = now
+        session.add(alert)
+        changes.updated.append(alert)
+    _queue(session, alert)
+    return changes
+
+
 def _close_tasks(session: Session, alert: HealthAlert, at: datetime) -> None:
     """Pending tasks raised by an alert close with it (they no longer apply)."""
     for task in session.exec(

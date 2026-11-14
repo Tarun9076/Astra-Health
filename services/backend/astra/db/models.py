@@ -239,3 +239,21 @@ class Insight(SQLModel, table=True):
     window_end: date
     model_version: str
     created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+class ChatMessage(SQLModel, table=True):
+    """AI Health Assistant conversation (LLD §3.4). Private to the astronaut and medical staff."""
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    user_id: str  # who asked (the astronaut, or a flight surgeon asking about them)
+    role: str  # user | assistant
+    text: str
+    mode: str | None = None  # llm | template | emergency (assistant turns)
+    provider: str | None = None  # claude | template | redflag
+    citations_json: str = "[]"
+    suggested_actions_json: str = "[]"
+    safety_flags_json: str = "[]"
+    emergency_protocol_id: str | None = None
+    alert_id: str | None = None  # Urgent alert raised from a red-flag report
+    created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)

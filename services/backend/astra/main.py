@@ -20,6 +20,7 @@ from sqlmodel import Session
 from astra.api import (
     alerts,
     analytics,
+    assistant,
     auth,
     catalog,
     checkins,
@@ -33,6 +34,7 @@ from astra.api import (
     insights as insights_api,
 )
 from astra.api.base import ApiModel
+from astra.assistant.service import Assistant
 from astra.config import Settings, settings
 from astra.core.enums import NodeRole
 from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_bundle
@@ -55,6 +57,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     init_db(engine)
     app.state.engine = engine
     insights.configure(cfg.models_path)
+    # Knowledge base + red flags; a broken note or an unknown protocol id stops startup too.
+    app.state.assistant = Assistant.load(
+        cfg.kb_path, bundle, cfg.protocols_path,
+        api_key=cfg.anthropic_api_key or None, model=cfg.llm_model, provider=cfg.llm_provider,
+    )  # fmt: skip
     routine = None
     if cfg.node_role == NodeRole.HABITAT and cfg.routine_interval_minutes > 0:
         routine = asyncio.create_task(_routine_loop(engine, bundle, cfg.routine_interval_minutes))
@@ -118,6 +125,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(analytics.router)
     app.include_router(insights_api.router)
     app.include_router(alerts.router)
+    app.include_router(assistant.router)
     app.include_router(checkins.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)
