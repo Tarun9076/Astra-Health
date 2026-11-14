@@ -205,8 +205,9 @@ WellnessScores    (AstronautId, Date, Overall, CardioScore, SleepScore, Behavior
 
 ### 3.4 Assistant, sync, audit
 ```
-ChatMessages   (Id, SessionId, AstronautId, Role ENUM[User,Assistant], Text, CitationsJson, Provider,
-                SafetyFlags, CreatedAt)
+ChatMessages   (Id, AstronautId, UserId, Role ENUM[user,assistant], Text, Mode, Provider, CitationsJson,
+                SuggestedActionsJson, SafetyFlagsJson, EmergencyProtocolId, AlertId, CreatedAt)   -- as built
+                (no SessionId: one running conversation per astronaut; the last 6 turns are sent as history)
 SyncOutbox     (Seq INTEGER PK AUTOINCREMENT, EntityType, EntityId, Operation ENUM[Upsert], PayloadJson,
                 CreatedAt, Status ENUM[Pending,InFlight,Sent,Acked], EnvelopeId NULL, Attempts)
 SyncInbox      (EnvelopeId PK, FromNodeId, Seq, ReceivedAt, AppliedAt, ItemCount)   -- idempotency
@@ -616,6 +617,34 @@ def trend(series: pd.Series, sigma: float) -> TrendResult                    # i
 
 ## 11. AI assistant (`astra/assistant/`)
 
+**As built (Step 7)** — `astra/assistant/` (`knowledge.py`, `redflag.py`, `guard.py`, `providers/{template,claude}.py`,
+`service.py`). Differences from the design below:
+- **Red flags** live in `protocols/redflags.yaml` and are checked against the emergency procedures at startup.
+  - 6 flags: chest pain, breathing, fainting, neurological signs, severe bleeding, self-harm.
+  - A negation in the 3 words before a match cancels it.
+  - A clearly hypothetical question ("what should I do if…", "signs of…") shows the procedure but raises no alert,
+    unless it also contains a present report ("I'm having it right now").
+  - Only an astronaut reporting about themselves creates the `Symptom` and the Urgent alert (`SYM-<flag>`,
+    category Symptom, escalated, task REC-CONTACT-SURGEON).
+- **Retrieval:**
+  - Query = the question only. Active alert titles are added only when the question has fewer than 3 meaningful
+    words; otherwise an open alert dragged every answer to its topic.
+  - Note titles count twice; context words common to every question are ignored; a small synonym map is applied.
+  - The best note's "What astronauts can do" section is always included.
+- **Claude call:**
+  - `client.beta.messages.create` with `model=ASTRA_LLM_MODEL`, `max_tokens=8000`.
+  - `output_config = {effort: "low", format: json_schema}`; thinking is adaptive (always on for Opus 5.5).
+  - Server-side refusal fallback: beta `server-side-fallback-2026-07-01`, `fallbacks: "default"`.
+  - Client timeout 45 s, 1 retry.
+  - No prompt caching: the system prompt is below the cacheable minimum.
+- **Guard:** dose units, medication instructions (except negated ones, "don't take any medication…") and diagnoses.
+  A failed Claude answer is retried once with a reminder, then the template answers. Any medication question also
+  gets a fixed line saying the CMO decides on medication.
+- **Template:** the astronaut's values vs their normal for the indicators the question names (or the most deviant
+  ones), active alerts, the latest AI insight, "General background" from explanatory sections, and "What helps" from
+  the advice section.
+- **Not built:** Ollama (tier 2), `preferredProvider` "ollama", link-mode gating (Step 9).
+
 ### 11.1 Contract of `assistant.answer(request) -> AssistantResponse`
 The `/api/assistant/chat` router builds this request from the database (findings) and the user's question, then calls the module in-process.
 ```json
@@ -780,8 +809,9 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 ### 13.4 Assistant, crew, environment, sync, admin
 | Method | Path | Role |
 |---|---|---|
-| POST | `/assistant/chat` `{sessionId, question}` → assistant response (§11.1) | self |
-| GET | `/assistant/sessions/{id}` | self |
+| POST | `/assistant/chat` ✅ `{question, astronautId?, provider: auto|claude|template}` → `{messageId, questionId, answer, citations:[{chunkId, title, source}], suggestedActions, safetyFlags, mode: llm|template|emergency, provider: claude|template|redflag, emergencyProtocolId, alertId, createdAt, disclaimer}` | astronaut (self); surgeon with `astronautId` (never raises symptom alerts); mission control 403 |
+| GET | `/assistant/history?astronautId=&limit=` ✅ | same as chat |
+| GET | `/assistant/status` ✅ → `{defaultProvider, claudeConfigured, model, knowledgeNotes, knowledgeChunks, redFlags}` | any signed-in |
 | GET | `/crew` → `[{astronaut, status, wellnessIndex, activeAlerts, lastDataAt}]` | surgeon, mission |
 | GET | `/mission/overview` → aggregates only | mission, surgeon |
 | GET | `/environment/current` · `/environment/radiation?astronautId=` | any |
@@ -853,7 +883,8 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | `BodyMap2D` | SVG with region `<path id="heart">`… coloured by `body-systems` status; click → `RegionPanel` |
 | `BodyModel3D` | R3F `<Canvas>`; meshes named `region_heart` etc.; hover outline; same `RegionPanel` |
 | `AssistantChat` | messages, citation chips, provider badge ("Onboard · offline" / "Earth relay · Claude"), emergency card variant |
-| `EmergencyProtocolCard` | full-screen red, numbered steps, "Notify CMO", "Start timer", works offline (protocols bundled in app) |
+| `EmergencyProtocolCard` | full-screen red, numbered steps, "Notify CMO", "Start timer", works offline (protocols bundled in app). **As built (Step 7):** red card with the numbered steps from `src/lib/emergency.ts`, which bundles `protocols/emergency/*.md` at build time (`import.meta.glob` …`?raw`); timer and Notify buttons not built |
+| `AssistantPage` ✅ | chat (Step 7): suggested questions, provider badge, citation chips linking to the source page, "You could" actions, emergency card inline, offline-only toggle when Claude is configured, side list of all emergency procedures |
 | `LinkStatusPill` | UP/DOWN, delay, queued count |
 | `BreathingExercise` | 4-7-8 / box breathing animated circle |
 
@@ -1016,10 +1047,10 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-S-01 | Sync | link down 10 min, 40 items | queued; link up → delivered once |
 | T-S-02 | Sync | duplicateRate = 0.5 | no duplicate rows on Ground |
 | T-S-03 | Sync | tampered envelope | rejected (HMAC) |
-| T-AI-01 | Assistant | "I have chest pain" | mode emergency, no LLM call, Urgent alert created |
-| T-AI-02 | Assistant | "What dose of ibuprofen should I take?" | no dosage in answer; directs to surgeon/protocol |
-| T-AI-03 | Assistant | API key missing | template mode answer with citations |
-| T-AI-04 | Assistant | normal question | ≥ 1 valid citation |
+| T-AI-01 ✅ | Assistant | "I have chest pain" | mode emergency, no LLM call, Urgent alert created |
+| T-AI-02 ✅ | Assistant | "What dose of ibuprofen should I take?" | no dosage in answer; directs to surgeon/protocol |
+| T-AI-03 ✅ | Assistant | API key missing | template mode answer with citations |
+| T-AI-04 ✅ | Assistant | normal question | ≥ 1 valid citation (unknown chunk ids are dropped) |
 | T-ML-01 ✅ | Anomaly | fatigue scenario | anomaly score day 116 > 95th percentile of training (0.56 > 0.5) |
 | T-ML-02 ✅ | Anomaly | ML function raises / times out (monkeypatched) | measurement API still 201, alerts still raised |
 | T-ARCH-01 | Architecture | scan imports of `astra.core` | no fastapi / sqlmodel / sqlalchemy / httpx imports |

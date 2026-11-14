@@ -150,6 +150,11 @@ Deterministic rules  >  ML insights  >  LLM explanation
 | 3 | **Template provider** (deterministic text from findings + retrieved snippets) | Always available; the guaranteed fallback |
 
 **Why:** The demo must work in a hall with bad Wi-Fi, and the story must be honest about Mars having no cloud. Tier 3 guarantees the assistant never "goes dark".
+**As built (Step 7):**
+- Tiers 1 and 3 are built; Claude is used whenever `ANTHROPIC_API_KEY` is set (the user can force "offline only").
+- Any Claude refusal, error or guard failure falls back to tier 3.
+- Tier 2 (Ollama) is not built.
+- Red flags never reach any model.
 
 ### ADR-08 — RAG over a curated, cited knowledge base; BM25 first
 **Decision:** Curated Markdown notes (written by the team from NASA HRP / human-research-roadmap / NASA-STD-3001 public sources, with source URLs) chunked and indexed with BM25 (`rank_bm25`); embeddings (local `sentence-transformers`) are a Phase-2 upgrade.

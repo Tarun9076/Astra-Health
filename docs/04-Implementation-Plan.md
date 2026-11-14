@@ -45,7 +45,7 @@ gantt
     Step 4 Dashboard, check-in, live alerts :done, s4, after s3, 4d
     Step 5 Analytics, recommendations, wellness :done, s5, after s4, 2d
     Step 6 ML insights                   :done, s6, after s5, 3d
-    Step 7 AI assistant + RAG            :s7, after s6, 3d
+    Step 7 AI assistant + RAG            :done, s7, after s6, 3d
     section Earth and wow
     Step 8 Reports + surgeon dashboard   :s8, after s7, 2d
     Step 9 Offline, Ground node, link sim :s9, after s8, 3d
@@ -205,18 +205,34 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
-### Step 7 — AI Health Assistant with RAG and safety router (Days 16–18) → **M4**
+### Step 7 — AI Health Assistant with RAG and safety router (Days 16–18) → **M4** ✅
 
 **Tasks**
-- [ ] Knowledge base: ~25 Markdown notes in your own words from the **hackathon-provided sources** (TDD §12.1), one per hazard, one per relevant NASA risk, plus countermeasures and the CSA radiation article (LLD §11.3). Split across the team.
-- [ ] `astra/assistant/retriever.py`: heading-based chunking + BM25 (`rank_bm25`), index built at startup.
-- [ ] `redflags.yaml` + `redflag.py` + test T-AI-01.
-- [ ] Providers: **`template.py` first** (works with no key), then **`claude.py`** (official `anthropic` SDK, model from `ASTRA_LLM_MODEL`, structured JSON output, refusal/error → template), then `ollama.py` (stretch).
-- [ ] `guard.py` (dosage/diagnosis filter, citation check, escalation line) + tests T-AI-02..04.
-- [ ] Router `POST /api/assistant/chat`: builds findings from the DB, calls `assistant.answer()`, stores `ChatMessages`, audits.
-- [ ] Chat UI: suggested questions, citation chips, provider badge ("Onboard · offline" / "Earth relay · Claude"), `EmergencyProtocolCard`; emergency protocols bundled into the web app so they work if the backend is down.
+- [x] Knowledge base: 29 notes (91 sections) in our own words from the 5 hackathon-provided pages: one per hazard, the relevant NASA risks, countermeasures, the CSA neutron-radiation article and how the app judges readings. Every note cites only those URLs (checked by a test).
+- [x] `astra/assistant/knowledge.py`: heading-based chunks + BM25 (`rank_bm25`), built at startup. It weights note titles double, ignores words every question shares ("Mars", "astronaut"…) and maps everyday words to the notes' terms ("lonely" → isolation).
+- [x] `protocols/redflags.yaml` + `redflag.py` (T-AI-01). It handles negations ("no chest pain") and hypothetical questions (protocol shown, no alert), unless the person is clearly reporting it now. Two new procedures: `EMG-NEURO-SYMPTOMS`, `EMG-SEVERE-BLEEDING` (10 in total).
+- [x] Providers: `template.py` (works with no key) and `claude.py`.
+  - `claude.py` uses the official `anthropic` SDK with model `ASTRA_LLM_MODEL` (default `claude-opus-5-5`), structured JSON output, effort `low` and the server-side refusal fallback.
+  - A refusal, a cut-off answer or an API error falls back to the template.
+  - `ollama.py` is **not built** (stretch).
+- [x] `guard.py`: no doses, medication instructions or diagnoses; only retrieved citations; escalation line; a fixed "ask the CMO" line for any medication question (T-AI-02..04).
+- [x] API:
+  - `POST /api/assistant/chat` builds findings from the dashboard and recent insights, answers, stores `ChatMessage`s and audits without the question text.
+  - A red-flag *report* from an astronaut creates a `Symptom` and an Urgent `SYM-*` alert, pushed live.
+  - Also `GET /api/assistant/history` and `/status`.
+- [x] Chat UI: suggested questions, citation chips linking to the source page, provider badge ("Onboard · offline" / "Earth relay · Claude" / "Emergency · no AI"), `EmergencyProtocolCard`. The 10 emergency procedures are bundled into the web app at build time, so they open even when the backend is down.
 
-**Done when:** the same question answers via Claude with a key set and via the template without one, and "I have chest pain" instantly shows the emergency card and creates an Urgent alert. **Tag `m4-assistant`.**
+**Done when:** the same question answers via Claude with a key set and via the template without one, and "I have chest pain" instantly shows the emergency card and creates an Urgent alert. **Done 2026-11-15:**
+- **Chest pain (in the browser):**
+  - "I have chest pain" shows the chest-pain procedure at once, with no AI call.
+  - The Urgent alert `SYM-CHEST-PAIN` appears in the Alerts Center with its evidence, procedure and "contact the CMO" task.
+  - The Overview turns RED.
+- **Template (live and in the browser):** "Why is my resting heart rate increasing?" answers with "Your resting heart rate is 92 bpm; your personal normal is 64 bpm, so this is 9.3σ above your normal", the AI insight and the fatigue-recovery note, with citations.
+- **Claude:** the same question goes through the Claude provider in an API test, using a mocked SDK client; it gets the same citations and history, and Claude is chosen whenever a key is configured. **Not run against the real Claude API:** no `ANTHROPIC_API_KEY` is set on this machine. Add one to `services/backend/.env` and restart to try it.
+- **Checks:** 222 backend tests pass (44 assistant tests); ruff, mypy, `tsc`, `vite build` and `oxlint` are clean.
+- **Not covered:** a visual screenshot (the browser pane could not draw; the pages were checked through their DOM text). Symptom intake outside the chat (a symptom form, and `SANS-VISION-SYMPTOM`) is not built yet.
+
+**Tag `m4-assistant`.**
 
 ---
 
