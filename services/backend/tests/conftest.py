@@ -21,6 +21,7 @@ def test_settings(tmp_path: Path) -> Settings:
         database_url=f"sqlite:///{(tmp_path / 'test.db').as_posix()}",
         bcrypt_rounds=4,
         routine_interval_minutes=0,
+        models_path=tmp_path / "models",
     )
 
 

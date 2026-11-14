@@ -13,7 +13,7 @@ from astra.core.protocols import ProtocolBundle, load_protocol_bundle
 
 def test_real_protocols_load_with_expected_counts(bundle: ProtocolBundle) -> None:
     counts = bundle.counts()
-    assert (counts.indicators, counts.rules, counts.recommendations) == (22, 16, 21)
+    assert (counts.indicators, counts.rules, counts.recommendations) == (22, 17, 21)
     assert (counts.emergency_protocols, counts.mission_profiles) == (8, 1)
 
 
@@ -27,7 +27,7 @@ def test_starter_rules_and_severities(bundle: ProtocolBundle) -> None:
         "RS-SPO2-CRITICAL",
         "MET-GLUCOSE-LOW",
     }
-    assert len(severities) == 16 and severities["BEH-FATIGUE-COMPOSITE"] == Severity.ATTENTION
+    assert len(severities) == 17 and severities["BEH-FATIGUE-COMPOSITE"] == Severity.ATTENTION
 
 
 def test_urgent_rules_link_an_emergency_protocol(bundle: ProtocolBundle) -> None:
@@ -75,9 +75,15 @@ LEAF = {"indicator": "body_temp", "agg": "latest", "window": "1d", "op": "gte", 
         ({"when": {**LEAF, "window": "4 days"}}, "when.leaf.window"),
         ({"when": {**LEAF, "indicator": "radiation_dose", "op": "z_gte"}}, "has no personal baseline"),
         (
-            {"when": {**LEAF, "op": "insight"}, "severity": "Urgent", "protocol": "EMG-FEVER"},
+            {
+                "when": {**LEAF, "indicator": "ml_anomaly", "op": "insight"},
+                "severity": "Urgent",
+                "protocol": "EMG-FEVER",
+            },
             "Urgent rules may not depend on ML insights",
-        ),
+        ),  # fmt: skip
+        ({"when": {**LEAF, "op": "insight"}}, "op 'insight' needs one of ['ml_anomaly', 'ml_trend']"),
+        ({"when": {**LEAF, "indicator": "ml_trend"}}, "op 'insight' needs one of"),
         ({"when": {"all": [LEAF, LEAF]}}, "evidence key used twice: body_temp"),
         ({"recommendations": ["REC-DOES-NOT-EXIST"]}, "unknown recommendation 'REC-DOES-NOT-EXIST'"),
         ({"protocol": "EMG-NOPE"}, "unknown emergency protocol 'EMG-NOPE'"),

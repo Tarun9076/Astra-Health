@@ -66,7 +66,7 @@ def test_wellness_is_on_the_dashboard_and_stored_daily(seeded_client: TestClient
     dash = seeded_client.get("/api/astronauts/AST-001/dashboard", headers=ast1).json()
     assert dash["wellnessIndex"] == dash["wellness"]["overall"] and dash["wellnessIndex"] <= 75  # alert cap
     cardio = next(d for d in dash["wellness"]["domains"] if d["domain"] == "Cardiovascular")
-    assert any("resting_hr" in r for r in cardio["reasons"])
+    assert any("resting heart rate" in r for r in cardio["reasons"])  # names, not codes
     trend = seeded_client.get(
         "/api/astronauts/AST-001/wellness", params={"range": "30d"}, headers=ast1
     ).json()

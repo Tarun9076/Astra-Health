@@ -3,6 +3,7 @@
 - ARES-1 scenario: fatigue onset (AST-001, day 114), the real May 2024 solar storm (day 87),
   a sensor glitch (AST-002, day 60). The right alerts must appear at the right time.
 - Healthy crew (same data, no events): the false-alarm budget (T-SC-01).
+- ML insights (Step 6): the fatigue trend shows before the rule alerts; no trend for healthy crew.
 """
 
 from collections.abc import Iterator
@@ -120,7 +121,12 @@ def test_fatigue_pattern_detected_within_days_of_onset(mission: Engine) -> None:
 
 def test_resting_heart_rate_and_sleep_alerts_join_the_fatigue_story(mission: Engine) -> None:
     active_at_end = {a.rule_id for a in _alerts(mission) if a.astronaut == "AST-001" and a.last_day == 120}
-    assert active_at_end == {"CV-RHR-BASELINE", "SLP-DEFICIT", "BEH-FATIGUE-COMPOSITE"}
+    assert active_at_end == {
+        "CV-RHR-BASELINE",
+        "SLP-DEFICIT",
+        "BEH-FATIGUE-COMPOSITE",
+        "ML-ANOMALY-CORROBORATED",
+    }
     rhr = next(a for a in _alerts(mission) if a.astronaut == "AST-001" and a.rule_id == "CV-RHR-BASELINE")
     assert rhr.first_day >= 114  # heart-rate rise is part of the episode, not earlier noise
 
@@ -177,3 +183,56 @@ def test_wellness_index_tracks_the_fatigue_episode(mission: Engine) -> None:
     assert rows[88].overall == rows[100].overall == 40
     assert rows[120].overall is not None and rows[120].overall < 40  # fatigue episode on top
     assert rows[87].overall == 40  # urgent solar-storm alert caps the index
+
+
+def _insights(engine: Engine) -> list[tuple[str, str, int]]:
+    from astra.db.models import Insight
+
+    with Session(engine) as session:
+        codes = {
+            a.id: a.code for a in [find_astronaut(session, c) for c in ("AST-001", "AST-002", "AST-003")] if a
+        }
+        rows = session.exec(select(Insight)).all()
+        day = lambda d: mission_day(datetime.combine(d, datetime.min.time(), tzinfo=UTC))  # noqa: E731
+        return sorted((codes[i.astronaut_id], i.kind, day(i.insight_date)) for i in rows)
+
+
+def test_fatigue_trend_insight_comes_before_the_rule_alerts(mission: Engine) -> None:
+    # Step 6 "done when": the trend insight shows about a day before the rule alert
+    trends = [day for code, kind, day in _insights(mission) if code == "AST-001" and kind == "Trend"]
+    assert trends and trends[0] >= 114, trends  # part of the episode, not earlier noise
+    story = {"CV-RHR-BASELINE", "BEH-FATIGUE-COMPOSITE"}
+    first_alert = min(
+        a.first_day for a in _alerts(mission) if a.astronaut == "AST-001" and a.rule_id in story
+    )
+    assert trends[0] < first_alert, (trends, first_alert)
+    ml = next(a for a in _alerts(mission) if a.rule_id == "ML-ANOMALY-CORROBORATED")
+    assert (ml.astronaut, ml.severity) == ("AST-001", "Attention") and ml.first_day >= trends[0]
+
+
+def test_fatigue_day_scores_above_the_training_95th_percentile(
+    mission: Engine, bundle_m: ProtocolBundle
+) -> None:
+    # T-ML-01: day 116 of the fatigue scenario is more unusual than 95 % of AST-001's ordinary days
+    from datetime import timedelta
+
+    from astra.services import insights
+    from astra.services.assessment import HISTORY_MARGIN, load_assessor
+
+    day = SCENARIO.mission.date_of(116)
+    with Session(mission) as session:
+        ast1 = find_astronaut(session, "AST-001")
+        assert ast1 is not None
+        at = datetime.combine(day, datetime.max.time(), tzinfo=UTC)
+        assessor = load_assessor(session, bundle_m, ast1, at - HISTORY_MARGIN - timedelta(days=60))
+        scored = insights.anomaly_score(assessor, ast1.id, day)
+    assert scored is not None
+    score, model = scored
+    assert score.score > 0.5, score  # 0.5 = the training 95th percentile
+    assert {c for c, _ in score.contributors} & {"resting_hr", "fatigue", "sleep_hours"}
+    assert model.n_train >= 21 and model.train_end < day
+
+
+def test_healthy_crew_gets_no_trend_insights(healthy: Engine) -> None:
+    assert not [i for i in _insights(healthy) if i[1] == "Trend"]
+    assert not [a for a in _alerts(healthy) if a.rule_id == "ML-ANOMALY-CORROBORATED"]

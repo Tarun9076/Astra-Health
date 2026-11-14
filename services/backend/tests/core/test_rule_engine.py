@@ -25,6 +25,7 @@ class MemoryContext:
     as_of: datetime = AS_OF
     mission_start: date | None = date(2026, 7, 17)
     limits: dict[str, float] = field(default_factory=dict)
+    insights: dict[str, float] = field(default_factory=dict)  # kind -> best score in the window
 
     def points(self, indicator: str) -> Sequence[Point]:
         values = self.data.get(indicator, [])
@@ -40,8 +41,8 @@ class MemoryContext:
     def limit(self, indicator: str) -> float | None:
         return self.limits.get(indicator)
 
-    def has_insight(self, indicator: str, since: datetime) -> bool:
-        return False
+    def insight_score(self, kind: str, since: datetime) -> float | None:
+        return self.insights.get(kind)
 
 
 def _run(bundle: ProtocolBundle, rule_id: str, ctx: MemoryContext) -> RuleOutcome:
@@ -190,6 +191,35 @@ STEP5_CASES = [
     ("IMM-STRESS-FEVER", {"stress": [7, 8, 8, 7, 8], "body_temp": [36.7, 37.6]}, {}, True),
     ("IMM-STRESS-FEVER", {"stress": [7, 8, 8, 7, 8], "body_temp": [36.7, 37.0]}, {}, False),
 ]
+
+FATIGUE_DAY = {"resting_hr": [64, 64, 75], "fatigue": [3, 3, 8], "sleep_hours": [7, 5, 5]}
+FATIGUE_BASE = {
+    "resting_hr": _base("resting_hr", 64, 3),
+    "fatigue": _base("fatigue", 3, 1),
+    "sleep_hours": _base("sleep_hours", 7, 0.4),
+}
+ML_CASES = [
+    # ML alone never alerts: the anomaly score and the strain trend must agree AND a reading must confirm
+    ({"Anomaly": 0.63, "Trend": 1.7}, FATIGUE_DAY, True),
+    ({"Anomaly": 0.63}, FATIGUE_DAY, False),  # no trend
+    ({"Anomaly": 0.55, "Trend": 1.7}, FATIGUE_DAY, False),  # score below 0.6
+    (
+        {"Anomaly": 0.9, "Trend": 2.5},
+        {"resting_hr": [64, 64, 65], "fatigue": [3, 3, 3]},
+        False,
+    ),  # unconfirmed
+]
+
+
+@pytest.mark.parametrize(("insights", "data", "expected"), ML_CASES)
+def test_ml_anomaly_needs_trend_and_a_confirming_reading(
+    bundle: ProtocolBundle, insights: dict[str, float], data: dict[str, list[float]], expected: bool
+) -> None:
+    outcome = _run(bundle, "ML-ANOMALY-CORROBORATED", MemoryContext(data, FATIGUE_BASE, insights=insights))
+    assert outcome.matched is expected
+    if expected:
+        assert outcome.evidence["anomaly"].value == 0.63 and "0.63" in outcome.reason
+        assert outcome.rule.severity == "Attention"
 
 
 @pytest.mark.parametrize(("rule_id", "data", "baselines", "expected"), STEP5_CASES)

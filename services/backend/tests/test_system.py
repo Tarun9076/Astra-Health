@@ -22,7 +22,7 @@ def test_health_shows_loaded_protocol_counts(client: TestClient) -> None:
     assert body["kbPathExists"] is True
     assert body["protocols"] == {
         "indicators": 22,
-        "rules": 16,
+        "rules": 17,
         "recommendations": 21,
         "emergencyProtocols": 8,
         "missionProfiles": 1,
