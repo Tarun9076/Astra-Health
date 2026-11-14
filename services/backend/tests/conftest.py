@@ -17,7 +17,11 @@ PROTOCOLS_DIR = REPO_ROOT / "protocols"
 @pytest.fixture
 def test_settings(tmp_path: Path) -> Settings:
     """Settings pointing at a throwaway SQLite file, so tests never touch habitat.db."""
-    return Settings(database_url=f"sqlite:///{(tmp_path / 'test.db').as_posix()}", bcrypt_rounds=4)
+    return Settings(
+        database_url=f"sqlite:///{(tmp_path / 'test.db').as_posix()}",
+        bcrypt_rounds=4,
+        routine_interval_minutes=0,
+    )
 
 
 @pytest.fixture

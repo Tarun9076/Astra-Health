@@ -13,20 +13,21 @@ from astra.core.protocols import ProtocolBundle, load_protocol_bundle
 
 def test_real_protocols_load_with_expected_counts(bundle: ProtocolBundle) -> None:
     counts = bundle.counts()
-    assert (counts.indicators, counts.rules, counts.recommendations) == (22, 6, 15)
-    assert (counts.emergency_protocols, counts.mission_profiles) == (5, 1)
+    assert (counts.indicators, counts.rules, counts.recommendations) == (22, 16, 21)
+    assert (counts.emergency_protocols, counts.mission_profiles) == (8, 1)
 
 
 def test_starter_rules_and_severities(bundle: ProtocolBundle) -> None:
     severities = {r.id: r.severity_level for r in bundle.rules}
-    assert severities == {
-        "CV-RHR-BASELINE": Severity.ATTENTION,
-        "TH-FEVER": Severity.ATTENTION,
-        "TH-FEVER-HIGH": Severity.URGENT,
-        "SLP-DEFICIT": Severity.ATTENTION,
-        "BEH-FATIGUE-COMPOSITE": Severity.ATTENTION,
-        "RAD-SPE-EVENT": Severity.URGENT,
+    urgent = {rid for rid, s in severities.items() if s == Severity.URGENT}
+    assert urgent == {
+        "TH-FEVER-HIGH",
+        "RAD-SPE-EVENT",
+        "CV-BP-CRITICAL",
+        "RS-SPO2-CRITICAL",
+        "MET-GLUCOSE-LOW",
     }
+    assert len(severities) == 16 and severities["BEH-FATIGUE-COMPOSITE"] == Severity.ATTENTION
 
 
 def test_urgent_rules_link_an_emergency_protocol(bundle: ProtocolBundle) -> None:

@@ -4,6 +4,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 
+import pytest
+
 from astra.core.baselines import Baseline
 from astra.core.protocols import ProtocolBundle
 from astra.core.rules.engine import Point, RuleOutcome, evaluate, window_points
@@ -145,3 +147,61 @@ def test_windows() -> None:
     assert [p.value for p in window_points(pts, "3r", AS_OF, None)] == [2, 1, 0]
     assert [p.value for p in window_points(pts, "2d", AS_OF, None)] == [1, 0]
     assert [p.value for p in window_points(pts, "3r", AS_OF - timedelta(days=2), None)] == [4, 3, 2]
+
+
+# --- Step 5 rules: one case that must fire and one that must not, per rule -------------------------
+
+BP = {"bp_sys": _base("bp_sys", 116, 5), "bp_dia": _base("bp_dia", 74, 4)}
+STEP5_CASES = [
+    ("CV-BP-HIGH", {"bp_sys": [138, 142, 145], "bp_dia": [80, 82, 84]}, BP, True),
+    ("CV-BP-HIGH", {"bp_sys": [118, 120, 125], "bp_dia": [76, 78, 80]}, BP, False),
+    ("CV-BP-CRITICAL", {"bp_sys": [150, 185, 190], "bp_dia": [90, 100, 104]}, BP, True),
+    ("CV-BP-CRITICAL", {"bp_sys": [150, 120, 190], "bp_dia": [90, 80, 104]}, BP, False),  # not repeated
+    ("RS-SPO2-LOW", {"spo2": [97, 93, 94]}, {"spo2": _base("spo2", 98, 0.7)}, True),
+    ("RS-SPO2-LOW", {"spo2": [93, 97, 94]}, {"spo2": _base("spo2", 98, 0.7)}, False),
+    ("RS-SPO2-CRITICAL", {"spo2": [96, 89, 88]}, {}, True),
+    ("RS-SPO2-CRITICAL", {"spo2": [89, 92]}, {}, False),
+    ("MET-GLUCOSE-LOW", {"glucose": [90, 50]}, {}, True),
+    ("MET-GLUCOSE-LOW", {"glucose": [50, 60]}, {}, False),
+    ("MET-GLUCOSE-OUT", {"glucose": [92, 66, 64]}, {"glucose": _base("glucose", 92, 8)}, True),
+    ("MET-GLUCOSE-OUT", {"glucose": [190, 195]}, {"glucose": _base("glucose", 92, 8)}, True),
+    (
+        "MET-GLUCOSE-OUT",
+        {"glucose": [92, 69]},
+        {"glucose": _base("glucose", 92, 8)},
+        False,
+    ),  # single low reading
+    ("MSK-EXERCISE-ADHERENCE", {"exercise_sessions": [5, 3]}, {}, True),
+    ("MSK-EXERCISE-ADHERENCE", {"exercise_sessions": [3, 5]}, {}, False),
+    (
+        "MSK-STRENGTH-DECLINE",
+        {"strength_index": [100 - 0.5 * d for d in range(28)]},
+        {"strength_index": _base("strength_index", 99, 3)},
+        True,
+    ),
+    (
+        "MSK-STRENGTH-DECLINE",
+        {"strength_index": [100.0] * 28},
+        {"strength_index": _base("strength_index", 100, 3)},
+        False,
+    ),
+    ("RAD-CUMULATIVE", {"radiation_dose": [3.0] * 120}, {}, True),  # 360 mSv = 60 % of 600
+    ("RAD-CUMULATIVE", {"radiation_dose": [0.64] * 120}, {}, False),
+    ("IMM-STRESS-FEVER", {"stress": [7, 8, 8, 7, 8], "body_temp": [36.7, 37.6]}, {}, True),
+    ("IMM-STRESS-FEVER", {"stress": [7, 8, 8, 7, 8], "body_temp": [36.7, 37.0]}, {}, False),
+]
+
+
+@pytest.mark.parametrize(("rule_id", "data", "baselines", "expected"), STEP5_CASES)
+def test_step5_rules(
+    bundle: ProtocolBundle,
+    rule_id: str,
+    data: dict[str, list[float]],
+    baselines: dict[str, Baseline],
+    expected: bool,
+) -> None:
+    ctx = MemoryContext(data, baselines, limits={"radiation_dose": 600})
+    outcome = _run(bundle, rule_id, ctx)
+    assert outcome.matched is expected
+    if expected:
+        assert "n/a" not in outcome.reason or rule_id == "MSK-STRENGTH-DECLINE", outcome.reason

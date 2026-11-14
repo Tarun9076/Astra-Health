@@ -24,6 +24,7 @@ from astra.core.protocols import ProtocolBundle
 from astra.core.rules.engine import Point, RuleOutcome, evaluate, indicators_used
 from astra.db.models import Astronaut, HealthAlert, HealthBaseline, HealthMeasurement, Mission
 from astra.services.alerts import AlertChanges, apply_outcomes
+from astra.services.wellness import WELLNESS_INDICATORS, compute_wellness, store_wellness
 
 HISTORY_MARGIN = timedelta(days=45)  # 28-day window + 3 skipped days + slack
 
@@ -114,20 +115,24 @@ def load_assessor(
     profile = bundle.mission_profiles.get(mission.profile_code) if mission else None
     limits = {"radiation_dose": profile.radiation_limit_msv} if profile else {}
 
-    indicators = indicators_used(bundle.rules) | {
-        "resting_hr",
-        "bp_sys",
-        "bp_dia",
-        "body_temp",
-        "spo2",
-        "glucose",
-        "sleep_hours",
-        "mood",
-        "stress",
-        "fatigue",
-        "activity_min",
-        "radiation_dose",
-    }
+    indicators = (
+        indicators_used(bundle.rules)
+        | WELLNESS_INDICATORS
+        | {
+            "resting_hr",
+            "bp_sys",
+            "bp_dia",
+            "body_temp",
+            "spo2",
+            "glucose",
+            "sleep_hours",
+            "mood",
+            "stress",
+            "fatigue",
+            "activity_min",
+            "radiation_dose",
+        }
+    )
     if mission_start is not None:
         since = min(
             since, datetime.combine(mission_start, datetime.min.time(), tzinfo=UTC) - timedelta(days=31)
@@ -185,6 +190,10 @@ def assess(
         outcomes = assessor.evaluate_at(at)
         result.changes.extend(apply_outcomes(session, bundle, astronaut, outcomes, at, node_id=node_id))
         result.evaluations += 1
+        session.flush()  # so the wellness index sees alerts raised at this moment
+        store_wellness(
+            session, astronaut.id, at.date(), compute_wellness(session, assessor, astronaut.id, at)
+        )
     _store_baselines(session, assessor, astronaut, times[-1].date())
     return result
 

@@ -14,6 +14,7 @@ from astra.db.models import HealthAlert, Mission, RecommendationTask
 from astra.db.session import SessionDep
 from astra.security.deps import ViewableAstronaut
 from astra.services.assessment import HISTORY_MARGIN, load_assessor
+from astra.services.wellness import compute_wellness
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
 
@@ -47,6 +48,21 @@ class Vital(ApiModel):
     worse_when: Literal["high", "low", "both"]
 
 
+class WellnessDomain(ApiModel):
+    domain: str
+    score: float | None
+    reasons: list[str]
+
+
+class WellnessOut(ApiModel):
+    overall: int | None
+    cap_reason: str | None
+    indicators_seen: int
+    indicators_total: int
+    domains: list[WellnessDomain]
+    note: str = "Wellness index — a summary of your readings vs your own normal, not a clinical score."
+
+
 class DashboardOut(ApiModel):
     astronaut_code: str
     display_name: str
@@ -58,7 +74,8 @@ class DashboardOut(ApiModel):
     vitals: list[Vital]
     tasks: list[TaskOut]
     last_reading_at: datetime | None
-    wellness_index: float | None = None  # Step 5
+    wellness_index: int | None = None
+    wellness: WellnessOut | None = None
     simulated_data: bool = True
 
 
@@ -127,6 +144,17 @@ def get_dashboard(astronaut: ViewableAstronaut, request: Request, session: Sessi
         .order_by(col(RecommendationTask.due_at))
     ).all()
     last = max((v.measured_at for v in vitals), default=None)
+    well = compute_wellness(session, assessor, astronaut.id, now)
+    wellness = WellnessOut(
+        overall=well.overall,
+        cap_reason=well.cap_reason,
+        indicators_seen=well.indicators_seen,
+        indicators_total=well.indicators_total,
+        domains=[
+            WellnessDomain(domain=d.domain, score=d.score, reasons=[p.reason for p in d.penalties[:3]])
+            for d in well.domains
+        ],
+    )
     return DashboardOut(
         astronaut_code=astronaut.code,
         display_name=astronaut.display_name,
@@ -138,4 +166,6 @@ def get_dashboard(astronaut: ViewableAstronaut, request: Request, session: Sessi
         vitals=vitals,
         tasks=[task_out(t, bundle) for t in tasks],
         last_reading_at=last,
+        wellness_index=well.overall,
+        wellness=wellness,
     )

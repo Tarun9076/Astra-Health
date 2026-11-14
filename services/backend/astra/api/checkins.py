@@ -23,6 +23,7 @@ from astra.realtime.hub import hub
 from astra.security.deps import CurrentUser
 from astra.security.jwt import TokenClaims
 from astra.services.ingestion import IncomingReading, ingest_batch
+from astra.services.routine import complete_checkin_reminder
 
 router = APIRouter(prefix="/api", tags=["check-in"])
 
@@ -112,6 +113,7 @@ def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: C
         )
         for v in body.vitals
     ]
+    complete_checkin_reminder(session, astronaut.id, now)
     outcome = ingest_batch(
         session,
         bundle,

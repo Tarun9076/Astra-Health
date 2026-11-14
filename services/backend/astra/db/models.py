@@ -200,3 +200,20 @@ class SyncOutbox(SQLModel, table=True):
     status: str = Field(default="Pending", index=True)  # Pending | InFlight | Sent | Acked
     envelope_id: str | None = None
     attempts: int = 0
+
+
+class WellnessScore(SQLModel, table=True):
+    """Daily wellness index (LLD §9), stored at each assessment for the trend chart. Not a clinical score."""
+
+    astronaut_id: str = Field(foreign_key="astronaut.id", primary_key=True)
+    score_date: date = Field(primary_key=True)
+    overall: int | None = None
+    cardiovascular: float | None = None
+    sleep: float | None = None
+    behavioral: float | None = None
+    activity: float | None = None
+    metabolic: float | None = None
+    environment: float | None = None
+    cap_reason: str | None = None
+    indicators_seen: int = 0
+    computed_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)

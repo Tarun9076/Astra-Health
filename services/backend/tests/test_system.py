@@ -22,9 +22,9 @@ def test_health_shows_loaded_protocol_counts(client: TestClient) -> None:
     assert body["kbPathExists"] is True
     assert body["protocols"] == {
         "indicators": 22,
-        "rules": 6,
-        "recommendations": 15,
-        "emergencyProtocols": 5,
+        "rules": 16,
+        "recommendations": 21,
+        "emergencyProtocols": 8,
         "missionProfiles": 1,
     }
     assert body["nasaApi"] in {"enabled", "disabled"}

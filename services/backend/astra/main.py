@@ -5,20 +5,37 @@ ASTRA_NODE_ROLE. Module layout and build order: docs/03-Low-Level-Design.md §1 
 docs/04-Implementation-Plan.md.
 """
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Literal
 
+import anyio.to_thread
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import Engine
+from sqlmodel import Session
 
-from astra.api import alerts, auth, catalog, checkins, crew, dashboard, measurements, realtime, system
+from astra.api import (
+    alerts,
+    analytics,
+    auth,
+    catalog,
+    checkins,
+    crew,
+    dashboard,
+    measurements,
+    realtime,
+    system,
+)
 from astra.api.base import ApiModel
 from astra.config import Settings, settings
+from astra.core.enums import NodeRole
 from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_bundle
 from astra.db.session import init_db, make_engine
 from astra.realtime.hub import hub
+from astra.services.routine import ensure_routine_tasks
 
 logger = logging.getLogger("astra")
 
@@ -33,9 +50,31 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = make_engine(cfg.database_url)
     init_db(engine)
     app.state.engine = engine
-    # Step 5 starts the routine scheduler here; Step 9 the sync loop and external-data fetchers.
+    routine = None
+    if cfg.node_role == NodeRole.HABITAT and cfg.routine_interval_minutes > 0:
+        routine = asyncio.create_task(_routine_loop(engine, bundle, cfg.routine_interval_minutes))
+    # Step 9 adds the sync loop and the external-data fetchers here.
     yield
+    if routine:
+        routine.cancel()
     engine.dispose()
+
+
+async def _routine_loop(engine: Engine, bundle: ProtocolBundle, minutes: int) -> None:
+    """Keep each astronaut's daily routine tasks up to date (LLD §8)."""
+
+    def run_once() -> int:
+        with Session(engine) as session:
+            return ensure_routine_tasks(session, bundle)
+
+    while True:
+        try:
+            created = await anyio.to_thread.run_sync(run_once)
+            if created:
+                logger.info("Routine tasks created: %s", created)
+        except Exception:  # never let the scheduler take the app down
+            logger.exception("Routine task run failed")
+        await asyncio.sleep(minutes * 60)
 
 
 class Health(ApiModel):
@@ -71,6 +110,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(catalog.router)
     app.include_router(crew.router)
     app.include_router(dashboard.router)
+    app.include_router(analytics.router)
     app.include_router(alerts.router)
     app.include_router(checkins.router)
     app.include_router(measurements.router)

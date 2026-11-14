@@ -158,3 +158,22 @@ def test_healthy_crew_false_alarm_budget(healthy: Engine) -> None:
     for code in ("AST-001", "AST-002", "AST-003"):
         mine = [a for a in alerts if a.astronaut == code]
         assert len(mine) <= 2, mine
+
+
+def test_wellness_index_tracks_the_fatigue_episode(mission: Engine) -> None:
+    from astra.db.models import WellnessScore
+
+    with Session(mission) as session:
+        ast1 = find_astronaut(session, "AST-001")
+        assert ast1 is not None
+        rows = {
+            mission_day(datetime.combine(r.score_date, datetime.min.time(), tzinfo=UTC)): r
+            for r in session.exec(select(WellnessScore).where(WellnessScore.astronaut_id == ast1.id)).all()
+        }
+    calm = [rows[d].overall for d in range(60, 80) if d in rows]  # before the day-87 storm
+    assert len(calm) == 20 and min(o for o in calm if o is not None) >= 75
+    # Nobody closes the Urgent storm alert in this test, so the index stays capped at 40 afterwards
+    # (by design: Urgent alerts never close themselves).
+    assert rows[88].overall == rows[100].overall == 40
+    assert rows[120].overall is not None and rows[120].overall < 40  # fatigue episode on top
+    assert rows[87].overall == 40  # urgent solar-storm alert caps the index
