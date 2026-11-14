@@ -348,6 +348,73 @@
     }
    }
   },
+  "/api/astronauts/{astronaut}/insights": {
+   "get": {
+    "tags": [
+     "insights"
+    ],
+    "summary": "List Insights",
+    "description": "Newest first.",
+    "operationId": "list_insights_api_astronauts__astronaut__insights_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "range",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "7d",
+        "30d",
+        "mission"
+       ],
+       "type": "string",
+       "default": "7d",
+       "title": "Range"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/InsightOut"
+         },
+         "title": "Response List Insights Api Astronauts  Astronaut  Insights Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/astronauts/{astronaut}/alerts": {
    "get": {
     "tags": [
@@ -1088,6 +1155,14 @@
        }
       ]
      },
+     "insights": {
+      "items": {
+       "$ref": "#/components/schemas/InsightOut"
+      },
+      "type": "array",
+      "title": "Insights",
+      "default": []
+     },
      "acknowledgedAt": {
       "anyOf": [
        {
@@ -1604,6 +1679,29 @@
     ],
     "title": "CheckinOut"
    },
+   "Contributor": {
+    "properties": {
+     "indicator": {
+      "type": "string",
+      "title": "Indicator"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "value": {
+      "type": "number",
+      "title": "Value"
+     }
+    },
+    "type": "object",
+    "required": [
+     "indicator",
+     "name",
+     "value"
+    ],
+    "title": "Contributor"
+   },
    "DashboardOut": {
     "properties": {
      "astronautCode": {
@@ -2010,6 +2108,81 @@
      "hasBaseline"
     ],
     "title": "IndicatorOut"
+   },
+   "InsightOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "Anomaly",
+       "Trend"
+      ],
+      "title": "Kind"
+     },
+     "day": {
+      "type": "string",
+      "format": "date",
+      "title": "Day"
+     },
+     "score": {
+      "type": "number",
+      "title": "Score"
+     },
+     "direction": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Direction"
+     },
+     "explanation": {
+      "type": "string",
+      "title": "Explanation"
+     },
+     "contributors": {
+      "items": {
+       "$ref": "#/components/schemas/Contributor"
+      },
+      "type": "array",
+      "title": "Contributors"
+     },
+     "windowStart": {
+      "type": "string",
+      "format": "date",
+      "title": "Windowstart"
+     },
+     "windowEnd": {
+      "type": "string",
+      "format": "date",
+      "title": "Windowend"
+     },
+     "modelVersion": {
+      "type": "string",
+      "title": "Modelversion"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "kind",
+     "day",
+     "score",
+     "direction",
+     "explanation",
+     "contributors",
+     "windowStart",
+     "windowEnd",
+     "modelVersion"
+    ],
+    "title": "InsightOut"
    },
    "ItemProblem": {
     "properties": {

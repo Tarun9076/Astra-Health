@@ -3,12 +3,13 @@ import { AlertOctagon, CheckSquare, ChevronRight, ClipboardCheck, Square } from 
 import { Link } from 'react-router-dom'
 import { Button, ErrorNote, Loading, Panel } from '../../components/ui/Panel'
 import { SeverityBadge, StatusBadge } from '../../components/ui/Status'
+import { INSIGHT_NOTE, InsightList } from '../../components/ui/InsightList'
 import { VitalCard } from '../../components/ui/VitalCard'
 import { WellnessCard } from '../../components/ui/WellnessCard'
 import { api, unwrap, type Dashboard, type Task } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { dayOf, timeAgo } from '../../lib/mission'
-import { useDashboard } from '../../lib/queries'
+import { useDashboard, useInsights } from '../../lib/queries'
 
 /** Overview for one astronaut. `readOnly` = a flight surgeon viewing someone else. */
 export function OverviewPage({ code, readOnly = false }: { code?: string; readOnly?: boolean }) {
@@ -54,6 +55,8 @@ export function OverviewPage({ code, readOnly = false }: { code?: string; readOn
         </div>
       </div>
 
+      <InsightsPanel code={data.astronautCode} missionStart={start} />
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Panel title={`Active alerts (${data.activeAlerts.length})`}>
           {data.activeAlerts.length === 0 ? (
@@ -85,6 +88,21 @@ export function OverviewPage({ code, readOnly = false }: { code?: string; readOn
         <TaskList tasks={data.tasks} code={data.astronautCode} readOnly={readOnly} />
       </div>
     </div>
+  )
+}
+
+function InsightsPanel({ code, missionStart }: { code: string; missionStart?: string | null }) {
+  const { data, error, isPending } = useInsights(code, '7d')
+  return (
+    <Panel title="AI insights · last 7 days">
+      {isPending && <Loading />}
+      {error && <ErrorNote error={error} />}
+      {data && data.length === 0 && (
+        <p className="text-sm text-ink-muted">No unusual patterns in your readings this week.</p>
+      )}
+      {data && data.length > 0 && <InsightList insights={data.slice(0, 4)} missionStart={missionStart} />}
+      <p className="mt-3 text-xs text-ink-muted">{INSIGHT_NOTE}</p>
+    </Panel>
   )
 }
 

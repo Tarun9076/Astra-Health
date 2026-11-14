@@ -155,6 +155,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/astronauts/{astronaut}/insights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Insights
+         * @description Newest first.
+         */
+        get: operations["list_insights_api_astronauts__astronaut__insights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/astronauts/{astronaut}/alerts": {
         parameters: {
             query?: never;
@@ -410,6 +430,11 @@ export interface components {
             /** Recommendations */
             recommendations: components["schemas"]["TaskOut"][];
             emergencyProtocol: components["schemas"]["ProtocolOut"] | null;
+            /**
+             * Insights
+             * @default []
+             */
+            insights: components["schemas"]["InsightOut"][];
             /** Acknowledgedat */
             acknowledgedAt: string | null;
             /** Acknowledgedby */
@@ -595,6 +620,15 @@ export interface components {
             /** Updatedalerts */
             updatedAlerts: components["schemas"]["AlertSummary"][];
         };
+        /** Contributor */
+        Contributor: {
+            /** Indicator */
+            indicator: string;
+            /** Name */
+            name: string;
+            /** Value */
+            value: number;
+        };
         /** DashboardOut */
         DashboardOut: {
             /** Astronautcode */
@@ -716,6 +750,41 @@ export interface components {
             bodySystem: string | null;
             /** Hasbaseline */
             hasBaseline: boolean;
+        };
+        /** InsightOut */
+        InsightOut: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "Anomaly" | "Trend";
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Score */
+            score: number;
+            /** Direction */
+            direction: string | null;
+            /** Explanation */
+            explanation: string;
+            /** Contributors */
+            contributors: components["schemas"]["Contributor"][];
+            /**
+             * Windowstart
+             * Format: date
+             */
+            windowStart: string;
+            /**
+             * Windowend
+             * Format: date
+             */
+            windowEnd: string;
+            /** Modelversion */
+            modelVersion: string;
         };
         /** ItemProblem */
         ItemProblem: {
@@ -1286,6 +1355,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WellnessDay"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_insights_api_astronauts__astronaut__insights_get: {
+        parameters: {
+            query?: {
+                range?: "7d" | "30d" | "mission";
+            };
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InsightOut"][];
                 };
             };
             /** @description Validation Error */

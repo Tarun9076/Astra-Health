@@ -22,6 +22,7 @@ export type Analytics = Schemas['AnalyticsOut']
 export type AnalyticsDay = Schemas['DayPoint']
 export type WellnessDay = Schemas['WellnessDay']
 export type Wellness = Schemas['WellnessOut']
+export type Insight = Schemas['InsightOut']
 
 export class ApiError extends Error {
   readonly status: number

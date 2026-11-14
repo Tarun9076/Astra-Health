@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CheckSquare, ChevronDown, ChevronRight, ShieldAlert, Square } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
+import { INSIGHT_NOTE, InsightList } from '../../components/ui/InsightList'
 import { Button, ErrorNote, Loading, Panel, ProtocolSteps } from '../../components/ui/Panel'
 import { AlertStatusChip, SeverityBadge } from '../../components/ui/Status'
 import { api, unwrap, type AlertDetail, type AlertSummary, type Indicator } from '../../lib/api'
@@ -86,6 +87,7 @@ function AlertCard({ alert, open, onToggle, missionStart }: {
 
 function AlertBody({ id }: { id: string }) {
   const { data, error, isPending } = useAlert(id)
+  const missionStart = useAuth((s) => s.user?.missionStart)
   const catalog = useCatalog().data ?? {}
   const queryClient = useQueryClient()
   const refresh = () => {
@@ -118,6 +120,14 @@ function AlertBody({ id }: { id: string }) {
       )}
 
       <EvidenceTable detail={data} catalog={catalog} />
+
+      {data.insights && data.insights.length > 0 && (
+        <div>
+          <h3 className="mb-2 text-xs font-semibold tracking-wider text-ink-muted uppercase">What the AI noticed</h3>
+          <InsightList insights={data.insights} missionStart={missionStart} />
+          <p className="mt-2 text-xs text-ink-muted">{INSIGHT_NOTE}</p>
+        </div>
+      )}
 
       {data.recommendations.length > 0 && (
         <div>
@@ -156,6 +166,12 @@ function AlertBody({ id }: { id: string }) {
   )
 }
 
+// Rule leaves that read an ML insight instead of a measurement (LLD §10)
+const ML_SOURCES: Record<string, { name: string; unit: string }> = {
+  ml_anomaly: { name: 'AI anomaly score', unit: '' },
+  ml_trend: { name: 'Recovery strain trend', unit: 'σ' },
+}
+
 function EvidenceTable({ detail, catalog }: { detail: AlertDetail; catalog: Record<string, Indicator> }) {
   const rows = Object.entries(detail.evidence) as [string, Record<string, number | string | boolean | null>][]
   return (
@@ -173,16 +189,17 @@ function EvidenceTable({ detail, catalog }: { detail: AlertDetail; catalog: Reco
         </thead>
         <tbody className="font-mono">
           {rows.map(([key, ev]) => {
-            const meta = catalog[String(ev.indicator)]
-            const dec = meta?.decimals ?? 1
+            const ml = ML_SOURCES[String(ev.indicator)]
+            const meta = ml ? undefined : catalog[String(ev.indicator)]
+            const dec = ml ? 2 : (meta?.decimals ?? 1)
             const isCount = String(ev.agg).startsWith('count')
-            const unit = isCount ? 'readings' : meta?.unit === 'score' ? '/10' : (meta?.unit ?? '')
+            const unit = ml ? ml.unit : isCount ? 'readings' : meta?.unit === 'score' ? '/10' : (meta?.unit ?? '')
             const num = (v: unknown) => (typeof v === 'number' ? formatValue(v, Math.max(dec, 1)) : '—')
             return (
               <tr key={key} className="border-t border-space-700">
                 <td className="py-1.5 pr-3 font-sans">
-                  {meta?.name ?? ev.indicator}
-                  <span className="block text-[11px] text-ink-muted">{String(ev.agg).replace('_', ' ')}</span>
+                  {ml?.name ?? meta?.name ?? ev.indicator}
+                  <span className="block text-[11px] text-ink-muted">{ml ? 'machine learning' : String(ev.agg).replace('_', ' ')}</span>
                 </td>
                 <td className="py-1.5 pr-3">{ev.missing ? 'no data' : `${num(ev.value)} ${unit}`}</td>
                 <td className="py-1.5 pr-3">{typeof ev.baseline === 'number' && !isCount ? `${num(ev.baseline)} ± ${num(ev.sigma)}` : '—'}</td>

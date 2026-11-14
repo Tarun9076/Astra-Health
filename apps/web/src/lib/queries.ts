@@ -51,6 +51,15 @@ export function useAnalytics(code: string | null | undefined, indicator: string 
   })
 }
 
+export function useInsights(code: string | null | undefined, range: '7d' | '30d' | 'mission' = '7d') {
+  return useQuery({
+    queryKey: ['insights', code, range],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/insights', { params: { path: { astronaut: code! }, query: { range } } })),
+    enabled: Boolean(code),
+  })
+}
+
 export function useWellnessTrend(code: string | null | undefined, range: Range) {
   return useQuery({
     queryKey: ['wellness', code, range],
