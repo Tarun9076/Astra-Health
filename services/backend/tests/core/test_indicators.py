@@ -7,8 +7,21 @@ from astra.core.protocols import ProtocolBundle
 def test_catalog_has_all_indicators(bundle: ProtocolBundle) -> None:
     catalog = bundle.catalog
     assert len(catalog) == 22
-    for code in ("heart_rate", "resting_hr", "bp_sys", "body_temp", "glucose", "spo2", "sleep_hours",
-                 "mood", "stress", "fatigue", "activity_min", "radiation_dose", "cabin_co2"):  # fmt: skip
+    for code in (
+        "heart_rate",
+        "resting_hr",
+        "bp_sys",
+        "body_temp",
+        "glucose",
+        "spo2",
+        "sleep_hours",
+        "mood",
+        "stress",
+        "fatigue",
+        "activity_min",
+        "radiation_dose",
+        "cabin_co2",
+    ):
         assert code in catalog
 
 

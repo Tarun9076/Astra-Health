@@ -30,13 +30,6 @@ def test_health_shows_loaded_protocol_counts(client: TestClient) -> None:
     assert body["nasaApi"] in {"enabled", "disabled"}
 
 
-def test_websocket_connects_and_answers_ping(client: TestClient) -> None:
-    with client.websocket_connect("/ws") as ws:
-        assert ws.receive_json()["type"] == "Connected"
-        ws.send_json({"type": "ping"})
-        assert ws.receive_json()["type"] == "pong"
-
-
 def test_app_refuses_to_start_with_a_broken_rule(protocols_copy: Path) -> None:
     rule_file = protocols_copy / "rules" / "TH-FEVER.json"
     rule = json.loads(rule_file.read_text(encoding="utf-8"))

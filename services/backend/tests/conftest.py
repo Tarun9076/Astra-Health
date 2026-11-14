@@ -17,7 +17,7 @@ PROTOCOLS_DIR = REPO_ROOT / "protocols"
 @pytest.fixture
 def test_settings(tmp_path: Path) -> Settings:
     """Settings pointing at a throwaway SQLite file, so tests never touch habitat.db."""
-    return Settings(database_url=f"sqlite:///{(tmp_path / 'test.db').as_posix()}")
+    return Settings(database_url=f"sqlite:///{(tmp_path / 'test.db').as_posix()}", bcrypt_rounds=4)
 
 
 @pytest.fixture
@@ -32,7 +32,7 @@ def seeded_client(client: TestClient) -> TestClient:
     """App whose database holds the ARES-1 mission, AST-001..003 and the demo users."""
     engine = client.app.state.engine  # type: ignore[attr-defined]
     with Session(engine) as session:
-        seed_database(session, load_seed(BACKEND_ROOT / "seed.example.json"))
+        seed_database(session, load_seed(BACKEND_ROOT / "seed.example.json"), bcrypt_rounds=4)
     return client
 
 
@@ -48,3 +48,22 @@ def protocols_copy(tmp_path: Path) -> Path:
     target = tmp_path / "protocols"
     shutil.copytree(PROTOCOLS_DIR, target)
     return target
+
+
+DEMO_PASSWORDS = {
+    "ast1": "astra-demo-ast1",
+    "ast2": "astra-demo-ast2",
+    "ast3": "astra-demo-ast3",
+    "surgeon1": "astra-demo-surgeon",
+    "mission1": "astra-demo-mission",
+    "admin": "astra-demo-admin",
+}
+
+
+def auth(client: TestClient, username: str) -> dict[str, str]:
+    """Sign in as a demo user and return the Authorization header."""
+    response = client.post(
+        "/api/auth/login", json={"username": username, "password": DEMO_PASSWORDS[username]}
+    )
+    assert response.status_code == 200, response.text
+    return {"Authorization": f"Bearer {response.json()['accessToken']}"}

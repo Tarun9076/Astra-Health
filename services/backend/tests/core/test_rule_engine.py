@@ -1,0 +1,147 @@
+"""Rule engine against the real starter rules, with an in-memory context (T-R-01..05)."""
+
+from collections.abc import Sequence
+from dataclasses import dataclass, field
+from datetime import UTC, date, datetime, timedelta
+
+from astra.core.baselines import Baseline
+from astra.core.protocols import ProtocolBundle
+from astra.core.rules.engine import Point, RuleOutcome, evaluate, window_points
+from astra.core.rules.models import Rule
+
+AS_OF = datetime(2026, 11, 13, 23, 59, tzinfo=UTC)
+
+
+def _base(indicator: str, median: float, sigma: float) -> Baseline:
+    return Baseline(indicator, median, sigma / 1.4826, sigma, 28, "Rolling", False)
+
+
+@dataclass
+class MemoryContext:
+    data: dict[str, list[float]]  # one value per day, oldest first, last value = AS_OF's day
+    baselines: dict[str, Baseline] = field(default_factory=dict)
+    as_of: datetime = AS_OF
+    mission_start: date | None = date(2026, 7, 17)
+    limits: dict[str, float] = field(default_factory=dict)
+
+    def points(self, indicator: str) -> Sequence[Point]:
+        values = self.data.get(indicator, [])
+        n = len(values)
+        return [
+            Point(self.as_of.replace(hour=7, minute=0) - timedelta(days=n - 1 - i), v)
+            for i, v in enumerate(values)
+        ]
+
+    def baseline(self, indicator: str) -> Baseline | None:
+        return self.baselines.get(indicator)
+
+    def limit(self, indicator: str) -> float | None:
+        return self.limits.get(indicator)
+
+    def has_insight(self, indicator: str, since: datetime) -> bool:
+        return False
+
+
+def _run(bundle: ProtocolBundle, rule_id: str, ctx: MemoryContext) -> RuleOutcome:
+    rule: Rule = next(r for r in bundle.rules if r.id == rule_id)
+    (outcome,) = evaluate([rule], ctx)
+    return outcome
+
+
+RHR = {"resting_hr": _base("resting_hr", 64, 3)}
+
+
+def test_single_raised_heart_rate_is_not_enough(bundle: ProtocolBundle) -> None:
+    # T-R-01: z = 2.5 once → no alert (needs 2 of the last 3 readings)
+    outcome = _run(bundle, "CV-RHR-BASELINE", MemoryContext({"resting_hr": [64, 64, 71.5]}, RHR))
+    assert not outcome.matched
+    assert outcome.evidence["resting_hr"].z == 2.5
+    assert outcome.evidence["resting_hr_repeats"].value == 1
+
+
+def test_two_of_last_three_raised_triggers_alert(bundle: ProtocolBundle) -> None:
+    # T-R-02
+    outcome = _run(bundle, "CV-RHR-BASELINE", MemoryContext({"resting_hr": [64, 71, 72]}, RHR))
+    assert outcome.matched
+    assert outcome.reason.startswith("Resting heart rate is 72 bpm against your normal of 64 bpm (+2.7σ)")
+
+
+def test_same_heart_rate_means_different_things_for_different_people(bundle: ProtocolBundle) -> None:
+    # T-R-03: 85 bpm twice — normal for someone at 82, abnormal for someone at 55
+    a = MemoryContext({"resting_hr": [82, 85, 85]}, {"resting_hr": _base("resting_hr", 82, 3)})
+    b = MemoryContext({"resting_hr": [55, 85, 85]}, {"resting_hr": _base("resting_hr", 55, 2.5)})
+    assert not _run(bundle, "CV-RHR-BASELINE", a).matched
+    assert _run(bundle, "CV-RHR-BASELINE", b).matched
+
+
+def test_high_fever_is_urgent_and_also_trips_fever(bundle: ProtocolBundle) -> None:
+    # T-R-05
+    ctx = MemoryContext({"body_temp": [36.7, 39.6]}, {"body_temp": _base("body_temp", 36.7, 0.15)})
+    high = _run(bundle, "TH-FEVER-HIGH", ctx)
+    assert high.matched and high.rule.severity == "Urgent"
+    assert "39.6 °C" in high.reason
+    assert _run(bundle, "TH-FEVER", ctx).matched
+
+
+def test_low_temperature_is_urgent_too(bundle: ProtocolBundle) -> None:
+    assert _run(bundle, "TH-FEVER-HIGH", MemoryContext({"body_temp": [34.8]})).matched
+
+
+def test_fatigue_composite_explains_every_value(bundle: ProtocolBundle) -> None:
+    ctx = MemoryContext(
+        {
+            "sleep_hours": [6.5, 5.0, 4.6, 4.3, 4.1],
+            "resting_hr": [64, 80, 86],
+            "fatigue": [3, 7, 8],
+            "mood": [7, 4, 4],
+        },
+        {"sleep_hours": _base("sleep_hours", 6.5, 0.5), "resting_hr": _base("resting_hr", 64, 3)},
+    )
+    outcome = _run(bundle, "BEH-FATIGUE-COMPOSITE", ctx)
+    assert outcome.matched
+    assert outcome.reason == (
+        "Sleep has averaged 4.5 h over 4 days (your normal 6.5 h), resting heart rate is 86 bpm "
+        "(your normal 64), and fatigue was rated 8/10."
+    )
+    assert set(outcome.evidence) == {"sleep_hours", "resting_hr", "fatigue", "mood"}  # all evaluated
+
+
+def test_fatigue_composite_needs_every_part(bundle: ProtocolBundle) -> None:
+    ctx = MemoryContext(
+        {"sleep_hours": [6.5, 5.0, 4.6, 4.3, 4.1], "resting_hr": [64, 64, 65], "fatigue": [8], "mood": [3]},
+        {"sleep_hours": _base("sleep_hours", 6.5, 0.5), "resting_hr": _base("resting_hr", 64, 3)},
+    )
+    assert not _run(bundle, "BEH-FATIGUE-COMPOSITE", ctx).matched  # heart rate is normal
+
+
+def test_solar_particle_event_uses_ratio_to_normal(bundle: ProtocolBundle) -> None:
+    ctx = MemoryContext(
+        {"radiation_dose": [0.64, 19.2]}, {"radiation_dose": _base("radiation_dose", 0.64, 0.03)}
+    )
+    outcome = _run(bundle, "RAD-SPE-EVENT", ctx)
+    assert outcome.matched and outcome.rule.protocol == "EMG-RADIATION-SHELTER"
+    assert "about 30× the habitat's normal of 0.64 mSv/day" in outcome.reason
+
+
+def test_missing_data_or_baseline_never_matches(bundle: ProtocolBundle) -> None:
+    no_data = _run(bundle, "CV-RHR-BASELINE", MemoryContext({}, RHR))
+    no_baseline = _run(bundle, "CV-RHR-BASELINE", MemoryContext({"resting_hr": [90, 95, 99]}))
+    assert not no_data.matched and no_data.evidence["resting_hr"].missing
+    assert not no_baseline.matched and no_baseline.evidence["resting_hr"].missing
+
+
+def test_sleep_deficit_any_branch(bundle: ProtocolBundle) -> None:
+    # absolute branch (< 5.5 h) fires even when the baseline is low too
+    ctx = MemoryContext(
+        {"sleep_hours": [5.2, 5.3, 5.1, 5.0]}, {"sleep_hours": _base("sleep_hours", 5.4, 0.5)}
+    )
+    outcome = _run(bundle, "SLP-DEFICIT", ctx)
+    assert outcome.matched and not outcome.evidence["sleep_vs_normal"].missing
+    assert "averaged 5.2 h" in outcome.reason
+
+
+def test_windows() -> None:
+    pts = [Point(AS_OF - timedelta(days=d), float(d)) for d in (5, 4, 3, 2, 1, 0)]
+    assert [p.value for p in window_points(pts, "3r", AS_OF, None)] == [2, 1, 0]
+    assert [p.value for p in window_points(pts, "2d", AS_OF, None)] == [1, 0]
+    assert [p.value for p in window_points(pts, "3r", AS_OF - timedelta(days=2), None)] == [4, 3, 2]

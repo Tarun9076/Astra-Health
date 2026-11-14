@@ -5,30 +5,39 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, func, select
 
 from astra.db.models import AuditLog, HealthMeasurement, SyncOutbox
+from tests.conftest import auth
 
 T0 = datetime.now(UTC).replace(microsecond=0) - timedelta(hours=2)
 
 
 def _reading(indicator: str, value: float, unit: str, minutes: int = 0, **extra: Any) -> dict[str, Any]:
-    return {"indicator": indicator, "value": value, "unit": unit,
-            "measuredAt": (T0 + timedelta(minutes=minutes)).isoformat(), **extra}  # fmt: skip
+    return {
+        "indicator": indicator,
+        "value": value,
+        "unit": unit,
+        "measuredAt": (T0 + timedelta(minutes=minutes)).isoformat(),
+        **extra,
+    }
 
 
-def _post(client: TestClient, items: list[dict[str, Any]], backfill: bool = False) -> dict[str, Any]:
+def _post(
+    client: TestClient, items: list[dict[str, Any]], backfill: bool = False, user: str = "ast1"
+) -> dict[str, Any]:
+    headers = auth(client, user) | ({"X-Backfill": "true"} if backfill else {})
     response = client.post(
-        "/api/measurements/batch",
-        json={"astronautId": "AST-001", "items": items},
-        headers={"X-Backfill": "true"} if backfill else {},
+        "/api/measurements/batch", json={"astronautId": "AST-001", "items": items}, headers=headers
     )
     assert response.status_code == 201, response.text
     body: dict[str, Any] = response.json()
     return body
 
 
-def test_crew_list(seeded_client: TestClient) -> None:
-    crew = seeded_client.get("/api/astronauts").json()
+def test_crew_list_depends_on_role(seeded_client: TestClient) -> None:
+    crew = seeded_client.get("/api/astronauts", headers=auth(seeded_client, "surgeon1")).json()
     assert [a["code"] for a in crew] == ["AST-001", "AST-002", "AST-003"]
     assert crew[0]["missionCode"] == "ARES-1"
+    mine = seeded_client.get("/api/astronauts", headers=auth(seeded_client, "ast2")).json()
+    assert [a["code"] for a in mine] == ["AST-002"]
 
 
 def test_batch_sorts_readings_into_accepted_questionable_rejected(seeded_client: TestClient) -> None:
@@ -50,13 +59,15 @@ def test_batch_sorts_readings_into_accepted_questionable_rejected(seeded_client:
         "bp_inconsistent",
         "implausible",
     ]
-    assert body["newAlerts"] == []
+    assert body["newAlerts"] == [] and body["evaluations"] == 1
 
 
 def test_same_reading_twice_is_stored_once(seeded_client: TestClient) -> None:
     # T-V-04: idempotent by id, and by (indicator, time, device) when no id is sent
-    items = [_reading("resting_hr", 64, "bpm", 10, id="0193a6f2-7c1e-7b10-9a11-2f6f3c1b0001"),
-             _reading("spo2", 98, "%", 11, deviceId="OX-1")]  # fmt: skip
+    items = [
+        _reading("resting_hr", 64, "bpm", 10, id="0193a6f2-7c1e-7b10-9a11-2f6f3c1b0001"),
+        _reading("spo2", 98, "%", 11, deviceId="OX-1"),
+    ]
     first = _post(seeded_client, items)
     second = _post(seeded_client, items)
     assert len(first["accepted"]) == 2
@@ -69,21 +80,53 @@ def test_same_reading_twice_is_stored_once(seeded_client: TestClient) -> None:
         assert session.exec(select(func.count()).select_from(AuditLog)).one() == 2  # one per batch
 
 
+def test_astronauts_can_only_post_and_read_their_own_data(seeded_client: TestClient) -> None:
+    ast2 = auth(seeded_client, "ast2")
+    body = {"astronautId": "AST-001", "items": [_reading("mood", 7, "score")]}
+    assert seeded_client.post("/api/measurements/batch", json=body, headers=ast2).status_code == 403
+    read = seeded_client.get(
+        "/api/astronauts/AST-001/measurements", params={"indicator": "mood"}, headers=ast2
+    )
+    assert read.status_code == 403
+    surgeon_read = seeded_client.get(
+        "/api/astronauts/AST-001/measurements",
+        params={"indicator": "mood"},
+        headers=auth(seeded_client, "surgeon1"),
+    )
+    assert surgeon_read.status_code == 200
+
+
+def test_admin_may_post_for_anyone_mission_control_may_not(seeded_client: TestClient) -> None:
+    assert _post(seeded_client, [_reading("mood", 7, "score")], user="admin")["accepted"]
+    body = {"astronautId": "AST-001", "items": [_reading("mood", 6, "score", 5)]}
+    response = seeded_client.post(
+        "/api/measurements/batch", json=body, headers=auth(seeded_client, "mission1")
+    )
+    assert response.status_code == 403
+
+
 def test_unknown_astronaut_is_404(seeded_client: TestClient) -> None:
     response = seeded_client.post(
-        "/api/measurements/batch", json={"astronautId": "AST-999", "items": [_reading("mood", 7, "score")]}
+        "/api/measurements/batch",
+        json={"astronautId": "AST-999", "items": [_reading("mood", 7, "score")]},
+        headers=auth(seeded_client, "admin"),
     )
     assert response.status_code == 404
 
 
 def test_naive_timestamp_is_refused(seeded_client: TestClient) -> None:
     item = _reading("mood", 7, "score") | {"measuredAt": "2026-11-14T07:00:00"}
-    response = seeded_client.post("/api/measurements/batch", json={"astronautId": "AST-001", "items": [item]})
+    response = seeded_client.post(
+        "/api/measurements/batch",
+        json={"astronautId": "AST-001", "items": [item]},
+        headers=auth(seeded_client, "ast1"),
+    )
     assert response.status_code == 422
 
 
 def test_daily_buckets_average_valid_readings_only(seeded_client: TestClient) -> None:
     day = datetime(2026, 11, 10, tzinfo=UTC)
+    values = ((60, 6), (64, 7), (68, 8), (400, 9))  # 400 bpm is implausible → rejected, not averaged
     items = [
         {
             "indicator": "resting_hr",
@@ -91,33 +134,32 @@ def test_daily_buckets_average_valid_readings_only(seeded_client: TestClient) ->
             "unit": "bpm",
             "measuredAt": (day + timedelta(hours=h)).isoformat(),
         }
-        for v, h in ((60, 6), (64, 7), (68, 8))
+        for v, h in values
     ]
-    items.append(
-        {
-            "indicator": "resting_hr",
-            "value": 400,
-            "unit": "bpm",
-            "measuredAt": (day + timedelta(hours=9)).isoformat(),
-        }
-    )
     _post(seeded_client, items, backfill=True)
 
     series = seeded_client.get(
-        "/api/astronauts/AST-001/measurements", params={"indicator": "resting_hr", "bucket": "day"}
+        "/api/astronauts/AST-001/measurements",
+        params={"indicator": "resting_hr", "bucket": "day"},
+        headers=auth(seeded_client, "ast1"),
     ).json()
     assert series["unit"] == "bpm"
     assert [(p["value"], p["min"], p["max"], p["n"]) for p in series["points"]] == [(64.0, 60.0, 68.0, 3)]
 
 
 def test_radiation_is_stored_per_channel(seeded_client: TestClient) -> None:
-    _post(seeded_client, [_reading("radiation_dose", 640, "uSv", 0),
-                          _reading("radiation_dose", 0.19, "mSv", 0, channel="Neutron")])  # fmt: skip
-    total = seeded_client.get(
-        "/api/astronauts/AST-001/measurements", params={"indicator": "radiation_dose"}
-    ).json()
+    _post(
+        seeded_client,
+        [
+            _reading("radiation_dose", 640, "uSv", 0),
+            _reading("radiation_dose", 0.19, "mSv", 0, channel="Neutron"),
+        ],
+    )
+    headers = auth(seeded_client, "ast1")
+    url = "/api/astronauts/AST-001/measurements"
+    total = seeded_client.get(url, params={"indicator": "radiation_dose"}, headers=headers).json()
     neutron = seeded_client.get(
-        "/api/astronauts/AST-001/measurements", params={"indicator": "radiation_dose", "channel": "Neutron"}
+        url, params={"indicator": "radiation_dose", "channel": "Neutron"}, headers=headers
     ).json()
     assert [p["value"] for p in total["points"]] == [0.64]
     assert [p["value"] for p in neutron["points"]] == [0.19]
