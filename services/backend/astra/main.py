@@ -13,7 +13,7 @@ from typing import Literal
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
-from astra.api import alerts, auth, crew, dashboard, measurements, realtime, system
+from astra.api import alerts, auth, catalog, checkins, crew, dashboard, measurements, realtime, system
 from astra.api.base import ApiModel
 from astra.config import Settings, settings
 from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_bundle
@@ -68,9 +68,11 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     )
     app.include_router(system.router)
     app.include_router(auth.router)
+    app.include_router(catalog.router)
     app.include_router(crew.router)
     app.include_router(dashboard.router)
     app.include_router(alerts.router)
+    app.include_router(checkins.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)
 

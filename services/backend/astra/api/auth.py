@@ -1,10 +1,12 @@
+from datetime import date
+
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import Field
 from sqlmodel import select
 
 from astra.api.base import ApiModel
 from astra.core.enums import Role
-from astra.db.models import Astronaut, UserAccount
+from astra.db.models import Astronaut, Mission, UserAccount
 from astra.db.session import SessionDep
 from astra.security.deps import CurrentUser
 from astra.security.jwt import TokenClaims, create_access_token
@@ -25,6 +27,8 @@ class MeOut(ApiModel):
     display_name: str
     astronaut_id: str | None
     astronaut_code: str | None
+    mission_code: str | None
+    mission_start: date | None
 
 
 class LoginOut(ApiModel):
@@ -36,6 +40,9 @@ class LoginOut(ApiModel):
 
 def _me(session: SessionDep, claims: TokenClaims) -> MeOut:
     astronaut = session.get(Astronaut, claims.astronaut_id) if claims.astronaut_id else None
+    mission = (
+        session.get(Mission, astronaut.mission_id) if astronaut else session.exec(select(Mission)).first()
+    )
     return MeOut(
         user_id=claims.user_id,
         username=claims.username,
@@ -43,6 +50,8 @@ def _me(session: SessionDep, claims: TokenClaims) -> MeOut:
         display_name=claims.display_name,
         astronaut_id=claims.astronaut_id,
         astronaut_code=astronaut.code if astronaut else None,
+        mission_code=mission.code if mission else None,
+        mission_start=mission.start_date if mission else None,
     )
 
 

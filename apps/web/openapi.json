@@ -1,0 +1,2409 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "ASTRA HEALTH API",
+  "description": "Astronaut health decision support (prototype). Rules decide severity, ML corroborates, the LLM only explains. Not a medical device.",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/api/system/status": {
+   "get": {
+    "tags": [
+     "system"
+    ],
+    "summary": "Get Status",
+    "description": "Which node this is and whether it is up. Used by the web app's status bar.",
+    "operationId": "get_status_api_system_status_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SystemStatus"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/login": {
+   "post": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Login",
+    "description": "Demo accounts are in services/backend/seed.example.json.",
+    "operationId": "login_api_auth_login_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LoginIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LoginOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me": {
+   "get": {
+    "tags": [
+     "auth"
+    ],
+    "summary": "Me",
+    "operationId": "me_api_me_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/catalog/indicators": {
+   "get": {
+    "tags": [
+     "catalog"
+    ],
+    "summary": "List Indicators",
+    "description": "Names, units and precision for every indicator (from protocols/indicators.json).",
+    "operationId": "list_indicators_api_catalog_indicators_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/IndicatorOut"
+         },
+         "type": "array",
+         "title": "Response List Indicators Api Catalog Indicators Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts": {
+   "get": {
+    "tags": [
+     "crew"
+    ],
+    "summary": "List Astronauts",
+    "description": "Crew list. Astronauts see only themselves; staff roles see the whole crew.",
+    "operationId": "list_astronauts_api_astronauts_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/AstronautOut"
+         },
+         "type": "array",
+         "title": "Response List Astronauts Api Astronauts Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts/{astronaut}/dashboard": {
+   "get": {
+    "tags": [
+     "dashboard"
+    ],
+    "summary": "Get Dashboard",
+    "operationId": "get_dashboard_api_astronauts__astronaut__dashboard_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DashboardOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/alerts": {
+   "get": {
+    "tags": [
+     "alerts"
+    ],
+    "summary": "List Alerts",
+    "operationId": "list_alerts_api_astronauts__astronaut__alerts_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "status",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "active",
+        "all"
+       ],
+       "type": "string",
+       "default": "active",
+       "title": "Status"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/AlertSummary"
+         },
+         "title": "Response List Alerts Api Astronauts  Astronaut  Alerts Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alerts/{alert_id}": {
+   "get": {
+    "tags": [
+     "alerts"
+    ],
+    "summary": "Get Alert",
+    "operationId": "get_alert_api_alerts__alert_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "alert_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Alert Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AlertDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alerts/{alert_id}/acknowledge": {
+   "post": {
+    "tags": [
+     "alerts"
+    ],
+    "summary": "Acknowledge",
+    "description": "The astronaut confirms they have seen the alert.",
+    "operationId": "acknowledge_api_alerts__alert_id__acknowledge_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "alert_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Alert Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AlertSummary"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alerts/{alert_id}/review": {
+   "post": {
+    "tags": [
+     "alerts"
+    ],
+    "summary": "Review",
+    "operationId": "review_api_alerts__alert_id__review_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "alert_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Alert Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NoteIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AlertSummary"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alerts/{alert_id}/resolve": {
+   "post": {
+    "tags": [
+     "alerts"
+    ],
+    "summary": "Resolve",
+    "description": "Flight surgeon closes an alert under review (note required).",
+    "operationId": "resolve_api_alerts__alert_id__resolve_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "alert_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Alert Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NoteIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AlertSummary"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/alerts/{alert_id}/dismiss": {
+   "post": {
+    "tags": [
+     "alerts"
+    ],
+    "summary": "Dismiss",
+    "description": "Flight surgeon marks a false alarm (note required).",
+    "operationId": "dismiss_api_alerts__alert_id__dismiss_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "alert_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Alert Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/NoteIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AlertSummary"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/checkins": {
+   "post": {
+    "tags": [
+     "check-in"
+    ],
+    "summary": "Post Checkin",
+    "operationId": "post_checkin_api_checkins_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CheckinIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CheckinOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/tasks/{task_id}/complete": {
+   "post": {
+    "tags": [
+     "check-in"
+    ],
+    "summary": "Complete Task",
+    "description": "The astronaut ticks off a recommended action.",
+    "operationId": "complete_task_api_tasks__task_id__complete_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "task_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Task Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TaskOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/measurements/batch": {
+   "post": {
+    "tags": [
+     "measurements"
+    ],
+    "summary": "Post Measurements",
+    "operationId": "post_measurements_api_measurements_batch_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "x-backfill",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "description": "true for historical/simulated imports",
+       "default": false,
+       "title": "X-Backfill"
+      },
+      "description": "true for historical/simulated imports"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MeasurementBatchIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeasurementBatchOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/measurements": {
+   "get": {
+    "tags": [
+     "measurements"
+    ],
+    "summary": "Get Measurements",
+    "description": "Raw readings (Valid + Questionable, with their quality) or hourly/daily buckets of Valid readings.",
+    "operationId": "get_measurements_api_astronauts__astronaut__measurements_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "indicator",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "examples": [
+        "resting_hr"
+       ],
+       "title": "Indicator"
+      }
+     },
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date-time"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "bucket",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "raw",
+        "hour",
+        "day"
+       ],
+       "type": "string",
+       "default": "raw",
+       "title": "Bucket"
+      }
+     },
+     {
+      "name": "channel",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "Total",
+          "Charged",
+          "Neutron"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Channel"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SeriesOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/health": {
+   "get": {
+    "tags": [
+     "system"
+    ],
+    "summary": "Health",
+    "operationId": "health_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/Health"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AlertDetail": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "ruleId": {
+      "type": "string",
+      "title": "Ruleid"
+     },
+     "ruleVersion": {
+      "type": "string",
+      "title": "Ruleversion"
+     },
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "hazard": {
+      "type": "string",
+      "title": "Hazard"
+     },
+     "severity": {
+      "type": "string",
+      "enum": [
+       "Attention",
+       "Urgent"
+      ],
+      "title": "Severity"
+     },
+     "status": {
+      "$ref": "#/components/schemas/AlertStatus"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     },
+     "firstTriggeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Firsttriggeredat"
+     },
+     "lastTriggeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Lasttriggeredat"
+     },
+     "triggerCount": {
+      "type": "integer",
+      "title": "Triggercount"
+     },
+     "escalationRequired": {
+      "type": "boolean",
+      "title": "Escalationrequired"
+     },
+     "protocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocol"
+     },
+     "evidence": {
+      "additionalProperties": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "object",
+      "title": "Evidence"
+     },
+     "recommendations": {
+      "items": {
+       "$ref": "#/components/schemas/TaskOut"
+      },
+      "type": "array",
+      "title": "Recommendations"
+     },
+     "emergencyProtocol": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ProtocolOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "acknowledgedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Acknowledgedat"
+     },
+     "acknowledgedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Acknowledgedby"
+     },
+     "reviewedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewedby"
+     },
+     "resolvedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Resolvedat"
+     },
+     "resolutionNote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Resolutionnote"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer",
+      "default": "Decision support only — not a diagnosis. Thresholds are illustrative."
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "ruleId",
+     "ruleVersion",
+     "category",
+     "hazard",
+     "severity",
+     "status",
+     "title",
+     "reason",
+     "firstTriggeredAt",
+     "lastTriggeredAt",
+     "triggerCount",
+     "escalationRequired",
+     "protocol",
+     "evidence",
+     "recommendations",
+     "emergencyProtocol",
+     "acknowledgedAt",
+     "acknowledgedBy",
+     "reviewedBy",
+     "resolvedAt",
+     "resolutionNote"
+    ],
+    "title": "AlertDetail"
+   },
+   "AlertStatus": {
+    "type": "string",
+    "enum": [
+     "Open",
+     "Acknowledged",
+     "InReview",
+     "Resolved",
+     "Dismissed"
+    ],
+    "title": "AlertStatus"
+   },
+   "AlertSummary": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "ruleId": {
+      "type": "string",
+      "title": "Ruleid"
+     },
+     "ruleVersion": {
+      "type": "string",
+      "title": "Ruleversion"
+     },
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "hazard": {
+      "type": "string",
+      "title": "Hazard"
+     },
+     "severity": {
+      "type": "string",
+      "enum": [
+       "Attention",
+       "Urgent"
+      ],
+      "title": "Severity"
+     },
+     "status": {
+      "$ref": "#/components/schemas/AlertStatus"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     },
+     "firstTriggeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Firsttriggeredat"
+     },
+     "lastTriggeredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Lasttriggeredat"
+     },
+     "triggerCount": {
+      "type": "integer",
+      "title": "Triggercount"
+     },
+     "escalationRequired": {
+      "type": "boolean",
+      "title": "Escalationrequired"
+     },
+     "protocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocol"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "ruleId",
+     "ruleVersion",
+     "category",
+     "hazard",
+     "severity",
+     "status",
+     "title",
+     "reason",
+     "firstTriggeredAt",
+     "lastTriggeredAt",
+     "triggerCount",
+     "escalationRequired",
+     "protocol"
+    ],
+    "title": "AlertSummary"
+   },
+   "AstronautOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "displayName": {
+      "type": "string",
+      "title": "Displayname"
+     },
+     "roleTitle": {
+      "type": "string",
+      "title": "Roletitle"
+     },
+     "missionCode": {
+      "type": "string",
+      "title": "Missioncode"
+     },
+     "missionStart": {
+      "type": "string",
+      "format": "date",
+      "title": "Missionstart"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "code",
+     "displayName",
+     "roleTitle",
+     "missionCode",
+     "missionStart"
+    ],
+    "title": "AstronautOut"
+   },
+   "CheckinIn": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id",
+      "description": "UUIDv7 from the client (offline outbox); generated if missing"
+     },
+     "sleepHours": {
+      "type": "number",
+      "maximum": 16.0,
+      "minimum": 0.0,
+      "title": "Sleephours",
+      "description": "Last night's sleep"
+     },
+     "sleepQuality": {
+      "type": "integer",
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "Sleepquality"
+     },
+     "mood": {
+      "type": "integer",
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "Mood"
+     },
+     "stress": {
+      "type": "integer",
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "Stress"
+     },
+     "fatigue": {
+      "type": "integer",
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "Fatigue"
+     },
+     "vitals": {
+      "items": {
+       "$ref": "#/components/schemas/VitalIn"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "title": "Vitals"
+     },
+     "privateNote": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 1000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Privatenote",
+      "description": "Visible to you only"
+     },
+     "completedInSeconds": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 3600.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Completedinseconds"
+     }
+    },
+    "type": "object",
+    "required": [
+     "sleepHours",
+     "sleepQuality",
+     "mood",
+     "stress",
+     "fatigue"
+    ],
+    "title": "CheckinIn"
+   },
+   "CheckinOut": {
+    "properties": {
+     "checkinId": {
+      "type": "string",
+      "title": "Checkinid"
+     },
+     "accepted": {
+      "type": "integer",
+      "title": "Accepted"
+     },
+     "questionable": {
+      "items": {
+       "$ref": "#/components/schemas/ItemProblem"
+      },
+      "type": "array",
+      "title": "Questionable"
+     },
+     "rejected": {
+      "items": {
+       "$ref": "#/components/schemas/ItemProblem"
+      },
+      "type": "array",
+      "title": "Rejected"
+     },
+     "newAlerts": {
+      "items": {
+       "$ref": "#/components/schemas/AlertSummary"
+      },
+      "type": "array",
+      "title": "Newalerts"
+     },
+     "updatedAlerts": {
+      "items": {
+       "$ref": "#/components/schemas/AlertSummary"
+      },
+      "type": "array",
+      "title": "Updatedalerts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "checkinId",
+     "accepted",
+     "questionable",
+     "rejected",
+     "newAlerts",
+     "updatedAlerts"
+    ],
+    "title": "CheckinOut"
+   },
+   "DashboardOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "displayName": {
+      "type": "string",
+      "title": "Displayname"
+     },
+     "missionCode": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Missioncode"
+     },
+     "missionDay": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Missionday"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "GREEN",
+       "YELLOW",
+       "RED"
+      ],
+      "title": "Status"
+     },
+     "statusReason": {
+      "type": "string",
+      "title": "Statusreason"
+     },
+     "activeAlerts": {
+      "items": {
+       "$ref": "#/components/schemas/AlertSummary"
+      },
+      "type": "array",
+      "title": "Activealerts"
+     },
+     "vitals": {
+      "items": {
+       "$ref": "#/components/schemas/Vital"
+      },
+      "type": "array",
+      "title": "Vitals"
+     },
+     "tasks": {
+      "items": {
+       "$ref": "#/components/schemas/TaskOut"
+      },
+      "type": "array",
+      "title": "Tasks"
+     },
+     "lastReadingAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lastreadingat"
+     },
+     "wellnessIndex": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Wellnessindex"
+     },
+     "simulatedData": {
+      "type": "boolean",
+      "title": "Simulateddata",
+      "default": true
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "displayName",
+     "missionCode",
+     "missionDay",
+     "status",
+     "statusReason",
+     "activeAlerts",
+     "vitals",
+     "tasks",
+     "lastReadingAt"
+    ],
+    "title": "DashboardOut"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "Health": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "nodeRole": {
+      "type": "string",
+      "title": "Noderole"
+     },
+     "llmProvider": {
+      "type": "string",
+      "title": "Llmprovider"
+     },
+     "anthropicKeyConfigured": {
+      "type": "boolean",
+      "title": "Anthropickeyconfigured"
+     },
+     "nasaApi": {
+      "type": "string",
+      "enum": [
+       "enabled",
+       "disabled"
+      ],
+      "title": "Nasaapi"
+     },
+     "kbPathExists": {
+      "type": "boolean",
+      "title": "Kbpathexists"
+     },
+     "protocols": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ProtocolCounts"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "websocketClients": {
+      "type": "integer",
+      "title": "Websocketclients"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status",
+     "nodeRole",
+     "llmProvider",
+     "anthropicKeyConfigured",
+     "nasaApi",
+     "kbPathExists",
+     "protocols",
+     "websocketClients"
+    ],
+    "title": "Health"
+   },
+   "IndicatorOut": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "units": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Units"
+     },
+     "decimals": {
+      "type": "integer",
+      "title": "Decimals"
+     },
+     "worseWhen": {
+      "type": "string",
+      "enum": [
+       "high",
+       "low",
+       "both"
+      ],
+      "title": "Worsewhen"
+     },
+     "hazard": {
+      "type": "string",
+      "title": "Hazard"
+     },
+     "bodySystem": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Bodysystem"
+     },
+     "hasBaseline": {
+      "type": "boolean",
+      "title": "Hasbaseline"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "name",
+     "unit",
+     "units",
+     "decimals",
+     "worseWhen",
+     "hazard",
+     "bodySystem",
+     "hasBaseline"
+    ],
+    "title": "IndicatorOut"
+   },
+   "ItemProblem": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "reason"
+    ],
+    "title": "ItemProblem"
+   },
+   "LoginIn": {
+    "properties": {
+     "username": {
+      "type": "string",
+      "title": "Username",
+      "examples": [
+       "ast1"
+      ]
+     },
+     "password": {
+      "type": "string",
+      "title": "Password",
+      "examples": [
+       "astra-demo-ast1"
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "username",
+     "password"
+    ],
+    "title": "LoginIn"
+   },
+   "LoginOut": {
+    "properties": {
+     "accessToken": {
+      "type": "string",
+      "title": "Accesstoken"
+     },
+     "tokenType": {
+      "type": "string",
+      "title": "Tokentype",
+      "default": "bearer"
+     },
+     "expiresIn": {
+      "type": "integer",
+      "title": "Expiresin"
+     },
+     "user": {
+      "$ref": "#/components/schemas/MeOut"
+     }
+    },
+    "type": "object",
+    "required": [
+     "accessToken",
+     "expiresIn",
+     "user"
+    ],
+    "title": "LoginOut"
+   },
+   "MeOut": {
+    "properties": {
+     "userId": {
+      "type": "string",
+      "title": "Userid"
+     },
+     "username": {
+      "type": "string",
+      "title": "Username"
+     },
+     "role": {
+      "$ref": "#/components/schemas/Role"
+     },
+     "displayName": {
+      "type": "string",
+      "title": "Displayname"
+     },
+     "astronautId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Astronautid"
+     },
+     "astronautCode": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Astronautcode"
+     },
+     "missionCode": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Missioncode"
+     },
+     "missionStart": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Missionstart"
+     }
+    },
+    "type": "object",
+    "required": [
+     "userId",
+     "username",
+     "role",
+     "displayName",
+     "astronautId",
+     "astronautCode",
+     "missionCode",
+     "missionStart"
+    ],
+    "title": "MeOut"
+   },
+   "MeasurementBatchIn": {
+    "properties": {
+     "astronautId": {
+      "type": "string",
+      "title": "Astronautid",
+      "description": "Astronaut code (AST-001) or id",
+      "examples": [
+       "AST-001"
+      ]
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/ReadingIn"
+      },
+      "type": "array",
+      "maxItems": 2000,
+      "minItems": 1,
+      "title": "Items"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautId",
+     "items"
+    ],
+    "title": "MeasurementBatchIn"
+   },
+   "MeasurementBatchOut": {
+    "properties": {
+     "accepted": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Accepted"
+     },
+     "questionable": {
+      "items": {
+       "$ref": "#/components/schemas/ItemProblem"
+      },
+      "type": "array",
+      "title": "Questionable"
+     },
+     "rejected": {
+      "items": {
+       "$ref": "#/components/schemas/ItemProblem"
+      },
+      "type": "array",
+      "title": "Rejected"
+     },
+     "duplicates": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Duplicates"
+     },
+     "newAlerts": {
+      "items": {
+       "$ref": "#/components/schemas/AlertSummary"
+      },
+      "type": "array",
+      "title": "Newalerts"
+     },
+     "evaluations": {
+      "type": "integer",
+      "title": "Evaluations",
+      "description": "How many times the rules were evaluated",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "accepted",
+     "questionable",
+     "rejected",
+     "duplicates"
+    ],
+    "title": "MeasurementBatchOut"
+   },
+   "MeasurementSource": {
+    "type": "string",
+    "enum": [
+     "Manual",
+     "Wearable",
+     "Device",
+     "Derived",
+     "Simulated"
+    ],
+    "title": "MeasurementSource"
+   },
+   "NoteIn": {
+    "properties": {
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 2000
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "title": "NoteIn"
+   },
+   "ProtocolCounts": {
+    "properties": {
+     "indicators": {
+      "type": "integer",
+      "title": "Indicators"
+     },
+     "rules": {
+      "type": "integer",
+      "title": "Rules"
+     },
+     "recommendations": {
+      "type": "integer",
+      "title": "Recommendations"
+     },
+     "emergencyProtocols": {
+      "type": "integer",
+      "title": "Emergencyprotocols"
+     },
+     "missionProfiles": {
+      "type": "integer",
+      "title": "Missionprofiles"
+     }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+     "indicators",
+     "rules",
+     "recommendations",
+     "emergencyProtocols",
+     "missionProfiles"
+    ],
+    "title": "ProtocolCounts"
+   },
+   "ProtocolOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "body": {
+      "type": "string",
+      "title": "Body"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "body",
+     "disclaimer"
+    ],
+    "title": "ProtocolOut"
+   },
+   "ReadingIn": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id",
+      "description": "UUIDv7 from the client; generated if missing"
+     },
+     "indicator": {
+      "type": "string",
+      "title": "Indicator",
+      "examples": [
+       "resting_hr"
+      ]
+     },
+     "value": {
+      "type": "number",
+      "title": "Value",
+      "examples": [
+       64
+      ]
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit",
+      "examples": [
+       "bpm"
+      ]
+     },
+     "measuredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Measuredat"
+     },
+     "source": {
+      "$ref": "#/components/schemas/MeasurementSource",
+      "default": "Manual"
+     },
+     "deviceId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deviceid"
+     },
+     "channel": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "Total",
+         "Charged",
+         "Neutron"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Channel",
+      "description": "Radiation dosimeter channel (radiation_dose only)"
+     },
+     "panelId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Panelid",
+      "description": "Groups readings taken together, e.g. bp_sys + bp_dia"
+     },
+     "signalQuality": {
+      "anyOf": [
+       {
+        "type": "number",
+        "maximum": 1.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Signalquality"
+     },
+     "motionArtifact": {
+      "type": "boolean",
+      "title": "Motionartifact",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "indicator",
+     "value",
+     "unit",
+     "measuredAt"
+    ],
+    "title": "ReadingIn"
+   },
+   "Role": {
+    "type": "string",
+    "enum": [
+     "Astronaut",
+     "FlightSurgeon",
+     "MissionControl",
+     "Admin"
+    ],
+    "title": "Role"
+   },
+   "SeriesOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "indicator": {
+      "type": "string",
+      "title": "Indicator"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "bucket": {
+      "type": "string",
+      "title": "Bucket"
+     },
+     "points": {
+      "items": {
+       "$ref": "#/components/schemas/SeriesPoint"
+      },
+      "type": "array",
+      "title": "Points"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "indicator",
+     "unit",
+     "bucket",
+     "points"
+    ],
+    "title": "SeriesOut"
+   },
+   "SeriesPoint": {
+    "properties": {
+     "t": {
+      "type": "string",
+      "format": "date-time",
+      "title": "T"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "min": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Min"
+     },
+     "max": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max"
+     },
+     "n": {
+      "type": "integer",
+      "title": "N",
+      "default": 1
+     },
+     "quality": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quality"
+     },
+     "channel": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Channel"
+     }
+    },
+    "type": "object",
+    "required": [
+     "t",
+     "value"
+    ],
+    "title": "SeriesPoint"
+   },
+   "SystemStatus": {
+    "properties": {
+     "service": {
+      "type": "string",
+      "title": "Service"
+     },
+     "nodeRole": {
+      "type": "string",
+      "title": "Noderole"
+     },
+     "nodeId": {
+      "type": "string",
+      "title": "Nodeid"
+     },
+     "missionCode": {
+      "type": "string",
+      "title": "Missioncode"
+     },
+     "utcNow": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Utcnow"
+     },
+     "simulatedData": {
+      "type": "boolean",
+      "title": "Simulateddata"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     }
+    },
+    "type": "object",
+    "required": [
+     "service",
+     "nodeRole",
+     "nodeId",
+     "missionCode",
+     "utcNow",
+     "simulatedData",
+     "disclaimer"
+    ],
+    "title": "SystemStatus"
+   },
+   "TaskOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "body": {
+      "type": "string",
+      "title": "Body"
+     },
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "priority": {
+      "type": "integer",
+      "title": "Priority"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "dueAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dueat"
+     },
+     "alertId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Alertid"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "code",
+     "title",
+     "body",
+     "category",
+     "priority",
+     "status",
+     "dueAt",
+     "alertId"
+    ],
+    "title": "TaskOut"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   },
+   "Vital": {
+    "properties": {
+     "indicator": {
+      "type": "string",
+      "title": "Indicator"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "value": {
+      "type": "number",
+      "title": "Value"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "measuredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Measuredat"
+     },
+     "baseline": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Baseline"
+     },
+     "sigma": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sigma"
+     },
+     "z": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Z"
+     },
+     "deviation": {
+      "type": "string",
+      "enum": [
+       "normal",
+       "above",
+       "below",
+       "unknown"
+      ],
+      "title": "Deviation"
+     },
+     "worseWhen": {
+      "type": "string",
+      "enum": [
+       "high",
+       "low",
+       "both"
+      ],
+      "title": "Worsewhen"
+     }
+    },
+    "type": "object",
+    "required": [
+     "indicator",
+     "name",
+     "value",
+     "unit",
+     "measuredAt",
+     "baseline",
+     "sigma",
+     "z",
+     "deviation",
+     "worseWhen"
+    ],
+    "title": "Vital"
+   },
+   "VitalIn": {
+    "properties": {
+     "indicator": {
+      "type": "string",
+      "enum": [
+       "resting_hr",
+       "bp_sys",
+       "bp_dia",
+       "body_temp",
+       "spo2",
+       "glucose",
+       "body_weight"
+      ],
+      "title": "Indicator"
+     },
+     "value": {
+      "type": "number",
+      "title": "Value"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit",
+      "examples": [
+       "bpm"
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "indicator",
+     "value",
+     "unit"
+    ],
+    "title": "VitalIn"
+   }
+  },
+  "securitySchemes": {
+   "HTTPBearer": {
+    "type": "http",
+    "description": "Paste the accessToken from POST /api/auth/login",
+    "scheme": "bearer"
+   }
+  }
+ }
+}

@@ -18,7 +18,7 @@ services/backend/.venv/Scripts/python simulator/simulate.py fixtures
 
 | Command | What it does |
 |---|---|
-| `seed` | 30 pre-flight + 120 mission days for AST-001..003 (about 6,600 readings). Safe to re-run: duplicates are skipped. `--dry-run` only counts |
+| `seed` | Signs in as the demo admin, takes the mission start date from the backend, and posts pre-flight plus mission history **up to yesterday** for AST-001..003 (about 6,600 readings). It then signs in as the flight surgeon and closes all past alerts (`--close-before-day N` to keep later ones open, `0` to keep all), so today's check-in raises alerts live. Safe to re-run: duplicates are skipped. `--dry-run` only counts |
 | `preview` | Prints the last generated values for one astronaut and indicator, without the backend |
 | `fixtures` | Re-downloads the real data below (needs `ASTRA_NASA_API_KEY` in `services/backend/.env`) |
 

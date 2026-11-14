@@ -89,21 +89,21 @@ def seed_command(
     batch_size: Annotated[int, typer.Option(min=1, max=2000)] = 500,
     dry_run: Annotated[bool, typer.Option(help="Generate and count only; post nothing")] = False,
     close_before_day: Annotated[
-        int,
+        int | None,
         typer.Option(
-            help="Then close alerts last seen before this mission day, as the flight surgeon "
-            "(0 = keep all open)"
+            help="Close alerts last seen before this mission day, as the flight surgeon. "
+            "Default: today's mission day (all past episodes closed, so today's check-in raises alerts "
+            "live). 0 = keep everything open."
         ),
-    ] = 113,
+    ] = None,
 ) -> None:
-    """Generate pre-flight + mission data for the whole crew and post it (the backend raises alerts)."""
+    """Post simulated history up to yesterday, then close past alerts (dates come from the backend)."""
     spec = load_scenario(scenario)
-    readings = generate(spec, seed=random_seed)
-    first = spec.mission.date_of(1 - spec.mission.preflight_days)
-    last = spec.mission.date_of(spec.mission.days)
-    per_crew = dict(Counter(r.astronaut for r in readings))
-    typer.echo(f"Generated {len(readings)} simulated readings, {first} -> {last}: {per_crew}")
     if dry_run:
+        readings = generate(spec, seed=random_seed)
+        typer.echo(
+            f"Generated {len(readings)} simulated readings: {dict(Counter(r.astronaut for r in readings))}"
+        )
         return
 
     totals: Counter[str] = Counter()
@@ -113,10 +113,36 @@ def seed_command(
         except httpx.HTTPError as exc:
             _fail(f"Can't reach the backend at {api} ({exc}). Is uvicorn running?")
         admin = _sign_in(client, "Admin")
-        crew = {a["code"] for a in client.get("/api/astronauts", headers=admin).raise_for_status().json()}
-        missing = {c.code for c in spec.crew} - crew
+        crew_rows = client.get("/api/astronauts", headers=admin).raise_for_status().json()
+        missing = {c.code for c in spec.crew} - {a["code"] for a in crew_rows}
         if missing:
             _fail(f"Astronauts {sorted(missing)} are not in the database. Run: python -m astra.seed")
+
+        # The database's mission start wins; history stops yesterday so "today" is free for live check-ins.
+        start = date.fromisoformat(crew_rows[0]["missionStart"])
+        today_day = (date.today() - start).days + 1
+        last_day = min(spec.mission.days, today_day - 1)
+        if last_day < 1:
+            _fail(
+                f"Today is mission day {today_day}; the mission hasn't started. "
+                "Re-seed with --mission-day-today."
+            )
+        if today_day - 1 > spec.mission.days:
+            typer.secho(
+                f"Note: today is mission day {today_day} but the scenario ends on day {spec.mission.days}; "
+                "re-seed with `python -m astra.seed --mission-day-today 121` for a continuous demo.",
+                fg=typer.colors.YELLOW,
+            )
+        spec = spec.model_copy(
+            update={"mission": spec.mission.model_copy(update={"start": start, "days": last_day})}
+        )
+        readings = generate(spec, seed=random_seed)
+        per_crew = dict(Counter(r.astronaut for r in readings))
+        first = spec.mission.date_of(1 - spec.mission.preflight_days)
+        typer.echo(
+            f"Generated {len(readings)} simulated readings, {first} -> {spec.mission.date_of(last_day)} "
+            f"(mission days {1 - spec.mission.preflight_days}..{last_day}; today is day {today_day})"
+        )
 
         for code in sorted(per_crew):
             mine = [r for r in readings if r.astronaut == code]
@@ -136,11 +162,11 @@ def seed_command(
             typer.echo(f"  {code}: posted {len(mine)} readings, {alerts} new alerts")
         typer.echo(f"Done: {dict(totals)}")
 
-        if close_before_day > 0:
-            closed = _close_past_episodes(client, sorted(per_crew), spec.mission.start, close_before_day)
+        before = today_day if close_before_day is None else close_before_day
+        if before > 0:
+            closed = _close_past_episodes(client, sorted(per_crew), start, before)
             typer.echo(
-                f"Flight surgeon (simulated) closed {closed} past alert(s) "
-                f"last seen before day {close_before_day}"
+                f"Flight surgeon (simulated) closed {closed} past alert(s) last seen before day {before}"
             )
 
 

@@ -6,7 +6,7 @@ Safe to run repeatedly: existing rows are updated, not duplicated.
 
 import argparse
 import json
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 from pydantic import Field
@@ -100,18 +100,37 @@ def seed_database(session: Session, data: SeedData, *, bcrypt_rounds: int = 12) 
     return {"missions": 1, "astronauts": len(crew), "users": len(data.users)}
 
 
+def with_mission_day_today(data: SeedData, mission_day_today: int, today: date | None = None) -> SeedData:
+    """Move the mission start so that today is `mission_day_today` (demos work on any date)."""
+    today = today or date.today()
+    start = today - timedelta(days=mission_day_today - 1)
+    return data.model_copy(update={"mission": data.mission.model_copy(update={"start_date": start})})
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--file", type=Path, default=None, help="seed JSON (default: seed.local.json or example)"
     )
+    parser.add_argument(
+        "--mission-day-today",
+        type=int,
+        default=None,
+        metavar="N",
+        help="set the mission start so that today is mission day N (e.g. 121); use on a fresh database",
+    )
     args = parser.parse_args()
     path = args.file or default_seed_file()
+    data = load_seed(path)
+    if args.mission_day_today:
+        data = with_mission_day_today(data, args.mission_day_today)
     engine = make_engine(settings.database_url)
     init_db(engine)
     with Session(engine) as session:
-        counts = seed_database(session, load_seed(path), bcrypt_rounds=settings.bcrypt_rounds)
-    print(f"Seeded {settings.database_url} from {path.name}: {counts}")
+        counts = seed_database(session, data, bcrypt_rounds=settings.bcrypt_rounds)
+    print(
+        f"Seeded {settings.database_url} from {path.name}: {counts}; mission start {data.mission.start_date}"
+    )
 
 
 if __name__ == "__main__":
