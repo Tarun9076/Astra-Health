@@ -32,8 +32,11 @@ Op = Literal[
     "z_lte",  # robust z-score vs the personal baseline
     "ratio_gte",  # x / baseline median >= value
     "pct_of_limit_gte",  # x as % of the mission limit >= value
-    "insight",  # an ML insight exists in the window (Attention rules only)
+    "insight",  # an ML insight in the window scored >= value (Attention rules only)
 ]
+
+# Leaves with op "insight" name an insight kind instead of an indicator (LLD §10).
+INSIGHT_SOURCES: dict[str, str] = {"ml_anomaly": "Anomaly", "ml_trend": "Trend"}
 
 Z_OPS: frozenset[str] = frozenset({"z_gt", "z_gte", "z_lt", "z_lte"})
 RANGE_OPS: frozenset[str] = frozenset({"between", "outside"})

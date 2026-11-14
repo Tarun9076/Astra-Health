@@ -5,7 +5,7 @@ Medical "knowledge as data", loaded and cross-checked by the backend at startup 
 | Path | Contents | Status |
 |---|---|---|
 | `indicators.json` | 22 indicators: units, conversions, plausible ranges, spread floors (LLD §2) | ✅ Step 1 |
-| `rules/*.json` | Rules in the JSON rule format (LLD §6.1); file name = rule id | ✅ 16 rules (Steps 1 + 5) |
+| `rules/*.json` | Rules in the JSON rule format (LLD §6.1); file name = rule id | ✅ 17 rules (Steps 1, 5, 6) |
 | `recommendations.json` | 21 actions linked from rules and the daily routine (LLD §8) | ✅ Steps 1 + 5 |
 | `emergency/EMG-*.md` | 8 step-by-step emergency procedures (YAML front matter + Markdown), shown offline | ✅ Steps 1 + 5 |
 | `mission-profiles/*.json` | Gravity, comms delay, radiation limit, exercise and hydration targets | ✅ `mars-surface.json` |

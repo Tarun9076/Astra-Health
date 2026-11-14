@@ -16,7 +16,7 @@ from statistics import mean, median
 from typing import Any, Protocol
 
 from astra.core.baselines import Baseline
-from astra.core.rules.models import AllNode, AnyNode, LeafNode, NotNode, Rule
+from astra.core.rules.models import INSIGHT_SOURCES, AllNode, AnyNode, LeafNode, NotNode, Rule
 
 
 @dataclass(frozen=True)
@@ -44,7 +44,9 @@ class EvaluationContext(Protocol):
         """Mission limit for pct_of_limit_gte (e.g. career radiation dose)."""
         ...
 
-    def has_insight(self, indicator: str, since: datetime) -> bool: ...
+    def insight_score(self, kind: str, since: datetime) -> float | None:
+        """Highest score of a stored ML insight of this kind (Anomaly / Trend) since `since`."""
+        ...
 
 
 @dataclass(frozen=True)
@@ -157,6 +159,20 @@ def _compare(op: str, x: float | None, value: float, value2: float | None) -> bo
 
 
 def _eval_leaf(leaf: LeafNode, ctx: EvaluationContext) -> tuple[bool, Evidence]:
+    if leaf.op == "insight":
+        days = int(leaf.window[:-1]) if leaf.window.endswith("d") else 1
+        score = ctx.insight_score(INSIGHT_SOURCES[leaf.indicator], ctx.as_of - timedelta(days=days))
+        found = score is not None
+        evidence = Evidence(
+            indicator=leaf.indicator,
+            agg=leaf.agg,
+            window=leaf.window,
+            n=int(found),
+            value=score,
+            missing=not found,
+        )
+        return score is not None and score >= leaf.value, evidence
+
     pts = window_points(ctx.points(leaf.indicator), leaf.window, ctx.as_of, ctx.mission_start)
     base = ctx.baseline(leaf.indicator)
     common: dict[str, Any] = {
@@ -167,11 +183,6 @@ def _eval_leaf(leaf: LeafNode, ctx: EvaluationContext) -> tuple[bool, Evidence]:
     }
     if base is not None:
         common |= {"baseline": base.median, "sigma": base.sigma}
-
-    if leaf.op == "insight":
-        since = ctx.as_of - timedelta(days=int(leaf.window[:-1])) if leaf.window.endswith("d") else ctx.as_of
-        found = ctx.has_insight(leaf.indicator, since)
-        return found, Evidence(**common, value=1.0 if found else 0.0)
 
     if not pts:
         return False, Evidence(**common, missing=True)
@@ -237,4 +248,6 @@ def evaluate(rules: Sequence[Rule], ctx: EvaluationContext) -> list[RuleOutcome]
 
 
 def indicators_used(rules: Sequence[Rule]) -> set[str]:
-    return {leaf.indicator for rule in rules for leaf in rule.leaves()}
+    return {
+        leaf.indicator for rule in rules for leaf in rule.leaves() if leaf.indicator not in INSIGHT_SOURCES
+    }

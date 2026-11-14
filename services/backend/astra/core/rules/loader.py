@@ -10,7 +10,7 @@ from pydantic import ValidationError
 
 from astra.core.errors import describe_validation_error
 from astra.core.indicators import IndicatorCatalog
-from astra.core.rules.models import EVIDENCE_ATTRIBUTES, Z_OPS, Rule
+from astra.core.rules.models import EVIDENCE_ATTRIBUTES, INSIGHT_SOURCES, Z_OPS, Rule
 
 
 def check_rule(
@@ -23,6 +23,15 @@ def check_rule(
     keys: list[str] = []
     for leaf in rule.leaves():
         keys.append(leaf.evidence_key)
+        if leaf.op == "insight" or leaf.indicator in INSIGHT_SOURCES:
+            if leaf.op != "insight" or leaf.indicator not in INSIGHT_SOURCES:
+                problems.append(
+                    f"op 'insight' needs one of {sorted(INSIGHT_SOURCES)} as its source "
+                    f"(got '{leaf.indicator}' with op '{leaf.op}')"
+                )
+            if rule.severity == "Urgent":
+                problems.append("Urgent rules may not depend on ML insights (TDD ADR-03)")
+            continue
         if leaf.indicator not in catalog:
             problems.append(f"unknown indicator '{leaf.indicator}'")
             continue
@@ -33,8 +42,6 @@ def check_rule(
                 f"'{leaf.indicator}' has no personal baseline (sigmaFloor is null), "
                 f"so it can't use op '{leaf.op}' / agg '{leaf.agg}'"
             )
-        if leaf.op == "insight" and rule.severity == "Urgent":
-            problems.append("Urgent rules may not depend on ML insights (TDD ADR-03)")
 
     duplicates = sorted({k for k in keys if keys.count(k) > 1})
     if duplicates:

@@ -1,0 +1,25 @@
+{
+  "id": "ML-ANOMALY-CORROBORATED",
+  "version": "1.0.0",
+  "title": "Unusual pattern confirmed by readings",
+  "category": "Behavioral",
+  "hazard": "Isolation",
+  "severity": "Attention",
+  "when": {
+    "all": [
+      { "indicator": "ml_anomaly", "as": "anomaly", "agg": "latest", "window": "2d", "op": "insight", "value": 0.6 },
+      { "indicator": "ml_trend", "as": "strain", "agg": "latest", "window": "2d", "op": "insight", "value": 1.0 },
+      {
+        "any": [
+          { "indicator": "resting_hr", "agg": "latest", "window": "1d", "op": "z_gte", "value": 2.0 },
+          { "indicator": "fatigue", "agg": "latest", "window": "1d", "op": "z_gte", "value": 2.0 },
+          { "indicator": "sleep_hours", "agg": "mean", "window": "3d", "op": "z_lte", "value": -2.0 }
+        ]
+      }
+    ]
+  },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "The anomaly model scored your recent readings {anomaly.value:.2f} (unusual for you) and recovery strain has been rising ({strain.value:+.1f}σ). Readings confirm it: resting heart rate {resting_hr.z:+.1f}σ, fatigue {fatigue.z:+.1f}σ, sleep {sleep_hours.z:+.1f}σ from your normal.",
+  "recommendations": ["REC-RECHECK-RHR", "REC-FATIGUE-ASSESS", "REC-SLEEP-ROUTINE"],
+  "disclaimer": "Illustrative rule for the prototype. ML alone never raises an alert: the anomaly score and the strain trend must agree, a deterministic reading must confirm them, and the alert can only be Attention (TDD ADR-03). Measured on the simulated mission: 0 extra alerts for the healthy crew."
+}
