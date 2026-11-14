@@ -64,11 +64,12 @@ def _ensure(client: TestClient, narrator: Any = None) -> list[MedicalReport]:
 def test_automatic_reports_are_created_once(seeded_client: TestClient) -> None:
     _history_and_fever(seeded_client)
     created = _ensure(seeded_client)
-    assert sorted(r.type for r in created) == ["AlertTriggered", "Daily", "Weekly"]
+    # the live fever reading already produced its alert report; the loop adds daily + weekly only
+    assert sorted(r.type for r in created) == ["Daily", "Weekly"]
     assert _ensure(seeded_client) == []  # idempotent
-    alert_report = next(r for r in created if r.type == "AlertTriggered")
-    assert alert_report.alert_id and alert_report.transmission_status == "Queued"
     with Session(_engine(seeded_client)) as session:
+        alert_report = session.exec(select(MedicalReport).where(MedicalReport.type == "AlertTriggered")).one()
+        assert alert_report.alert_id and alert_report.transmission_status == "Queued"
         queued = session.exec(select(SyncOutbox).where(SyncOutbox.entity_id == alert_report.id)).one()
     assert queued.priority == 1  # Urgent alert → sent first on the next link window
 

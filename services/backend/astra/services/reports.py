@@ -445,3 +445,26 @@ def ensure_reports(
                 )
     session.commit()
     return created
+
+
+def report_new_alerts(
+    session: Session,
+    bundle: ProtocolBundle,
+    astronaut: Astronaut,
+    created: list[HealthAlert],
+    *,
+    node_id: str,
+    narrator: Narrator | None = None,
+) -> MedicalReport | None:
+    """A live batch (check-in, readings, scenario) raised new alerts: one AlertTriggered report for the
+    last 7 days, about the most severe of them, queued for the ground with the alerts. Commits."""
+    if not created:
+        return None
+    lead = sorted(created, key=lambda a: (a.severity != "Urgent", a.first_triggered_at))[0]
+    today = datetime.now(UTC).date()
+    report = generate_report(
+        session, bundle, astronaut, "AlertTriggered", today - timedelta(days=ALERT_REPORT_DAYS - 1), today,
+        node_id=node_id, narrator=narrator, alert_id=lead.id, urgent=lead.severity == "Urgent",
+    )  # fmt: skip
+    session.commit()
+    return report

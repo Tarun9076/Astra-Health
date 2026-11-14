@@ -21,6 +21,8 @@ def test_settings(tmp_path: Path) -> Settings:
         database_url=f"sqlite:///{(tmp_path / 'test.db').as_posix()}",
         bcrypt_rounds=4,
         routine_interval_minutes=0,
+        sync_interval_seconds=0,  # tests drive sync passes by hand
+        space_weather_interval_minutes=0,
         models_path=tmp_path / "models",
         anthropic_api_key=None,  # tests never call the real Claude API
         llm_provider="auto",

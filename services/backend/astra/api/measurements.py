@@ -15,7 +15,8 @@ from sqlmodel import col, select
 
 from astra.api.alerts import AlertSummary, publish_alert_changes, summarize
 from astra.api.base import ApiModel
-from astra.core.enums import MeasurementQuality, MeasurementSource, Role
+from astra.api.reports import publish_report
+from astra.core.enums import MeasurementQuality, MeasurementSource, NodeRole, Role
 from astra.core.indicators import round_half_up
 from astra.core.protocols import ProtocolBundle
 from astra.db.models import Astronaut, HealthMeasurement
@@ -24,6 +25,7 @@ from astra.realtime.hub import hub
 from astra.security.deps import CurrentUser, ViewableAstronaut
 from astra.services.crew import find_astronaut
 from astra.services.ingestion import IncomingReading, ingest_batch
+from astra.services.reports import report_new_alerts
 
 router = APIRouter(prefix="/api", tags=["measurements"])
 
@@ -103,6 +105,10 @@ def post_measurements(
     user: CurrentUser,
     x_backfill: Annotated[bool, Header(description="true for historical/simulated imports")] = False,
 ) -> MeasurementBatchOut:
+    if request.app.state.settings.node_role == NodeRole.GROUND:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Readings are taken onboard: send them to the Habitat node"
+        )
     astronaut = _astronaut_or_404(session, body.astronaut_id)
     own = user.role == Role.ASTRONAUT and user.astronaut_id == astronaut.id
     if not (own or user.role == Role.ADMIN):
@@ -140,6 +146,13 @@ def post_measurements(
             {"astronautCode": astronaut.code, "count": len(outcome.accepted) + len(outcome.questionable)},
         )
     publish_alert_changes(outcome.alerts, astronaut)
+    if not x_backfill:  # history imports don't send a report per historical alert
+        report = report_new_alerts(
+            session, _bundle(request), astronaut, outcome.alerts.created,
+            node_id=request.app.state.settings.node_id,
+        )  # fmt: skip
+        if report is not None:
+            publish_report(report)
     return MeasurementBatchOut(
         accepted=outcome.accepted,
         questionable=[ItemProblem(id=i, reason=r) for i, r in outcome.questionable],

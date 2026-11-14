@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from typing import Literal
 
 import anyio.to_thread
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
@@ -29,6 +30,7 @@ from astra.api import (
     measurements,
     realtime,
     reports,
+    sync,
     system,
 )
 from astra.api import (
@@ -36,6 +38,7 @@ from astra.api import (
 )
 from astra.api.base import ApiModel
 from astra.api.reports import publish_report
+from astra.api.sync import close_alert_tasks, publish_merge
 from astra.assistant.service import Assistant
 from astra.config import Settings, settings
 from astra.core.enums import NodeRole
@@ -45,6 +48,8 @@ from astra.realtime.hub import hub
 from astra.services import insights
 from astra.services.reports import ensure_reports
 from astra.services.routine import ensure_routine_tasks
+from astra.services.space_weather import refresh_space_weather
+from astra.sync.engine import SyncEngine
 
 logger = logging.getLogger("astra")
 
@@ -70,11 +75,42 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         routine = asyncio.create_task(
             _routine_loop(engine, bundle, app.state.assistant, cfg.node_id, cfg.routine_interval_minutes)
         )
-    # Step 9 adds the sync loop and the external-data fetchers here.
+    sync_task = None
+    if cfg.sync_interval_seconds > 0 and cfg.peer_url:
+        app.state.sync = SyncEngine(engine, cfg, publish_merge, close_alert_tasks)
+        sync_task = asyncio.create_task(_sync_loop(app.state.sync, cfg))
+    weather = None
+    if cfg.node_role == NodeRole.GROUND and cfg.space_weather_interval_minutes > 0 and cfg.nasa_api_key:
+        weather = asyncio.create_task(_space_weather_loop(engine, cfg))
     yield
-    if routine:
-        routine.cancel()
+    for task in (routine, sync_task, weather):
+        if task:
+            task.cancel()
     engine.dispose()
+
+
+async def _sync_loop(sync: SyncEngine, cfg: Settings) -> None:
+    """Habitat ↔ Ground sync over the simulated link (LLD §12.2), every few seconds."""
+    assert cfg.peer_url
+    with httpx.Client(base_url=cfg.peer_url, timeout=10) as http:
+        while True:
+            try:
+                await anyio.to_thread.run_sync(sync.run_once, http)
+            except Exception:  # the peer may be down; never let the loop die
+                logger.exception("Sync pass failed")
+            await asyncio.sleep(cfg.sync_interval_seconds)
+
+
+async def _space_weather_loop(engine: Engine, cfg: Settings) -> None:
+    """Ground node: new NASA DONKI solar particle events → stored and sent to the Habitat (LLD §20)."""
+    while True:
+        try:
+            added = await anyio.to_thread.run_sync(refresh_space_weather, engine, cfg)
+            if added:
+                logger.info("Space weather: %s new SEP event(s)", added)
+        except Exception:
+            logger.exception("Space weather refresh failed")
+        await asyncio.sleep(cfg.space_weather_interval_minutes * 60)
 
 
 async def _routine_loop(
@@ -139,6 +175,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(alerts.router)
     app.include_router(assistant.router)
     app.include_router(reports.router)
+    app.include_router(sync.router)
+    app.include_router(sync.node_router)
     app.include_router(checkins.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)

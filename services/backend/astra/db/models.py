@@ -200,6 +200,9 @@ class SyncOutbox(SQLModel, table=True):
     status: str = Field(default="Pending", index=True)  # Pending | InFlight | Sent | Acked
     envelope_id: str | None = None
     attempts: int = 0
+    sent_at: datetime | None = Field(
+        default=None, sa_type=UTCDateTime
+    )  # when the envelope left (retry timer)
 
 
 class WellnessScore(SQLModel, table=True):
@@ -294,3 +297,51 @@ class MedicalInstruction(SQLModel, table=True):
     delivered_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
     acknowledged_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
     origin_node_id: str
+
+
+class SyncInbox(SQLModel, table=True):
+    """Envelopes received from the peer (LLD §12.3). The simulated link holds each one until `deliver_at`;
+    `envelope_id` as primary key makes a re-sent envelope a no-op (T-S-01)."""
+
+    envelope_id: str = Field(primary_key=True)
+    from_node_id: str
+    body_json: str
+    item_count: int
+    received_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+    deliver_at: datetime = Field(sa_type=UTCDateTime, index=True)
+    applied_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    ack_sent_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+
+
+class SyncAck(SQLModel, table=True):
+    """ACKs from the peer for envelopes we sent; also delayed by the link."""
+
+    envelope_id: str = Field(primary_key=True)
+    deliver_at: datetime = Field(sa_type=UTCDateTime)
+    processed_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+
+
+class LinkState(SQLModel, table=True):
+    """The simulated deep-space link (LLD §12.5). One row, owned by the Habitat node."""
+
+    id: int = Field(default=1, primary_key=True)
+    status: str = "Up"  # Up | Down
+    real_delay_minutes: float = 0.0  # one-way light time (JPL Horizons for the mission date, or manual)
+    delay_source: str = "horizons"  # horizons | manual
+    compression_seconds_per_minute: float = 2.0  # demo time: 1 light-minute → 2 s
+    updated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+    @property
+    def one_way_seconds(self) -> float:
+        return self.real_delay_minutes * self.compression_seconds_per_minute
+
+
+class SpaceWeatherEvent(SQLModel, table=True):
+    """Solar energetic particle events from NASA DONKI (LLD §20), fetched on the Ground node and sent to
+    the Habitat as notices."""
+
+    id: str = Field(primary_key=True)  # DONKI sepID
+    event_time: datetime = Field(sa_type=UTCDateTime)
+    instruments: str
+    source: str  # donki-live | donki-fixture
+    fetched_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)

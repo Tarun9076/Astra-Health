@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING
 from sqlmodel import Session
 
 from astra.core.ids import uuid7
-from astra.db.models import Insight
+from astra.db.models import Insight, SyncOutbox
 from astra.ml import isolation
 from astra.ml.features import FEATURES, FILL_LIMIT_DAYS, STRAIN, feature_frame, strain
 from astra.ml.trend import STRAIN_WINDOW_DAYS, strain_trend
@@ -180,6 +180,7 @@ def _store(session: Session, astronaut_id: str, f: Found) -> None:
     row.window_start, row.window_end = f.window_start, f.window_end
     row.created_at = datetime.now(UTC)
     session.add(row)
+    session.add(SyncOutbox(entity_type="Insight", entity_id=iid, payload_json=row.model_dump_json()))
 
 
 @dataclass

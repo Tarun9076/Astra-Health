@@ -39,5 +39,11 @@ class Settings(BaseSettings):
     bcrypt_rounds: int = 12  # tests lower this to 4 for speed
     routine_interval_minutes: int = 15  # daily routine tasks (Habitat only); 0 disables
 
+    # Habitat ↔ Ground sync over the simulated deep-space link (LLD §12; Step 9)
+    sync_key: str = "dev-only-sync-key"  # shared secret for envelope HMAC; set a random value in .env
+    sync_interval_seconds: float = 2.0  # 0 disables the sync loop (tests drive it by hand)
+    link_compression_seconds_per_minute: float = 2.0  # demo time: 1 light-minute of delay → 2 s
+    space_weather_interval_minutes: int = 60  # Ground node: DONKI refresh; 0 disables
+
 
 settings = Settings()

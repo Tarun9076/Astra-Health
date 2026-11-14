@@ -16,7 +16,7 @@ from sqlmodel import Session, col, func, select
 from astra.api.base import ApiModel
 from astra.assistant.service import Assistant
 from astra.core.alerts import ACTIVE_STATUSES
-from astra.core.enums import Role
+from astra.core.enums import NodeRole, Role
 from astra.core.ids import uuid7
 from astra.db.models import (
     Astronaut,
@@ -246,8 +246,9 @@ def send_instruction(
         from_name=user.display_name,
         text=body.text,
         created_at=now,
-        # Same node for now: delivered at once. Step 9 sets it when the envelope reaches the Habitat.
-        delivered_at=now,
+        # On the Habitat (same node as the astronaut) it is delivered at once; from the Ground node it is
+        # delivered when the envelope reaches the Habitat, which reports the time back (Step 9).
+        delivered_at=now if request.app.state.settings.node_role == NodeRole.HABITAT else None,
         origin_node_id=request.app.state.settings.node_id,
     )
     session.add(instruction)

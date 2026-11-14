@@ -15,6 +15,7 @@ from sqlmodel import Session, select
 from astra.config import BACKEND_ROOT, settings
 from astra.core.base import CoreModel
 from astra.core.enums import Role
+from astra.core.ids import stable_id
 from astra.db.models import Astronaut, Mission, UserAccount
 from astra.db.session import init_db, make_engine
 from astra.security.passwords import hash_password, verify_password
@@ -59,9 +60,11 @@ def load_seed(path: Path) -> SeedData:
 
 def seed_database(session: Session, data: SeedData, *, bcrypt_rounds: int = 12) -> dict[str, int]:
     m = data.mission
+    # Stable ids (same on the Habitat and the Ground node), so synced records refer to the same rows.
     mission = session.exec(select(Mission).where(Mission.code == m.code)).first() or Mission(
-        code=m.code, name=m.name, profile_code=m.profile_code, start_date=m.start_date
-    )
+        id=stable_id("mission", m.code), code=m.code, name=m.name, profile_code=m.profile_code,
+        start_date=m.start_date,
+    )  # fmt: skip
     mission.name, mission.profile_code, mission.start_date = m.name, m.profile_code, m.start_date
     session.add(mission)
     session.flush()
@@ -69,8 +72,9 @@ def seed_database(session: Session, data: SeedData, *, bcrypt_rounds: int = 12) 
     crew: dict[str, Astronaut] = {}
     for a in data.astronauts:
         astronaut = session.exec(select(Astronaut).where(Astronaut.code == a.code)).first() or Astronaut(
-            code=a.code, display_name=a.display_name, role_title=a.role_title, mission_id=mission.id
-        )
+            id=stable_id("astronaut", a.code), code=a.code, display_name=a.display_name,
+            role_title=a.role_title, mission_id=mission.id,
+        )  # fmt: skip
         astronaut.display_name, astronaut.role_title, astronaut.mission_id = (
             a.display_name,
             a.role_title,
@@ -87,6 +91,7 @@ def seed_database(session: Session, data: SeedData, *, bcrypt_rounds: int = 12) 
         user = session.exec(select(UserAccount).where(UserAccount.username == u.username)).first()
         if user is None:
             user = UserAccount(
+                id=stable_id("user", u.username),
                 username=u.username,
                 password_hash=hash_password(u.password, bcrypt_rounds),
                 role=u.role.value,

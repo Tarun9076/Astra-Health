@@ -21,3 +21,11 @@ def uuid7(timestamp_ms: int | None = None, entropy: bytes | None = None) -> uuid
 
 def new_id() -> str:
     return str(uuid7())
+
+
+ASTRA_NAMESPACE = uuid.UUID("6f1c2b8e-5d1a-4c3e-9b7a-2e5f0d4c8a11")
+
+
+def stable_id(kind: str, key: str) -> str:
+    """Same input → same id on every node (seeded records: mission, astronauts, users)."""
+    return str(uuid.uuid5(ASTRA_NAMESPACE, f"{kind}:{key}"))

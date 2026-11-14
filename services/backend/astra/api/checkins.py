@@ -14,7 +14,8 @@ from sqlmodel import Session
 from astra.api.alerts import AlertSummary, TaskOut, publish_alert_changes, summarize, task_out
 from astra.api.base import ApiModel
 from astra.api.measurements import ItemProblem
-from astra.core.enums import MeasurementSource, Role
+from astra.api.reports import publish_report
+from astra.core.enums import MeasurementSource, NodeRole, Role
 from astra.core.ids import new_id
 from astra.core.protocols import ProtocolBundle
 from astra.db.models import Astronaut, RecommendationTask, WellnessCheckin
@@ -23,6 +24,7 @@ from astra.realtime.hub import hub
 from astra.security.deps import CurrentUser
 from astra.security.jwt import TokenClaims
 from astra.services.ingestion import IncomingReading, ingest_batch
+from astra.services.reports import report_new_alerts
 from astra.services.routine import complete_checkin_reminder
 
 router = APIRouter(prefix="/api", tags=["check-in"])
@@ -70,6 +72,10 @@ def _own_astronaut(session: Session, user: TokenClaims) -> Astronaut:
 
 @router.post("/checkins", status_code=status.HTTP_201_CREATED, response_model=CheckinOut)
 def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: CurrentUser) -> CheckinOut:
+    if request.app.state.settings.node_role == NodeRole.GROUND:
+        raise HTTPException(
+            status.HTTP_409_CONFLICT, "Readings are taken onboard: send them to the Habitat node"
+        )
     astronaut = _own_astronaut(session, user)
     bundle: ProtocolBundle = request.app.state.protocols
     now = datetime.now(UTC).replace(microsecond=0)
@@ -130,6 +136,11 @@ def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: C
         {"astronautCode": astronaut.code, "checkinId": checkin_id},
     )
     publish_alert_changes(outcome.alerts, astronaut)
+    report = report_new_alerts(
+        session, bundle, astronaut, outcome.alerts.created, node_id=request.app.state.settings.node_id
+    )
+    if report is not None:
+        publish_report(report)
     return CheckinOut(
         checkin_id=checkin_id,
         accepted=len(outcome.accepted),
