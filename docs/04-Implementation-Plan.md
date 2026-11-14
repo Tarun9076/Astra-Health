@@ -43,7 +43,7 @@ gantt
     Step 3 Baselines, rules, alerts, auth :done, s3, after s2, 2d
     section Product
     Step 4 Dashboard, check-in, live alerts :done, s4, after s3, 4d
-    Step 5 Analytics, recommendations, wellness :s5, after s4, 2d
+    Step 5 Analytics, recommendations, wellness :done, s5, after s4, 2d
     Step 6 ML insights                   :s6, after s5, 3d
     Step 7 AI assistant + RAG            :s7, after s6, 3d
     section Earth and wow
@@ -167,17 +167,20 @@ simulator/simulate.py seed
 ```
 Today is mission day 121; the history covers days −29…120.
 
-### Step 5 — Analytics, wellness index, full rule set (Days 11–12)
+### Step 5 — Analytics, wellness index, full rule set (Days 11–12) ✅
 
 **Tasks**
-- [ ] **Health Analytics** page: indicator picker, 7d/30d/mission ranges, `BaselineChart` (median ± 2σ band, pre-flight dashed line, alert markers, hollow questionable points), compare two indicators.
-- [ ] `astra/core/wellness.py` (LLD §9) + tests; daily `WellnessScores`; ring on Overview.
-- [ ] Routine recommendations (exercise sessions, hydration, check-in reminder, assessments due): small asyncio scheduler started in `lifespan`.
-- [ ] Remaining rules from LLD §6.2 (CV-BP-*, RS-SPO2-*, MET-GLUCOSE-*, MSK-*, RAD-CUMULATIVE, ENV-*, IMM-STRESS-FEVER, SANS-VISION-SYMPTOM), each with a positive and a negative test.
+- [x] **Health Analytics** page: *Compare vs your normal* (two indicators as σ from their own normal on one axis, default sleep vs resting HR) and *Single indicator* (`BaselineChart`: personal band, pre-flight line, alert periods, hollow flagged readings); 7 days / 30 days / mission; table view; wellness trend. Backend `GET /api/astronauts/{id}/analytics` and `/wellness`.
+- [x] `astra/core/wellness.py` (LLD §9) + tests; daily `WellnessScore` stored at every assessment; ring + domain bars on Overview.
+- [x] Routine tasks (`astra/services/routine.py`): check-in reminder, hydration, exercise when behind target; asyncio scheduler in `lifespan` (Habitat, every 15 min). *Assessments due* waits for assessment records.
+- [x] 10 more rules: `CV-BP-HIGH`, `CV-BP-CRITICAL`, `RS-SPO2-LOW`, `RS-SPO2-CRITICAL`, `MET-GLUCOSE-LOW`, `MET-GLUCOSE-OUT`, `MSK-EXERCISE-ADHERENCE`, `MSK-STRENGTH-DECLINE`, `RAD-CUMULATIVE`, `IMM-STRESS-FEVER` (16 total, + 3 emergency procedures, + 6 recommendations), each with a positive and a negative test. `ENV-*` → Step 10, `SANS-VISION-SYMPTOM` → Step 7 (both need inputs that don't exist yet).
 
-**Done when:** one chart shows sleep falling below its band while resting HR rises above its band.
-
----
+**Done when:** one chart shows sleep falling below its band while resting HR rises above its band. **Done 2026-11-14:**
+- **The data:** from day 116 (9 Nov), AST-001's sleep is 4.0–5.2 h against a band of 5.2–7.3 h (−2.9σ to −4.8σ), while resting HR is 75–92 bpm against 58–70 (+3.7σ to +9.3σ).
+- **The page:** in the browser, all 4 Analytics charts render. The compare chart has both series, the ±2σ band and the end labels; the single charts have alert markers and pre-flight lines; the wellness chart has both cap lines.
+- **Checks:** 158 backend tests pass; ruff, mypy, `tsc`, `vite build` and `oxlint` are clean.
+- **Healthy-crew false alarms:** still 1 / 1 / 2.
+- **Not covered:** a visual screenshot of the charts (the browser window was minimized; the structure was checked through the DOM).
 
 ### Step 6 — ML insights (Days 13–15) → **M3**
 

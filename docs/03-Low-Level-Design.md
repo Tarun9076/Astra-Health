@@ -347,7 +347,25 @@ The six starter rules are in `protocols/rules/` (one file per rule; the file nam
 - A template field that doesn't exist, or an invalid format spec.
 - Any unknown JSON field (catches typos such as `sigmaFlor`).
 
-### 6.2 Starter rule set (⚠️ illustrative)
+### 6.2 Rule set (⚠️ illustrative)
+
+**As built (Step 5): 16 rules** in `protocols/rules/`, each with a positive and a negative unit test. The table below is the original design; differences are noted.
+- **Built:**
+  - Cardiovascular: `CV-RHR-BASELINE`, `CV-BP-HIGH`, `CV-BP-CRITICAL` (both of the last 2 readings ≥ 180/120).
+  - Thermal: `TH-FEVER`, `TH-FEVER-HIGH`.
+  - Oxygen: `RS-SPO2-LOW` / `RS-SPO2-CRITICAL` (both of the last 2 readings).
+  - Glucose: `MET-GLUCOSE-LOW` (single reading < 54, Urgent); `MET-GLUCOSE-OUT` (**both of the last 2 readings** < 70 or > 180; a single 69 mg/dL in healthy simulated crew raised false alarms).
+  - Sleep and behaviour: `SLP-DEFICIT`, `BEH-FATIGUE-COMPOSITE`, `IMM-STRESS-FEVER`.
+  - Musculoskeletal: `MSK-EXERCISE-ADHERENCE` (weekly count **< 4**, i.e. well below the target of 5), `MSK-STRENGTH-DECLINE`.
+  - Radiation: `RAD-SPE-EVENT`, `RAD-CUMULATIVE` (≥ 50 % of the mission limit).
+- **Deferred:**
+  - `CV-HR-CRITICAL` and the dizziness branch of `CV-BP-CRITICAL` (need symptoms / at-rest context).
+  - `BEH-WELLBEING-DECLINE` (covered by the fatigue composite for now).
+  - `ENV-*` (needs the habitat environment store, Step 10).
+  - `SANS-VISION-SYMPTOM` and `SYM-REDFLAG` (need symptom intake, Step 7).
+  - `ML-ANOMALY-CORROBORATED` (Step 6).
+- **Urgent rules** link the new procedures `EMG-BLOOD-PRESSURE`, `EMG-LOW-OXYGEN` and `EMG-LOW-GLUCOSE` (8 procedures, 21 recommendations in total).
+
 | Rule id | Severity | Condition (summary) |
 |---|---|---|
 | `CV-RHR-BASELINE` | Attention | resting_hr latest z ≥ 2 AND `count_where_z_gte:2` over last 3r ≥ 2 (persistence) |
@@ -497,7 +515,11 @@ Rules (as built in `astra/core/alerts.py` + `astra/services/alerts.py`):
   "source": "Illustrative — replace with mission behavioural-health protocol" }
 ```
 - On alert creation → materialise its `recommendations[]` into `Recommendations` rows (skip if same code Pending for that astronaut).
-- **Routine engine** (daily at mission 06:00): exercise session tasks per mission profile, hydration target, check-in reminder, assessments due (from `Assessments.DueAt`).
+- **Routine engine** (as built, `astra/services/routine.py`): runs on the Habitat node every `ASTRA_ROUTINE_INTERVAL_MINUTES` (default 15; 0 disables, as in tests). It is idempotent and creates today's missing tasks:
+  - the check-in reminder, until today's check-in is submitted (submitting ticks it off);
+  - a daily hydration log;
+  - a resistance session, when the latest weekly count is below the mission profile's target.
+  Yesterday's unfinished routine tasks become `Skipped`. Assessment-due tasks wait for assessment records.
 - Wellness "missions" (gamification) = routine tasks with streak counters; **never** tied to health values themselves.
 
 ---
@@ -512,7 +534,21 @@ sleep penalty also uses absolute: +20 if sleep_hours mean 3d < 6
 overall_raw = 0.25·Cardio + 0.20·Sleep + 0.20·Behavioral + 0.15·Activity + 0.10·Metabolic + 0.10·Environment
 overall     = min(overall_raw, 40 if any Urgent open, 75 if any Attention open, 100)
 ```
-Status shown on Overview: GREEN ≥ 80 and no alerts · YELLOW otherwise · RED if any Urgent. Missing data reduces confidence (shown as "based on 7/10 indicators today"), not the score.
+**As built (`astra/core/wellness.py`, Step 5):**
+- **Domains:**
+  - Cardiovascular (resting HR, BP)
+  - Sleep (hours, quality)
+  - Behavioral (mood, stress, fatigue)
+  - Activity (activity minutes, exercise sessions, strength)
+  - Metabolic (glucose, weight, hydration)
+  - Environment (radiation)
+- **Readings:** the latest within 2 days (8 days for weekly indicators).
+- **Alert penalties** apply to every domain whose indicators the alert's rule reads: +25 Attention, +50 Urgent.
+- **Radiation:** +15 at ≥ 1.5× normal dose, +40 at ≥ 3×.
+- **Domains with no data** are left out and the weights renormalised; the coverage is shown as "based on 11 of 15 indicators".
+- **Storage:** stored daily in `WellnessScore` at every assessment (the trend chart).
+- **Live view:** computed live for the dashboard (`wellness` block with the top reasons per domain).
+- **Colour:** the dashboard status colour comes from active alerts only (GREEN / YELLOW / RED); the index is shown separately, in a single neutral hue, as a magnitude.
 
 ---
 
@@ -685,6 +721,8 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | POST | `/exercise` | self | `{id, type, durationMin, loadKg?, perceivedExertion}` |
 | GET | `/astronauts/{id}/baselines` | self, surgeon | → per indicator `{median, sigma, samples, source, provisional}` |
 | POST | `/astronauts/{id}/baselines/recompute` | surgeon, admin | |
+| GET | `/astronauts/{id}/analytics?indicator=&range=7d|30d|90d|mission` ✅ | self, surgeon | → `{indicator, name, unit, decimals, worseWhen, hasBaseline, start, end, days:[{day, value (daily mean), min, max, n, median, sigma, low, high (median ± 2σ that day), z}], questionable:[{t, value, reason}], preflight:{median, sigma}, alerts:[{id, ruleId, severity, title, firstDay, lastDay, status}]}`. The baseline is recomputed per day, so the band moves the way the alerts saw it |
+| GET | `/astronauts/{id}/wellness?range=` ✅ | self, surgeon | → daily stored wellness `[{day, overall, cardiovascular, sleep, behavioral, activity, metabolic, environment}]` |
 | GET | `/astronauts/{id}/body-systems` | self, surgeon | → `{brain:{status,metrics[],alerts[]}, heart:{…}, lungs, bones, muscles, digestive, immune}` |
 | GET | `/astronauts/{id}/timeline` | self, surgeon | → events (alerts, symptoms, instructions, assessments) |
 
@@ -750,7 +788,15 @@ As built: a socket without a valid token is closed with code 1008. Connect with 
 - **Pages:** `features/auth`, `overview`, `checkin`, `alerts` and `staff`.
 - **Routing and guards:** in `app/` (`router.tsx`, `Guards.tsx`, `AppLayout.tsx`, `sections.ts`).
 
-Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdates` inside `AppLayout`; Dexie and `persistQueryClient` (Step 9); `BaselineChart` (Step 5); `EmergencyProtocolCard` is rendered inside the alert detail.
+Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdates` inside `AppLayout`; Dexie and `persistQueryClient` (Step 9); `EmergencyProtocolCard` is rendered inside the alert detail.
+
+**Charts (Step 5, `features/analytics/`):**
+- **`BaselineChart`:** daily value line; neutral personal-normal band (median ± 2σ); dashed pre-flight normal; alert periods shaded in status colour with a text label; flagged readings as hollow neutral markers; crosshair tooltip.
+- **`DeviationChart`:** compares two indicators on **one axis**, each as σ from its own normal, with a shared ±2σ band. This avoids a dual-axis chart.
+- **`WellnessTrendChart`:** the daily index with the 75 / 40 cap lines.
+- **Accessibility:** legend and end labels when there are 2 series, plus a data-table toggle.
+- **Colours:** series blue `#3987e5` + magenta `#d55181`, checked with the dataviz validator against the dark surface `#121a2e` (CVD ΔE 15.9, normal 26.5, contrast ≥ 3:1). Blue + violet was rejected (CVD ΔE 1.9); orange was avoided because amber/red mean alert status here.
+- **Loading:** the Analytics page is lazy-loaded (Recharts ≈ 400 kB) and shown on the Overview as a `WellnessCard` (ring + domain bars).
 
 ### 15.1 State management
 | Kind | Tool |

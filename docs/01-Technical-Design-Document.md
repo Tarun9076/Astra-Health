@@ -310,7 +310,7 @@ A transparent weighted index of domain sub-scores (cardiovascular, sleep, behavi
 |---|---|
 | Scenario detection | 2 / 2 injected episodes detected (fatigue, solar storm); the sensor glitch was correctly *not* alarmed |
 | Time to detection | Fatigue (onset day 114, ramping over 5 days): heart-rate alert day 116, composite alert day 117. Solar storm: same day (87) |
-| False alarms, healthy crew (120 days) | 4 Attention alerts across 3 astronauts (1 / 1 / 2), 0 Urgent; budget ≤ 2 per astronaut |
+| False alarms, healthy crew (120 days) | 4 Attention alerts across 3 astronauts (1 / 1 / 2), 0 Urgent; budget ≤ 2 per astronaut. Unchanged after Step 5 added 10 rules (16 total): the new rules add 0 false alarms after the glucose rule was made repeat-confirmed |
 | Alerts with full evidence | 100 % (every alert stores rule id + version, values, baseline, σ, z and a rendered reason) |
 | Duplicate readings stored on re-import | 0 of 6,649 |
 
