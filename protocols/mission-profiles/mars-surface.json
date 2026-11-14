@@ -1,0 +1,11 @@
+{
+  "code": "mars-surface",
+  "name": "Mars surface stay",
+  "gravityG": 0.38,
+  "solLengthHours": 24.66,
+  "commsDelayMinutes": { "min": 3, "max": 22 },
+  "radiationLimitMsv": 600,
+  "exerciseTargetSessionsPerWeek": 5,
+  "hydrationTargetMlPerDay": 2500,
+  "disclaimer": "Illustrative values for the prototype; replace with mission-approved values."
+}

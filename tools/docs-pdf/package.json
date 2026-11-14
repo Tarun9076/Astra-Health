@@ -1,0 +1,13 @@
+{
+  "name": "astra-docs-pdf",
+  "private": true,
+  "type": "module",
+  "description": "Renders docs/*.md (with Mermaid diagrams) to PDFs in docs/pdf using headless Microsoft Edge",
+  "scripts": {
+    "pdf": "powershell -ExecutionPolicy Bypass -File make-pdfs.ps1"
+  },
+  "dependencies": {
+    "marked": "^18.2.0",
+    "mermaid": "^12.3.0"
+  }
+}

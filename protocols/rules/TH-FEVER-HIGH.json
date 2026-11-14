@@ -1,0 +1,15 @@
+{
+  "id": "TH-FEVER-HIGH",
+  "version": "1.0.0",
+  "title": "Body temperature outside the critical range",
+  "category": "Thermal",
+  "hazard": "Environment",
+  "severity": "Urgent",
+  "when": { "indicator": "body_temp", "agg": "latest", "window": "1d", "op": "outside", "value": 35.0, "value2": 39.5 },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "Body temperature is {body_temp.value:.1f} °C, outside the 35.0–39.5 °C range. Follow the fever protocol and contact medical support.",
+  "recommendations": ["REC-RECHECK-TEMP", "REC-CONTACT-SURGEON", "REC-FEVER-REST-HYDRATE"],
+  "protocol": "EMG-FEVER",
+  "escalation": { "whenTriggerCountGte": 1 },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

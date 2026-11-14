@@ -1,0 +1,15 @@
+{
+  "id": "RAD-SPE-EVENT",
+  "version": "1.0.0",
+  "title": "Radiation spike consistent with a solar particle event",
+  "category": "Radiation",
+  "hazard": "Radiation",
+  "severity": "Urgent",
+  "when": { "indicator": "radiation_dose", "agg": "latest", "window": "1d", "op": "ratio_gte", "value": 10 },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "Radiation dose rate is {radiation_dose.value:.2f} mSv/day, about {radiation_dose.ratio:.0f}× the habitat's normal of {radiation_dose.baseline:.2f} mSv/day. Go to the radiation shelter now.",
+  "recommendations": ["REC-RAD-SHELTER", "REC-RAD-DOSIMETER-CHECK", "REC-CONTACT-SURGEON"],
+  "protocol": "EMG-RADIATION-SHELTER",
+  "escalation": { "whenTriggerCountGte": 1 },
+  "disclaimer": "Illustrative rule for the prototype; the ×10 trigger is a scenario parameter, not a measured shelter criterion."
+}

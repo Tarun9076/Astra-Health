@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+/* Mission-ops design tokens (LLD §15.4). Use as bg-space-900, text-status-red, etc. */
+@theme {
+  --color-space-950: #070b16;
+  --color-space-900: #0b1020;
+  --color-space-800: #121a2e;
+  --color-space-700: #1c2742;
+  --color-space-600: #2a3756;
+  --color-ink: #e6ecff;
+  --color-ink-muted: #94a3c4;
+  --color-accent: #38bdf8;
+
+  --color-status-green: #22c55e;
+  --color-status-yellow: #f59e0b;
+  --color-status-red: #ef4444;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-space-900 text-ink font-sans antialiased;
+}

@@ -1,0 +1,96 @@
+{
+  "version": "1.0.0",
+  "disclaimer": "Illustrative prototype guidance. Replace with mission-approved procedures.",
+  "recommendations": [
+    {
+      "code": "REC-RECHECK-RHR", "title": "Recheck your resting heart rate tomorrow morning",
+      "body": "Measure resting heart rate right after waking, before getting up or drinking caffeine, so the reading can be compared with your normal.",
+      "category": "Cardiovascular", "priority": 2, "dueInHours": 24, "hazards": ["Gravity"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-CARDIO-REVIEW-EXERCISE", "title": "Review recent exercise intensity and recovery",
+      "body": "Check whether recent sessions were harder or longer than planned, and allow recovery time as your exercise plan describes.",
+      "category": "Exercise", "priority": 3, "dueInHours": 48, "hazards": ["Gravity"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-HYDRATION", "title": "Meet today's fluid target",
+      "body": "Log your fluid intake and aim for the mission's daily hydration target. Dehydration can raise heart rate and add to fatigue.",
+      "category": "Hydration", "priority": 2, "dueInHours": 12, "hazards": ["Environment"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-SLEEP-ROUTINE", "title": "Follow your prescribed sleep routine tonight",
+      "body": "Dim lighting 60 minutes before your sleep period, avoid screens, keep the sleep station at its assigned temperature and use the 10-minute wind-down audio.",
+      "category": "Sleep", "priority": 2, "dueInHours": 14, "hazards": ["Isolation"],
+      "source": "Illustrative — replace with mission behavioural-health protocol"
+    },
+    {
+      "code": "REC-SLEEP-ENVIRONMENT", "title": "Check your sleep environment",
+      "body": "Check noise, light leaks and temperature at your sleep station, and report anything that keeps disturbing your sleep.",
+      "category": "Sleep", "priority": 3, "dueInHours": 24, "hazards": ["Isolation", "Environment"],
+      "source": "Illustrative — replace with mission behavioural-health protocol"
+    },
+    {
+      "code": "REC-FATIGUE-ASSESS", "title": "Complete the fatigue and stress assessment",
+      "body": "Take the 3-minute fatigue and stress questionnaire in the Wellness Center so changes can be tracked over time.",
+      "category": "Behavioral", "priority": 2, "dueInHours": 12, "hazards": ["Isolation"],
+      "source": "Illustrative — replace with mission behavioural-health protocol"
+    },
+    {
+      "code": "REC-WORKLOAD-REVIEW", "title": "Review your workload and schedule",
+      "body": "Look at the next 3 days of tasks with the crew lead and identify anything that can be moved to protect your sleep period.",
+      "category": "Behavioral", "priority": 3, "dueInHours": 48, "hazards": ["Isolation"],
+      "source": "Illustrative — replace with mission behavioural-health protocol"
+    },
+    {
+      "code": "REC-BREATHING-EXERCISE", "title": "Try a guided breathing exercise",
+      "body": "Open the Wellness Center and follow the 4-minute guided breathing exercise.",
+      "category": "Behavioral", "priority": 3, "dueInHours": 8, "hazards": ["Isolation"],
+      "source": "Illustrative — replace with mission behavioural-health protocol"
+    },
+    {
+      "code": "REC-WELLNESS-CHECKIN", "title": "Complete today's wellness check-in",
+      "body": "Record sleep, mood, stress and fatigue. It takes under a minute and keeps your personal baseline accurate.",
+      "category": "General", "priority": 3, "dueInHours": 12, "hazards": ["Isolation"],
+      "source": "Illustrative — routine task"
+    },
+    {
+      "code": "REC-RECHECK-TEMP", "title": "Recheck your temperature in 30 minutes",
+      "body": "Rest, then measure again with the same thermometer to confirm the reading before acting on it.",
+      "category": "Thermal", "priority": 1, "dueInHours": 1, "hazards": ["Environment"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-FEVER-REST-HYDRATE", "title": "Rest, hydrate and limit contact with crew",
+      "body": "Pause strenuous tasks, increase fluid intake and limit close contact with other crew until the crew medical officer advises otherwise.",
+      "category": "Thermal", "priority": 1, "dueInHours": 2, "hazards": ["Environment"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-REPORT-SYMPTOMS", "title": "Report any other symptoms",
+      "body": "Log any other symptoms (for example cough, sore throat, headache, rash or stomach upset) so they are included in your next medical report.",
+      "category": "General", "priority": 2, "dueInHours": 4, "hazards": ["Environment"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-CONTACT-SURGEON", "title": "Contact the crew medical officer and flight surgeon",
+      "body": "Tell the crew medical officer now. A priority report is queued for the flight surgeon and will be sent on the next link window.",
+      "category": "General", "priority": 1, "dueInHours": 1, "hazards": ["Distance"],
+      "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-RAD-SHELTER", "title": "Go to the radiation shelter",
+      "body": "Move to the designated storm shelter with your personal dosimeter and stay there until mission control gives the all-clear.",
+      "category": "Radiation", "priority": 1, "dueInHours": 0, "hazards": ["Radiation"],
+      "source": "Illustrative — replace with the mission's radiation shelter procedure"
+    },
+    {
+      "code": "REC-RAD-DOSIMETER-CHECK", "title": "Check that your dosimeter is worn and recording",
+      "body": "Confirm your personal dosimeter is worn, powered and syncing, so your dose during the event is recorded accurately.",
+      "category": "Radiation", "priority": 1, "dueInHours": 1, "hazards": ["Radiation"],
+      "source": "Illustrative — replace with the mission's radiation shelter procedure"
+    }
+  ]
+}

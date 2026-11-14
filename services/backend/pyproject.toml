@@ -1,0 +1,48 @@
+[project]
+name = "astra-health-backend"
+version = "0.1.0"
+description = "ASTRA HEALTH backend: ingestion, baselines, rule engine, alerts, ML insights, assistant, sync"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "sqlmodel>=0.0.22",
+    "pandas>=2.2",
+    "numpy>=2.0",
+    "scikit-learn>=1.5",
+    "pymannkendall>=1.4",
+    "rank-bm25>=0.2.2",
+    "anthropic",
+    "httpx>=0.27",
+    "joblib>=1.4",
+    "pyyaml>=6.0",
+    "bcrypt>=4.1",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.11", "types-PyYAML"]
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["astra*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["astra"]

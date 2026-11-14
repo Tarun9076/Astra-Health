@@ -1,0 +1,14 @@
+{
+  "id": "TH-FEVER",
+  "version": "1.0.0",
+  "title": "Raised body temperature",
+  "category": "Thermal",
+  "hazard": "Environment",
+  "severity": "Attention",
+  "when": { "indicator": "body_temp", "agg": "latest", "window": "1d", "op": "gte", "value": 38.0 },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "Body temperature is {body_temp.value:.1f} °C, at or above the 38.0 °C attention level (your normal is {body_temp.baseline:.1f} °C).",
+  "recommendations": ["REC-RECHECK-TEMP", "REC-FEVER-REST-HYDRATE", "REC-REPORT-SYMPTOMS"],
+  "escalation": { "whenTriggerCountGte": 2 },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

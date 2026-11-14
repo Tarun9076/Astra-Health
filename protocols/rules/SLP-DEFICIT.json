@@ -1,0 +1,19 @@
+{
+  "id": "SLP-DEFICIT",
+  "version": "1.0.0",
+  "title": "Sleep below your personal normal",
+  "category": "Behavioral",
+  "hazard": "Isolation",
+  "severity": "Attention",
+  "when": {
+    "any": [
+      { "indicator": "sleep_hours", "as": "sleep_vs_normal", "agg": "mean", "window": "4d", "op": "z_lte", "value": -2.0 },
+      { "indicator": "sleep_hours", "as": "sleep_absolute", "agg": "mean", "window": "4d", "op": "lt", "value": 5.5 }
+    ]
+  },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "You have averaged {sleep_vs_normal.value:.1f} h of sleep over the last 4 days; your normal is {sleep_vs_normal.baseline:.1f} h.",
+  "recommendations": ["REC-SLEEP-ROUTINE", "REC-SLEEP-ENVIRONMENT", "REC-WORKLOAD-REVIEW"],
+  "escalation": { "whenTriggerCountGte": 4 },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

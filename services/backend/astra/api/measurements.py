@@ -1,0 +1,190 @@
+"""Measurement intake and time-series query (LLD §13.2).
+
+Auth arrives in Step 3; until then these routes are open on the local network.
+"""
+
+from datetime import UTC, datetime
+from typing import Annotated, Any, Literal
+
+import pandas as pd
+from fastapi import APIRouter, Header, HTTPException, Query, Request, status
+from pydantic import AwareDatetime, Field
+from sqlmodel import col, select
+
+from astra.api.base import ApiModel
+from astra.core.enums import MeasurementQuality, MeasurementSource
+from astra.core.indicators import round_half_up
+from astra.core.protocols import ProtocolBundle
+from astra.db.models import Astronaut, HealthMeasurement
+from astra.db.session import SessionDep
+from astra.services.crew import find_astronaut
+from astra.services.ingestion import IncomingReading, ingest_batch
+
+router = APIRouter(prefix="/api", tags=["measurements"])
+
+
+class ReadingIn(ApiModel):
+    id: str | None = Field(default=None, description="UUIDv7 from the client; generated if missing")
+    indicator: str = Field(examples=["resting_hr"])
+    value: float = Field(examples=[64])
+    unit: str = Field(examples=["bpm"])
+    measured_at: AwareDatetime
+    source: MeasurementSource = MeasurementSource.MANUAL
+    device_id: str | None = None
+    channel: Literal["Total", "Charged", "Neutron"] | None = Field(
+        default=None, description="Radiation dosimeter channel (radiation_dose only)"
+    )
+    panel_id: str | None = Field(default=None, description="Groups readings taken together, e.g. bp_sys + bp_dia")
+    signal_quality: float | None = Field(default=None, ge=0, le=1)
+    motion_artifact: bool = False
+
+
+class MeasurementBatchIn(ApiModel):
+    astronaut_id: str = Field(description="Astronaut code (AST-001) or id", examples=["AST-001"])
+    items: list[ReadingIn] = Field(min_length=1, max_length=2000)
+
+
+class ItemProblem(ApiModel):
+    id: str
+    reason: str
+
+
+class MeasurementBatchOut(ApiModel):
+    accepted: list[str]
+    questionable: list[ItemProblem]
+    rejected: list[ItemProblem]
+    duplicates: list[str]
+    new_alerts: list[dict[str, Any]] = Field(default_factory=list, description="Filled from Step 3")
+
+
+class SeriesPoint(ApiModel):
+    t: datetime
+    value: float | None
+    min: float | None = None
+    max: float | None = None
+    n: int = 1
+    quality: str | None = None
+    channel: str | None = None
+
+
+class SeriesOut(ApiModel):
+    astronaut_code: str
+    indicator: str
+    unit: str
+    bucket: str
+    points: list[SeriesPoint]
+
+
+def _bundle(request: Request) -> ProtocolBundle:
+    bundle: ProtocolBundle = request.app.state.protocols
+    return bundle
+
+
+def _astronaut_or_404(session: SessionDep, ref: str) -> Astronaut:
+    astronaut = find_astronaut(session, ref)
+    if astronaut is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Astronaut '{ref}' not found")
+    return astronaut
+
+
+@router.post("/measurements/batch", status_code=status.HTTP_201_CREATED, response_model=MeasurementBatchOut)
+def post_measurements(
+    body: MeasurementBatchIn,
+    request: Request,
+    session: SessionDep,
+    x_backfill: Annotated[bool, Header(description="true for historical/simulated imports")] = False,
+) -> MeasurementBatchOut:
+    astronaut = _astronaut_or_404(session, body.astronaut_id)
+    items = [
+        IncomingReading(
+            id=r.id,
+            indicator=r.indicator,
+            value=r.value,
+            unit=r.unit,
+            measured_at=r.measured_at,
+            source=r.source.value,
+            device_id=r.device_id,
+            channel=r.channel,
+            panel_id=r.panel_id,
+            signal_quality=r.signal_quality,
+            motion_artifact=r.motion_artifact,
+            is_simulated=r.source == MeasurementSource.SIMULATED,
+        )
+        for r in body.items
+    ]
+    outcome = ingest_batch(
+        session,
+        _bundle(request).catalog,
+        astronaut,
+        items,
+        node_id=request.app.state.settings.node_id,
+        backfill=x_backfill,
+    )
+    return MeasurementBatchOut(
+        accepted=outcome.accepted,
+        questionable=[ItemProblem(id=i, reason=r) for i, r in outcome.questionable],
+        rejected=[ItemProblem(id=i, reason=r) for i, r in outcome.rejected],
+        duplicates=outcome.duplicates,
+    )
+
+
+@router.get("/astronauts/{astronaut}/measurements", response_model=SeriesOut)
+def get_measurements(
+    astronaut: str,
+    request: Request,
+    session: SessionDep,
+    indicator: Annotated[str, Query(examples=["resting_hr"])],
+    start: AwareDatetime | None = None,
+    end: AwareDatetime | None = None,
+    bucket: Literal["raw", "hour", "day"] = "raw",
+    channel: Literal["Total", "Charged", "Neutron"] | None = None,
+) -> SeriesOut:
+    """Raw readings (Valid + Questionable, with their quality) or hourly/daily buckets of Valid readings."""
+    crew = _astronaut_or_404(session, astronaut)
+    catalog = _bundle(request).catalog
+    if indicator not in catalog:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown indicator '{indicator}'")
+    meta = catalog.get(indicator)
+
+    wanted = [MeasurementQuality.VALID.value]
+    if bucket == "raw":
+        wanted.append(MeasurementQuality.QUESTIONABLE.value)
+    query = select(HealthMeasurement).where(
+        HealthMeasurement.astronaut_id == crew.id,
+        HealthMeasurement.indicator_code == indicator,
+        col(HealthMeasurement.quality).in_(wanted),
+    )
+    if indicator == "radiation_dose":
+        query = query.where(HealthMeasurement.channel == (channel or "Total"))
+    if start:
+        query = query.where(col(HealthMeasurement.measured_at) >= start)
+    if end:
+        query = query.where(col(HealthMeasurement.measured_at) <= end)
+    rows = session.exec(query.order_by(col(HealthMeasurement.measured_at))).all()
+
+    if bucket == "raw":
+        points = [
+            SeriesPoint(t=r.measured_at, value=r.value, quality=r.quality, channel=r.channel or None) for r in rows
+        ]
+    else:
+        points = _bucketed(rows, "D" if bucket == "day" else "h", meta.decimals)
+    return SeriesOut(astronaut_code=crew.code, indicator=indicator, unit=meta.unit, bucket=bucket, points=points)
+
+
+def _bucketed(rows: list[HealthMeasurement] | Any, freq: str, decimals: int) -> list[SeriesPoint]:
+    data = [(r.measured_at, r.value) for r in rows if r.value is not None]
+    if not data:
+        return []
+    frame = pd.DataFrame(data, columns=["t", "value"]).set_index("t")
+    stats = frame["value"].resample(freq).agg(["mean", "min", "max", "count"])
+    stats = stats[stats["count"] > 0]
+    return [
+        SeriesPoint(
+            t=ts.to_pydatetime().astimezone(UTC),
+            value=round_half_up(float(row["mean"]), decimals),
+            min=float(row["min"]),
+            max=float(row["max"]),
+            n=int(row["count"]),
+        )
+        for ts, row in stats.iterrows()
+    ]

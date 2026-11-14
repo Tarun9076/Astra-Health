@@ -1,0 +1,22 @@
+{
+  "_comment": "DEMO-ONLY accounts for local development. To use other passwords, copy this file to seed.local.json (git-ignored) and edit it. Never reuse these passwords anywhere real.",
+  "mission": {
+    "code": "ARES-1",
+    "name": "ARES-1 Mars surface mission (simulated)",
+    "profileCode": "mars-surface",
+    "startDate": "2026-07-17"
+  },
+  "astronauts": [
+    { "code": "AST-001", "displayName": "Cmdr. A. Rao (simulated)", "roleTitle": "Commander" },
+    { "code": "AST-002", "displayName": "Dr. M. Okafor (simulated)", "roleTitle": "Crew Medical Officer" },
+    { "code": "AST-003", "displayName": "Eng. L. Fischer (simulated)", "roleTitle": "Flight Engineer" }
+  ],
+  "users": [
+    { "username": "ast1", "password": "astra-demo-ast1", "role": "Astronaut", "astronautCode": "AST-001", "displayName": "Cmdr. A. Rao" },
+    { "username": "ast2", "password": "astra-demo-ast2", "role": "Astronaut", "astronautCode": "AST-002", "displayName": "Dr. M. Okafor" },
+    { "username": "ast3", "password": "astra-demo-ast3", "role": "Astronaut", "astronautCode": "AST-003", "displayName": "Eng. L. Fischer" },
+    { "username": "surgeon1", "password": "astra-demo-surgeon", "role": "FlightSurgeon", "displayName": "Flight Surgeon (demo)" },
+    { "username": "mission1", "password": "astra-demo-mission", "role": "MissionControl", "displayName": "Mission Control (demo)" },
+    { "username": "admin", "password": "astra-demo-admin", "role": "Admin", "displayName": "Demo operator" }
+  ]
+}

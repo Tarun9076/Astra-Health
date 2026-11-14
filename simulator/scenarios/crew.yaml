@@ -1,0 +1,73 @@
+# Simulated crew for ARES-1 (LLD §16). All data generated from this file is labelled SIMULATED.
+# baseline values are [mean, standard deviation].
+mission:
+  code: ARES-1
+  start: 2026-07-17
+  preflightDays: 30
+  days: 120
+  profile: mars-surface
+
+crew:
+  - code: AST-001
+    name: "Cmdr. A. Rao (simulated)"
+    baseline:
+      resting_hr: [64, 3]
+      sleep_hours: [7.1, 0.5]
+      mood: [7, 1]
+      stress: [3, 1]
+      fatigue: [3, 1]
+      bp_sys: [116, 5]
+      bp_dia: [74, 4]
+      body_temp: [36.7, 0.15]
+      spo2: [98, 0.7]
+      glucose: [92, 8]
+      activity_min: [75, 15]
+  - code: AST-002
+    name: "Dr. M. Okafor (simulated)"   # low resting HR: same 85 bpm is abnormal for them
+    baseline:
+      resting_hr: [55, 2.5]
+      sleep_hours: [7.4, 0.4]
+      mood: [7, 1]
+      stress: [3, 1]
+      fatigue: [3, 1]
+      bp_sys: [112, 5]
+      bp_dia: [70, 4]
+      body_temp: [36.6, 0.15]
+      spo2: [98, 0.7]
+      glucose: [88, 7]
+      activity_min: [90, 15]
+  - code: AST-003
+    name: "Eng. L. Fischer (simulated)"  # high resting HR: same 85 bpm is near normal for them
+    baseline:
+      resting_hr: [80, 3]
+      sleep_hours: [6.8, 0.5]
+      mood: [6, 1]
+      stress: [4, 1]
+      fatigue: [4, 1]
+      bp_sys: [122, 6]
+      bp_dia: [79, 4]
+      body_temp: [36.8, 0.15]
+      spo2: [97, 0.8]
+      glucose: [95, 9]
+      activity_min: [60, 15]
+
+events:
+  - scenario: fatigue_onset
+    astronaut: AST-001
+    startDay: 114
+    rampDays: 5
+    effects:
+      sleep_hours: { delta: -2.4 }
+      resting_hr: { delta: 22 }
+      fatigue: { delta: 5 }
+      mood: { delta: -3 }
+      stress: { delta: 4 }
+  - scenario: spe_radiation
+    startDay: 87
+    effects:
+      radiation_dose: { multiply: 30, durationHours: 18 }
+  - scenario: sensor_glitch
+    astronaut: AST-002
+    day: 60
+    effects:
+      heart_rate: { spike: 190, quality: low_signal }

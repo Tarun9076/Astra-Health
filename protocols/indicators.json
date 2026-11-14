@@ -1,0 +1,145 @@
+{
+  "version": "1.0.0",
+  "disclaimer": "Ranges and spread floors are illustrative prototype values, not clinical limits.",
+  "indicators": [
+    {
+      "code": "heart_rate", "name": "Heart rate", "unit": "bpm",
+      "units": { "bpm": { "factor": 1 } },
+      "plausible": { "min": 25, "max": 250 }, "sigmaFloor": 3, "decimals": 0, "worseWhen": "both",
+      "hazard": "Gravity", "bodySystem": "heart", "collection": "Wearable (continuous)"
+    },
+    {
+      "code": "resting_hr", "name": "Resting heart rate", "unit": "bpm",
+      "units": { "bpm": { "factor": 1 } },
+      "plausible": { "min": 30, "max": 150 }, "sigmaFloor": 2, "decimals": 0, "worseWhen": "both",
+      "hazard": "Gravity", "bodySystem": "heart", "collection": "Wearable (derived each morning)"
+    },
+    {
+      "code": "bp_sys", "name": "Systolic blood pressure", "unit": "mmHg",
+      "units": { "mmHg": { "factor": 1 }, "kPa": { "factor": 7.50062 } },
+      "plausible": { "min": 60, "max": 260 }, "sigmaFloor": 4, "decimals": 0, "worseWhen": "both",
+      "hazard": "Gravity", "bodySystem": "heart", "collection": "Blood-pressure monitor (daily)"
+    },
+    {
+      "code": "bp_dia", "name": "Diastolic blood pressure", "unit": "mmHg",
+      "units": { "mmHg": { "factor": 1 }, "kPa": { "factor": 7.50062 } },
+      "plausible": { "min": 30, "max": 160 }, "sigmaFloor": 3, "decimals": 0, "worseWhen": "both",
+      "hazard": "Gravity", "bodySystem": "heart", "collection": "Blood-pressure monitor (daily)"
+    },
+    {
+      "code": "body_temp", "name": "Body temperature", "unit": "°C",
+      "units": {
+        "°C": { "factor": 1 }, "C": { "factor": 1 },
+        "°F": { "factor": 0.5555555555555556, "offset": -32 }, "F": { "factor": 0.5555555555555556, "offset": -32 }
+      },
+      "plausible": { "min": 30, "max": 43 }, "sigmaFloor": 0.15, "decimals": 1, "worseWhen": "both",
+      "hazard": "Environment", "bodySystem": "immune", "collection": "Thermometer (daily)"
+    },
+    {
+      "code": "glucose", "name": "Blood glucose", "unit": "mg/dL",
+      "units": { "mg/dL": { "factor": 1 }, "mmol/L": { "factor": 18.016 } },
+      "plausible": { "min": 20, "max": 600 }, "sigmaFloor": 5, "decimals": 1, "worseWhen": "both",
+      "hazard": "Environment", "bodySystem": "digestive", "collection": "Glucose meter (as required)"
+    },
+    {
+      "code": "spo2", "name": "Oxygen saturation", "unit": "%",
+      "units": { "%": { "factor": 1 } },
+      "plausible": { "min": 50, "max": 100 }, "sigmaFloor": 0.7, "decimals": 0, "worseWhen": "low",
+      "hazard": "Environment", "bodySystem": "lungs", "collection": "Pulse oximeter (as required)"
+    },
+    {
+      "code": "sleep_hours", "name": "Sleep duration", "unit": "h",
+      "units": { "h": { "factor": 1 }, "min": { "factor": 0.016666666666666666 } },
+      "plausible": { "min": 0, "max": 16 }, "sigmaFloor": 0.4, "decimals": 2, "worseWhen": "low",
+      "hazard": "Isolation", "bodySystem": "brain", "collection": "Wearable or manual (daily)"
+    },
+    {
+      "code": "sleep_quality", "name": "Sleep quality", "unit": "score",
+      "units": { "score": { "factor": 1 } },
+      "plausible": { "min": 1, "max": 10 }, "sigmaFloor": 1, "decimals": 0, "worseWhen": "low",
+      "hazard": "Isolation", "bodySystem": "brain", "collection": "Daily check-in (1–10)"
+    },
+    {
+      "code": "mood", "name": "Mood", "unit": "score",
+      "units": { "score": { "factor": 1 } },
+      "plausible": { "min": 1, "max": 10 }, "sigmaFloor": 1, "decimals": 0, "worseWhen": "low",
+      "hazard": "Isolation", "bodySystem": "brain", "collection": "Daily check-in (1–10)"
+    },
+    {
+      "code": "stress", "name": "Stress", "unit": "score",
+      "units": { "score": { "factor": 1 } },
+      "plausible": { "min": 1, "max": 10 }, "sigmaFloor": 1, "decimals": 0, "worseWhen": "high",
+      "hazard": "Isolation", "bodySystem": "brain", "collection": "Daily check-in (1–10)"
+    },
+    {
+      "code": "fatigue", "name": "Fatigue", "unit": "score",
+      "units": { "score": { "factor": 1 } },
+      "plausible": { "min": 1, "max": 10 }, "sigmaFloor": 1, "decimals": 0, "worseWhen": "high",
+      "hazard": "Isolation", "bodySystem": "brain", "collection": "Daily check-in (1–10)"
+    },
+    {
+      "code": "activity_min", "name": "Physical activity", "unit": "min",
+      "units": { "min": { "factor": 1 }, "h": { "factor": 60 } },
+      "plausible": { "min": 0, "max": 600 }, "sigmaFloor": 10, "decimals": 0, "worseWhen": "low",
+      "hazard": "Gravity", "bodySystem": "muscles", "collection": "Wearable or exercise log (daily)"
+    },
+    {
+      "code": "exercise_sessions", "name": "Resistance exercise sessions (7 days)", "unit": "count",
+      "units": { "count": { "factor": 1 } },
+      "plausible": { "min": 0, "max": 21 }, "sigmaFloor": 1, "decimals": 0, "worseWhen": "low",
+      "hazard": "Gravity", "bodySystem": "bones", "collection": "Exercise log (weekly)"
+    },
+    {
+      "code": "strength_index", "name": "Muscle strength (% of pre-flight)", "unit": "%",
+      "units": { "%": { "factor": 1 } },
+      "plausible": { "min": 0, "max": 200 }, "sigmaFloor": 3, "decimals": 1, "worseWhen": "low",
+      "hazard": "Gravity", "bodySystem": "muscles", "collection": "Exercise equipment (weekly)"
+    },
+    {
+      "code": "body_weight", "name": "Body weight", "unit": "kg",
+      "units": { "kg": { "factor": 1 }, "lb": { "factor": 0.45359237 } },
+      "plausible": { "min": 30, "max": 200 }, "sigmaFloor": 0.5, "decimals": 1, "worseWhen": "both",
+      "hazard": "Environment", "bodySystem": "digestive", "collection": "Mass-measurement device (weekly)"
+    },
+    {
+      "code": "hydration_ml", "name": "Fluid intake", "unit": "mL",
+      "units": { "mL": { "factor": 1 }, "L": { "factor": 1000 } },
+      "plausible": { "min": 0, "max": 8000 }, "sigmaFloor": 200, "decimals": 0, "worseWhen": "low",
+      "hazard": "Environment", "bodySystem": "digestive", "collection": "Manual log (daily)"
+    },
+    {
+      "code": "radiation_dose", "name": "Radiation dose (daily)", "unit": "mSv",
+      "units": { "mSv": { "factor": 1 }, "uSv": { "factor": 0.001 }, "µSv": { "factor": 0.001 } },
+      "plausible": { "min": 0, "max": 500 }, "sigmaFloor": null, "decimals": 3, "worseWhen": "high",
+      "hazard": "Radiation", "bodySystem": "whole_body",
+      "collection": "Personal dosimeter / neutron spectrometer (channels: total, charged, neutron)"
+    },
+    {
+      "code": "light_exposure", "name": "Daytime light exposure", "unit": "lux·h",
+      "units": { "lux·h": { "factor": 1 }, "lux-h": { "factor": 1 } },
+      "plausible": { "min": 0, "max": 200000 }, "sigmaFloor": null, "decimals": 0, "worseWhen": "low",
+      "hazard": "Isolation", "bodySystem": "brain", "collection": "Actigraphy wrist device (P2, modelled on NASA ARCHeR)"
+    },
+    {
+      "code": "cabin_temp", "name": "Cabin temperature", "unit": "°C",
+      "units": {
+        "°C": { "factor": 1 }, "C": { "factor": 1 },
+        "°F": { "factor": 0.5555555555555556, "offset": -32 }, "F": { "factor": 0.5555555555555556, "offset": -32 }
+      },
+      "plausible": { "min": 0, "max": 50 }, "sigmaFloor": null, "decimals": 1, "worseWhen": "both",
+      "hazard": "Environment", "bodySystem": null, "collection": "Habitat sensor"
+    },
+    {
+      "code": "cabin_humidity", "name": "Cabin relative humidity", "unit": "%",
+      "units": { "%": { "factor": 1 } },
+      "plausible": { "min": 0, "max": 100 }, "sigmaFloor": null, "decimals": 0, "worseWhen": "both",
+      "hazard": "Environment", "bodySystem": null, "collection": "Habitat sensor"
+    },
+    {
+      "code": "cabin_co2", "name": "Cabin CO₂ (partial pressure)", "unit": "mmHg",
+      "units": { "mmHg": { "factor": 1 }, "ppm": { "factor": 0.00076 } },
+      "plausible": { "min": 0, "max": 20 }, "sigmaFloor": null, "decimals": 2, "worseWhen": "high",
+      "hazard": "Environment", "bodySystem": "lungs", "collection": "Habitat sensor (ppm converted at 1 atm)"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "BEH-FATIGUE-COMPOSITE",
+  "version": "1.0.0",
+  "title": "Fatigue and recovery pattern needs review",
+  "category": "Behavioral",
+  "hazard": "Isolation",
+  "severity": "Attention",
+  "when": {
+    "all": [
+      { "indicator": "sleep_hours", "agg": "mean", "window": "4d", "op": "z_lte", "value": -1.5 },
+      { "indicator": "resting_hr", "agg": "latest", "window": "1d", "op": "z_gte", "value": 1.5 },
+      {
+        "any": [
+          { "indicator": "fatigue", "agg": "latest", "window": "1d", "op": "gte", "value": 7 },
+          { "indicator": "mood", "agg": "mean", "window": "3d", "op": "lte", "value": 4 }
+        ]
+      }
+    ]
+  },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "Sleep has averaged {sleep_hours.value:.1f} h over 4 days (your normal {sleep_hours.baseline:.1f} h), resting heart rate is {resting_hr.value:.0f} bpm (your normal {resting_hr.baseline:.0f}), and fatigue was rated {fatigue.value:.0f}/10.",
+  "recommendations": ["REC-RECHECK-RHR", "REC-FATIGUE-ASSESS", "REC-SLEEP-ROUTINE", "REC-WORKLOAD-REVIEW", "REC-BREATHING-EXERCISE"],
+  "escalation": { "whenTriggerCountGte": 3 },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold. Combines hazards because NASA notes they can make each other worse."
+}
