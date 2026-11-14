@@ -49,7 +49,7 @@ gantt
     section Earth and wow
     Step 8 Reports + surgeon dashboard   :done, s8, after s7, 2d
     Step 9 Offline, Ground node, link sim :done, s9, after s8, 3d
-    Step 10 Body Explorer, wellness, env :s10, after s9, 3d
+    Step 10 Body Explorer, wellness, env :done, s10, after s9, 3d
     section Ship
     Step 11 Hardening and tests          :s11, after s10, 3d
     Step 12 Demo and pitch               :s12, after s11, 2d
@@ -324,18 +324,54 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
-### Step 10 — Body Explorer, Wellness Center, environment & radiation (Days 24–26) → **M6**
+### Step 10 — Body Explorer, Wellness Center, environment & radiation (Days 24–26) → **M6** ✅
 
 **Tasks**
-- [ ] `GET /api/astronauts/{id}/body-systems` (LLD §15.3 mapping).
-- [ ] **BodyMap2D** (SVG) first → `RegionPanel` (metrics, mini charts, alerts, "what changes in space" from the KB, next steps).
-- [ ] **BodyModel3D** with React Three Fiber (`three @react-three/fiber @react-three/drei`): a CC0/CC-BY anatomy GLB (check and credit the licence) or a stylised body from primitives; meshes named `region_*`; 2D fallback toggle.
-- [ ] **Wellness Center**: breathing exercise, sleep routine, exercise plan + adherence ring, hydration tracker, wellness missions with streaks.
-- [ ] **Environment & radiation panel**: cabin temp/humidity/CO₂, daily dose per channel (incl. neutron), cumulative dose vs the 600 mSv limit, solar-particle-event banner → shelter protocol. Label real inputs clearly: "Real NASA DONKI event: 10 May 2024", "Earth–Mars light time: 11.0 min (JPL Horizons)".
-- [ ] Ground / Mission Control "Space weather now" card: live NOAA ≥10 MeV proton flux against the 10 pfu S1 threshold.
-- [ ] Mission timeline (stretch).
+- [x] `GET /api/astronauts/{id}/body-systems` (`astra/services/body.py`, LLD §15.3), with 9 regions: brain, eyes (SANS), heart, lungs, digestive, immune, muscles, bones, whole body (radiation). Each region has:
+  - its readings vs the personal normal, with a 14-day sparkline;
+  - active alerts whose rules read its indicators (red-flag symptom alerts mapped by type);
+  - the pending tasks of those alerts;
+  - "what changes in space" and "what you can do" from the knowledge base, with the source;
+  - a status: RED Urgent / YELLOW Attention or ≥ 2σ / GREEN / GREY no data.
+- [x] **BodyMap2D** (SVG, keyboard-accessible regions) → `RegionPanel` (readings, sparkline with the ±2σ normal band, alerts linking to the Alerts Center, next steps, knowledge).
+- [x] **BodyModel3D** (React Three Fiber 9.8 + drei 10.7, three 0.187): a stylised body built from primitives, so there is no external model licence to track.
+  - Meshes per region, coloured by status, with hover and click; drag to rotate.
+  - A 2D/3D toggle; lazy-loaded (≈ 0.9 MB chunk, only in the 3D view).
+- [x] **Wellness Center** (`GET /api/astronauts/{id}/wellness-center`, `POST /api/wellness/activity`):
+  - box-breathing exercise (logged when finished);
+  - hydration tracker (+250/+500 mL; reaching the target ticks off today's hydration task);
+  - 7-day fluid and sleep bars;
+  - exercise adherence ring vs the mission target, and strength;
+  - sleep routine tips;
+  - five wellness missions with progress and a check-in streak.
+- [x] **Environment & radiation panel** (Body Explorer, astronaut and surgeon):
+  - **Cabin air:** an `EnvironmentReading` store (habitat-wide; the simulator posts temperature, humidity and CO₂ every 6 h), `POST /api/environment/readings` and `GET /environment/current`.
+  - **Radiation** (`GET /api/astronauts/{id}/radiation`):
+    - daily dose per channel (charged vs neutron);
+    - mission total vs the 600 mSv limit and the neutron share;
+    - a solar-particle-event banner with the shelter protocol;
+    - real inputs labelled: "Real NASA DONKI solar particle events, 09–13 May 2024 — replayed on mission day 87" and "Earth–Mars light time today: 11.0 min (JPL Horizons)".
+  - **Rules:** `ENV-CO2-HIGH` and `ENV-HEAT-HYDRATION` are now built (19 rules), plus `REC-CABIN-CHECK` (22 recommendations). Cabin readings sync to Earth.
+- [x] Ground / mission control **"Space weather now"** card (`GET /api/space-weather/now`, `astra/integrations/noaa_swpc.py`): NOAA GOES ≥ 10 MeV proton flux against the 10 pfu S1 threshold, on a log scale. It is live on the Ground node (refreshed every 15 min) and falls back to a cached sample (labelled) on the Habitat or offline. It also shows recent DONKI SEP events and the light time.
+- [ ] Mission timeline (stretch) — **not built**.
 
-**Done when:** clicking the heart shows resting HR vs baseline, the fatigue alert and the reduced-gravity explanation. **Tag `m6-wow`.**
+**Done when:** clicking the heart shows resting HR vs baseline, the fatigue alert and the reduced-gravity explanation. **Done 2026-11-15** (live demo data, browser):
+- **The heart, after a fatigue check-in:**
+  - "Resting heart rate 91 bpm · your normal 64 bpm · +9.0σ";
+  - the alerts "Fatigue and recovery pattern needs review", "Resting heart rate above your personal normal" and "Unusual pattern confirmed by readings";
+  - six next steps;
+  - "What changes in space · Heart and blood vessels in reduced gravity — Without normal gravity, body fluids shift toward the head…".
+- **Wellness Center:** "+ 500 mL" updated today's total live (0 → 500).
+- **Space weather:** the Ground node showed live NOAA flux (0.225 pfu, below S1); the Habitat showed the cached sample, labelled.
+- **Cabin history:** 1,440 readings added no false alerts (the same 5 / 2 / 3 history alerts as before).
+- **Checks:** 242 backend tests pass (new: body-systems "done when", the CO₂ alert for the crew, radiation channels, space weather, wellness, and the environment rule cases); ruff, mypy, `tsc`, `vite build` and `oxlint` are clean.
+
+**Not covered:**
+- The 3D view was mounted but not seen: the browser pane could not draw, so there are no screenshots and pages were checked through their DOM text.
+- Live space-weather notices are not shown onboard yet (only the replayed May 2024 storm and stored DONKI events).
+- `npm install` reported audit warnings, left as is.
+
+**Tag `m6-wow`.**
 
 ---
 

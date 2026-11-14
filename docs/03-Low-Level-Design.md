@@ -365,7 +365,6 @@ The six starter rules are in `protocols/rules/` (one file per rule; the file nam
 - **Deferred:**
   - `CV-HR-CRITICAL` and the dizziness branch of `CV-BP-CRITICAL` (need symptoms / at-rest context).
   - `BEH-WELLBEING-DECLINE` (covered by the fatigue composite for now).
-  - `ENV-*` (needs the habitat environment store, Step 10).
   - `SANS-VISION-SYMPTOM` and `SYM-REDFLAG` (need symptom intake, Step 7).
 - **ML (Step 6):** `ML-ANOMALY-CORROBORATED` is built, stricter than the row below: anomaly score ≥ 0.6 **and** a
   recovery-strain trend insight (both within 2 days) **and** resting HR / fatigue z ≥ 2 or 3-day sleep z ≤ −2. The
@@ -393,8 +392,8 @@ The six starter rules are in `protocols/rules/` (one file per rule; the file nam
 | `MSK-STRENGTH-DECLINE` | Attention | strength_index slope 28d < −0.3 %/day OR latest z ≤ −2 |
 | `RAD-SPE-EVENT` | **Urgent** | radiation_dose latest ≥ 10× habitat daily median (SPE) → shelter protocol |
 | `RAD-CUMULATIVE` | Attention | cumulative mission dose ≥ 50 % / 75 % of mission limit |
-| `ENV-HEAT-HYDRATION` | Attention | cabin_temp mean 1d ≥ 27 AND hydration_ml latest < 2000 AND fatigue ≥ 6 |
-| `ENV-CO2-HIGH` | Attention | cabin_co2 mean 1d ≥ 4 mmHg |
+| `ENV-HEAT-HYDRATION` ✅ (Step 10) | Attention | cabin_temp mean 1d ≥ 27 AND hydration_ml latest (2d) < 2000 AND fatigue ≥ 6 |
+| `ENV-CO2-HIGH` ✅ (Step 10) | Attention | cabin_co2 mean 1d ≥ 4 mmHg. Cabin readings are habitat-wide (`EnvironmentReading`), so the rule is evaluated for every astronaut |
 | `IMM-STRESS-FEVER` | Attention | stress mean 5d ≥ 7 AND body_temp latest ≥ 37.5 (NASA: stress can reactivate dormant viruses) |
 | `SANS-VISION-SYMPTOM` | Attention | symptom `vision_change` reported OR VisionCheck assessment result worse than pre-flight → book surgeon review (SANS) |
 | `SYM-REDFLAG` | **Urgent** | symptom with RedFlag = true (chest pain, severe breathlessness, syncope, confusion, severe bleeding, self-harm thoughts) |
@@ -818,7 +817,9 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/astronauts/{id}/analytics?indicator=&range=7d|30d|90d|mission` ✅ | self, surgeon | → `{indicator, name, unit, decimals, worseWhen, hasBaseline, start, end, days:[{day, value (daily mean), min, max, n, median, sigma, low, high (median ± 2σ that day), z}], questionable:[{t, value, reason}], preflight:{median, sigma}, alerts:[{id, ruleId, severity, title, firstDay, lastDay, status}]}`. The baseline is recomputed per day, so the band moves the way the alerts saw it |
 | GET | `/astronauts/{id}/wellness?range=` ✅ | self, surgeon | → daily stored wellness `[{day, overall, cardiovascular, sleep, behavioral, activity, metabolic, environment}]` |
 | GET | `/astronauts/{id}/insights?range=7d|30d|mission` ✅ | self, surgeon | → newest first `[{id, kind: Anomaly|Trend, day, score, direction, explanation, contributors:[{indicator, name, value}], windowStart, windowEnd, modelVersion}]`. `GET /alerts/{id}` also returns `insights`: those within 3 days before / during the alert that involve its rule's indicators |
-| GET | `/astronauts/{id}/body-systems` | self, surgeon | → `{brain:{status,metrics[],alerts[]}, heart:{…}, lungs, bones, muscles, digestive, immune}` |
+| GET | `/astronauts/{id}/body-systems` ✅ | self, surgeon | → `{astronautCode, regions:[{id, title, status: GREEN|YELLOW|RED|GREY, metrics:[{indicator, name, unit, value, measuredAt, baseline, sigma, z, spark:[{day, value}]}], alerts, tasks, knowledge:[{noteId, title, whatHappens, whatYouCanDo, source}]}]}`; regions brain, eyes, heart, lungs, digestive, immune, muscles, bones, whole_body |
+| GET | `/astronauts/{id}/wellness-center` ✅ · POST `/wellness/activity` `{kind: fluid|breathing, amount}` ✅ | self, surgeon (read); astronaut (log) | hydration today/target and 7 days, exercise sessions vs target, strength, sleep 7 days vs normal, breathing this week, missions `[{id, title, progress, goal, unit, streak, done}]` |
+| GET | `/astronauts/{id}/radiation?range=30d|mission` ✅ | self, surgeon | daily dose per channel (total, neutron, charged), mission total vs limit, neutron share, active SEP alert + protocol, the replayed DONKI storm, stored SEP events, light time |
 | GET | `/astronauts/{id}/timeline` | self, surgeon | → events (alerts, symptoms, instructions, assessments) |
 
 ### 13.3 Alerts, recommendations, instructions, reports
@@ -847,7 +848,8 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/assistant/status` ✅ → `{defaultProvider, claudeConfigured, model, knowledgeNotes, knowledgeChunks, redFlags}` | any signed-in |
 | GET | `/crew` → `[{astronaut, status, wellnessIndex, activeAlerts, lastDataAt}]` | surgeon, mission |
 | GET | `/mission/overview` → aggregates only | mission, surgeon |
-| GET | `/environment/current` · `/environment/radiation?astronautId=` | any |
+| GET | `/environment/current` ✅ (cabin temp / humidity / CO₂: latest, illustrative range, status, last 8 readings) · POST `/environment/readings` ✅ (Admin/device; Habitat; `X-Backfill`) | any signed-in / admin |
+| GET | `/space-weather/now` ✅ → `{protonFluxPfu, fluxTime, sScale, thresholdPfu: 10, source: noaa-live|noaa-fixture, recentSepEvents, lightTimeMinutes}` | any signed-in |
 | GET | `/sync/status` ✅ → `{nodeId, nodeRole, link:{status, realDelayMinutes, delaySource, compressionSecondsPerMinute, oneWaySeconds, horizonsDelayMinutes}, pending, inFlight, acked, lastReceivedAt, lastAckAt}` | any signed-in |
 | POST | `/node/sync/envelopes` ✅ · `/node/sync/acks` ✅ · GET `/node/sync/link` ✅ (outside `/api`, HMAC-signed) | node-to-node |
 | GET/PUT | `/admin/link` ✅ `{status?, realDelayMinutes?, useHorizons?, compressionSecondsPerMinute?}` | admin (Habitat; 409 on Ground) |
@@ -917,8 +919,8 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | `InstructionsBanner` ✅ | astronaut Overview: unacknowledged instructions, live via WebSocket, "Got it — acknowledge" |
 | `InsightList` ✅ | ML insights (Step 6): icon per kind, score, explanation, contributor chips; accent colour (advisory, never a status colour) and the note "never sets alert severity" |
 | `CheckinWizard` | 4 steps (Sleep · Mood/Stress/Fatigue · Vitals · Symptoms) with big sliders; target < 60 s; shows timer |
-| `BodyMap2D` | SVG with region `<path id="heart">`… coloured by `body-systems` status; click → `RegionPanel` |
-| `BodyModel3D` | R3F `<Canvas>`; meshes named `region_heart` etc.; hover outline; same `RegionPanel` |
+| `BodyMap2D` ✅ | SVG with region `<path id="heart">`… coloured by `body-systems` status; click → `RegionPanel`. As built: keyboard-accessible region buttons, legend, "Whole body · radiation" chip |
+| `BodyModel3D` ✅ | R3F `<Canvas>`; meshes named `region_heart` etc.; hover outline; same `RegionPanel`. As built: stylised body from primitives (no model licence), status-coloured meshes with emissive hover, OrbitControls, lazy chunk |
 | `AssistantChat` | messages, citation chips, provider badge ("Onboard · offline" / "Earth relay · Claude"), emergency card variant |
 | `EmergencyProtocolCard` | full-screen red, numbered steps, "Notify CMO", "Start timer", works offline (protocols bundled in app). **As built (Step 7):** red card with the numbered steps from `src/lib/emergency.ts`, which bundles `protocols/emergency/*.md` at build time (`import.meta.glob` …`?raw`); timer and Notify buttons not built |
 | `AssistantPage` ✅ | chat (Step 7): suggested questions, provider badge, citation chips linking to the source page, "You could" actions, emergency card inline, offline-only toggle when Claude is configured, side list of all emergency procedures |
@@ -926,7 +928,9 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | `EarthCopyBanner` ✅ | Earth roles: "Earth copy (Ground node)", light-time delay, last received, link-down warning |
 | `OfflineBanner` ✅ | device offline or Habitat unreachable: "showing data saved on this device at HH:MM", items waiting in the outbox |
 | `DemoControlPage` ✅ | `/staff/sim` (Admin): link toggle, Horizons delay + override, both queues, scenario injection |
-| `BreathingExercise` | 4-7-8 / box breathing animated circle |
+| `BreathingExercise` ✅ | 4-7-8 / box breathing animated circle (as built: box breathing, 4 rounds, logged when finished) |
+| `EnvironmentPanel` ✅ | cabin air cards with ranges; dose bars per channel; mission total vs limit; SEP banner + shelter protocol; real-data labels |
+| `SpaceWeatherCard` ✅ | NOAA ≥10 MeV flux on a log bar with the S1 threshold, DONKI events, light time (Earth roles) |
 
 ### 15.3 Body region mapping
 | Region | Indicators / data | Rules shown |
