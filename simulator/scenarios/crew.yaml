@@ -26,7 +26,7 @@ defaults:                   # used when a crew member has no value of their own
   sleep_quality: [7, 1]
   hydration_ml: [2500, 300]
   body_weight: [72, 0.4]
-  exercise_sessions: [5, 0.8]
+  exercise_sessions: [5.5, 0.8]     # crews usually meet the target of 5 sessions/week
   strength_index: [100, 1.0]
 
 crew:

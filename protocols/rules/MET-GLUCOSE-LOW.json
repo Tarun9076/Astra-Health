@@ -1,0 +1,28 @@
+{
+  "id": "MET-GLUCOSE-LOW",
+  "version": "1.0.0",
+  "title": "Blood glucose very low",
+  "category": "Metabolic",
+  "hazard": "Environment",
+  "severity": "Urgent",
+  "when": {
+    "indicator": "glucose",
+    "agg": "latest",
+    "window": "1d",
+    "op": "lt",
+    "value": 54
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Blood glucose is {glucose.value:.0f} mg/dL, below the critical level of 54 mg/dL. Follow the low-glucose protocol.",
+  "recommendations": [
+    "REC-RECHECK-GLUCOSE",
+    "REC-CONTACT-SURGEON"
+  ],
+  "protocol": "EMG-LOW-GLUCOSE",
+  "escalation": {
+    "whenTriggerCountGte": 1
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

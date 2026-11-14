@@ -1,0 +1,39 @@
+{
+  "id": "CV-BP-HIGH",
+  "version": "1.0.0",
+  "title": "Blood pressure above the attention level",
+  "category": "Cardiovascular",
+  "hazard": "Gravity",
+  "severity": "Attention",
+  "when": {
+    "any": [
+      {
+        "indicator": "bp_sys",
+        "agg": "mean",
+        "window": "3r",
+        "op": "gte",
+        "value": 140
+      },
+      {
+        "indicator": "bp_dia",
+        "agg": "mean",
+        "window": "3r",
+        "op": "gte",
+        "value": 90
+      }
+    ]
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Your last 3 blood-pressure readings average {bp_sys.value:.0f}/{bp_dia.value:.0f} mmHg (attention level 140/90; your normal {bp_sys.baseline:.0f}/{bp_dia.baseline:.0f}).",
+  "recommendations": [
+    "REC-RECHECK-BP",
+    "REC-HYDRATION",
+    "REC-CONTACT-SURGEON"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 3
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

@@ -1,0 +1,39 @@
+{
+  "id": "CV-BP-CRITICAL",
+  "version": "1.0.0",
+  "title": "Very high blood pressure on repeat readings",
+  "category": "Cardiovascular",
+  "hazard": "Gravity",
+  "severity": "Urgent",
+  "when": {
+    "any": [
+      {
+        "indicator": "bp_sys",
+        "agg": "min",
+        "window": "2r",
+        "op": "gte",
+        "value": 180
+      },
+      {
+        "indicator": "bp_dia",
+        "agg": "min",
+        "window": "2r",
+        "op": "gte",
+        "value": 120
+      }
+    ]
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Your last 2 blood-pressure readings were both at or above the critical level (lowest {bp_sys.value:.0f}/{bp_dia.value:.0f} mmHg; critical 180/120). Follow the blood-pressure protocol.",
+  "recommendations": [
+    "REC-CONTACT-SURGEON",
+    "REC-RECHECK-BP"
+  ],
+  "protocol": "EMG-BLOOD-PRESSURE",
+  "escalation": {
+    "whenTriggerCountGte": 1
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "MET-GLUCOSE-OUT",
+  "version": "1.0.0",
+  "title": "Blood glucose outside the normal range on repeat readings",
+  "category": "Metabolic",
+  "hazard": "Environment",
+  "severity": "Attention",
+  "when": {
+    "any": [
+      {
+        "indicator": "glucose",
+        "as": "glucose_low",
+        "agg": "max",
+        "window": "2r",
+        "op": "lt",
+        "value": 70
+      },
+      {
+        "indicator": "glucose",
+        "as": "glucose_high",
+        "agg": "min",
+        "window": "2r",
+        "op": "gt",
+        "value": 180
+      }
+    ]
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Your last 2 blood-glucose readings were both outside the 70–180 mg/dL range (between {glucose_high.value:.0f} and {glucose_low.value:.0f} mg/dL; your normal {glucose_low.baseline:.0f}).",
+  "recommendations": [
+    "REC-RECHECK-GLUCOSE",
+    "REC-REPORT-SYMPTOMS"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 2
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold. Needs two readings in a row, like the other Attention rules; a single very low reading is covered by MET-GLUCOSE-LOW."
+}

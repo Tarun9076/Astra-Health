@@ -1,0 +1,28 @@
+{
+  "id": "RS-SPO2-CRITICAL",
+  "version": "1.0.0",
+  "title": "Oxygen saturation critically low",
+  "category": "Respiratory",
+  "hazard": "Environment",
+  "severity": "Urgent",
+  "when": {
+    "indicator": "spo2",
+    "agg": "max",
+    "window": "2r",
+    "op": "lte",
+    "value": 90
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Your last 2 oxygen-saturation readings were both {spo2.value:.0f}% or lower (critical level 90%). Follow the low-oxygen protocol.",
+  "recommendations": [
+    "REC-CONTACT-SURGEON",
+    "REC-RECHECK-SPO2"
+  ],
+  "protocol": "EMG-LOW-OXYGEN",
+  "escalation": {
+    "whenTriggerCountGte": 1
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

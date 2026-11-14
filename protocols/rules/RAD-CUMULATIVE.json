@@ -1,0 +1,27 @@
+{
+  "id": "RAD-CUMULATIVE",
+  "version": "1.0.0",
+  "title": "Cumulative mission radiation dose past half the limit",
+  "category": "Radiation",
+  "hazard": "Radiation",
+  "severity": "Attention",
+  "when": {
+    "indicator": "radiation_dose",
+    "agg": "sum",
+    "window": "mission",
+    "op": "pct_of_limit_gte",
+    "value": 50
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Your cumulative mission dose is {radiation_dose.value:.0f} mSv, {radiation_dose.ratio:.0%} of the mission limit.",
+  "recommendations": [
+    "REC-RAD-DOSE-REVIEW",
+    "REC-RAD-DOSIMETER-CHECK"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 1
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

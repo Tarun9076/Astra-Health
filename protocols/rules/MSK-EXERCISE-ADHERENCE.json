@@ -1,0 +1,27 @@
+{
+  "id": "MSK-EXERCISE-ADHERENCE",
+  "version": "1.0.0",
+  "title": "Resistance exercise well below target",
+  "category": "Musculoskeletal",
+  "hazard": "Gravity",
+  "severity": "Attention",
+  "when": {
+    "indicator": "exercise_sessions",
+    "agg": "latest",
+    "window": "8d",
+    "op": "lt",
+    "value": 4
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "You logged {exercise_sessions.value:.0f} resistance sessions in the last 7 days; the mission target is 5. Regular loading protects bone and muscle in reduced gravity.",
+  "recommendations": [
+    "REC-EXERCISE-SESSION",
+    "REC-WORKLOAD-REVIEW"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 2
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

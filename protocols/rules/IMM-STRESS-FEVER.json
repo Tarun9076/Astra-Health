@@ -1,0 +1,39 @@
+{
+  "id": "IMM-STRESS-FEVER",
+  "version": "1.0.0",
+  "title": "High stress with a raised temperature",
+  "category": "Thermal",
+  "hazard": "Isolation",
+  "severity": "Attention",
+  "when": {
+    "all": [
+      {
+        "indicator": "stress",
+        "agg": "mean",
+        "window": "5d",
+        "op": "gte",
+        "value": 7
+      },
+      {
+        "indicator": "body_temp",
+        "agg": "latest",
+        "window": "1d",
+        "op": "gte",
+        "value": 37.5
+      }
+    ]
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Stress has averaged {stress.value:.1f}/10 over 5 days and your temperature is {body_temp.value:.1f} °C. NASA notes that stress can reactivate dormant viruses, so this combination needs a closer look.",
+  "recommendations": [
+    "REC-RECHECK-TEMP",
+    "REC-REPORT-SYMPTOMS",
+    "REC-BREATHING-EXERCISE"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 2
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

@@ -1,0 +1,40 @@
+{
+  "id": "MSK-STRENGTH-DECLINE",
+  "version": "1.0.0",
+  "title": "Muscle strength declining",
+  "category": "Musculoskeletal",
+  "hazard": "Gravity",
+  "severity": "Attention",
+  "when": {
+    "any": [
+      {
+        "indicator": "strength_index",
+        "as": "strength_trend",
+        "agg": "slope",
+        "window": "28d",
+        "op": "lt",
+        "value": -0.3
+      },
+      {
+        "indicator": "strength_index",
+        "as": "strength_now",
+        "agg": "latest",
+        "window": "8d",
+        "op": "z_lte",
+        "value": -2.0
+      }
+    ]
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Strength is {strength_now.value:.1f}% of pre-flight (your recent normal {strength_now.baseline:.1f}%), changing by {strength_trend.value:+.2f} percentage points per day over 4 weeks.",
+  "recommendations": [
+    "REC-STRENGTH-ASSESSMENT",
+    "REC-EXERCISE-SESSION"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 2
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

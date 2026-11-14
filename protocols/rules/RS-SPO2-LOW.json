@@ -1,0 +1,27 @@
+{
+  "id": "RS-SPO2-LOW",
+  "version": "1.0.0",
+  "title": "Oxygen saturation low on repeat readings",
+  "category": "Respiratory",
+  "hazard": "Environment",
+  "severity": "Attention",
+  "when": {
+    "indicator": "spo2",
+    "agg": "max",
+    "window": "2r",
+    "op": "lte",
+    "value": 94
+  },
+  "persistence": {
+    "minTriggers": 1
+  },
+  "reasonTemplate": "Your last 2 oxygen-saturation readings were both {spo2.value:.0f}% or lower (attention level 94%; your normal {spo2.baseline:.0f}%).",
+  "recommendations": [
+    "REC-RECHECK-SPO2",
+    "REC-REPORT-SYMPTOMS"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 2
+  },
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}
