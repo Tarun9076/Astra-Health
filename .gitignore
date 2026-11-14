@@ -499,3 +499,7 @@ __pycache__/
 services/backend/models/
 seed.local.json
 *.egg-info/
+
+# Step 11 end-to-end tests
+playwright-report/
+services/backend/models-e2e/
