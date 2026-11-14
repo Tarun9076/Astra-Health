@@ -28,7 +28,7 @@ from astra.integrations.fixtures import (  # noqa: E402
     save_fixture,
 )
 from astra.seed import default_seed_file, load_seed  # noqa: E402
-from astra.simulation.generator import SimReading, generate  # noqa: E402
+from astra.simulation.generator import SimReading, generate, generate_environment  # noqa: E402
 from astra.simulation.scenario import DEFAULT_SCENARIO, load_scenario  # noqa: E402
 
 app = typer.Typer(help="ASTRA HEALTH crew-data simulator", no_args_is_help=True)
@@ -143,6 +143,18 @@ def seed_command(
             f"Generated {len(readings)} simulated readings, {first} -> {spec.mission.date_of(last_day)} "
             f"(mission days {1 - spec.mission.preflight_days}..{last_day}; today is day {today_day})"
         )
+
+        # Habitat cabin sensors first, so the crew's history is assessed with the cabin air it had
+        cabin = generate_environment(spec, seed=random_seed)
+        for i in range(0, len(cabin), 2000):
+            response = client.post(
+                "/api/environment/readings",
+                json={"items": cabin[i : i + 2000]},
+                headers=admin | {"X-Backfill": "true"},
+            )
+            if response.status_code != 201:
+                _fail(f"Cabin readings failed: HTTP {response.status_code}: {response.text[:300]}")
+        typer.echo(f"  habitat: posted {len(cabin)} cabin readings (temperature, humidity, CO2)")
 
         for code in sorted(per_crew):
             mine = [r for r in readings if r.astronaut == code]

@@ -214,3 +214,26 @@ class _CrewDay:
                     f"WR-{self.number}",
                     signal_quality=spike.signal_quality,
                 )
+
+
+# Habitat cabin sensors (Step 10): readings every 6 h on mission days. Typical long-duration habitat
+# values (illustrative): ~22.5 °C, ~45 % relative humidity, CO₂ ~2.6 mmHg.
+CABIN: dict[str, tuple[float, float, str, int]] = {  # mean, sd, unit, decimals
+    "cabin_temp": (22.5, 0.6, "°C", 1),
+    "cabin_humidity": (45.0, 4.0, "%", 0),
+    "cabin_co2": (2.6, 0.35, "mmHg", 2),
+}
+CABIN_HOURS = (0, 6, 12, 18)
+
+
+def generate_environment(scenario: Scenario, *, seed: int = 42) -> list[dict[str, Any]]:
+    """Cabin readings for mission days 1..days, as API items. Own random stream: crew data is unchanged."""
+    noise = _Noise(seed + 1000)
+    items: list[dict[str, Any]] = []
+    for day in range(1, scenario.mission.days + 1):
+        for hour in CABIN_HOURS:
+            at = datetime.combine(scenario.mission.date_of(day), time(hour, 0), tzinfo=UTC)
+            for code, (mean, sd, unit, decimals) in CABIN.items():
+                value = round(mean + sd * noise.next("HAB", code), decimals)
+                items.append({"indicator": code, "value": value, "unit": unit, "measuredAt": at.isoformat()})
+    return items

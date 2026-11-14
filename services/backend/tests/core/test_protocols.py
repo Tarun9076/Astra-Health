@@ -13,7 +13,7 @@ from astra.core.protocols import ProtocolBundle, load_protocol_bundle
 
 def test_real_protocols_load_with_expected_counts(bundle: ProtocolBundle) -> None:
     counts = bundle.counts()
-    assert (counts.indicators, counts.rules, counts.recommendations) == (22, 17, 21)
+    assert (counts.indicators, counts.rules, counts.recommendations) == (22, 19, 22)
     assert (counts.emergency_protocols, counts.mission_profiles) == (10, 1)
 
 
@@ -27,7 +27,7 @@ def test_starter_rules_and_severities(bundle: ProtocolBundle) -> None:
         "RS-SPO2-CRITICAL",
         "MET-GLUCOSE-LOW",
     }
-    assert len(severities) == 17 and severities["BEH-FATIGUE-COMPOSITE"] == Severity.ATTENTION
+    assert len(severities) == 19 and severities["BEH-FATIGUE-COMPOSITE"] == Severity.ATTENTION
 
 
 def test_urgent_rules_link_an_emergency_protocol(bundle: ProtocolBundle) -> None:

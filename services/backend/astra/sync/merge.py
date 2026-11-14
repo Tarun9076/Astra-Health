@@ -21,6 +21,7 @@ from sqlmodel import Session, SQLModel
 from astra.core.enums import NodeRole
 from astra.db.models import (
     Astronaut,
+    EnvironmentReading,
     HealthAlert,
     HealthMeasurement,
     Insight,
@@ -126,6 +127,8 @@ def apply_items(
             incoming = Insight.model_validate(payload)
             session.merge(incoming)
             row = incoming
+        elif kind == "EnvironmentReading":
+            row = _insert_if_absent(session, EnvironmentReading, payload, payload["id"])
         elif kind == "SpaceWeatherEvent":
             row = _insert_if_absent(session, SpaceWeatherEvent, payload, payload["id"])
             if isinstance(row, SpaceWeatherEvent):

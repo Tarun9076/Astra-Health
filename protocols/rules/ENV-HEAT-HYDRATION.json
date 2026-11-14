@@ -1,0 +1,19 @@
+{
+  "id": "ENV-HEAT-HYDRATION",
+  "version": "1.0.0",
+  "title": "Warm cabin, low fluid intake and fatigue",
+  "category": "Environment",
+  "hazard": "Environment",
+  "severity": "Attention",
+  "when": {
+    "all": [
+      { "indicator": "cabin_temp", "agg": "mean", "window": "1d", "op": "gte", "value": 27.0 },
+      { "indicator": "hydration_ml", "agg": "latest", "window": "2d", "op": "lt", "value": 2000 },
+      { "indicator": "fatigue", "agg": "latest", "window": "1d", "op": "gte", "value": 6 }
+    ]
+  },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "The cabin averaged {cabin_temp.value:.1f} °C over the last day, fluid intake was {hydration_ml.value:.0f} mL and fatigue was rated {fatigue.value:.0f}/10: a combination that suggests heat strain and dehydration.",
+  "recommendations": ["REC-HYDRATION", "REC-CABIN-CHECK"],
+  "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
+}

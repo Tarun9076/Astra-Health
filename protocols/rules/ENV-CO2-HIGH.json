@@ -1,0 +1,13 @@
+{
+  "id": "ENV-CO2-HIGH",
+  "version": "1.0.0",
+  "title": "Cabin CO₂ above the action level",
+  "category": "Environment",
+  "hazard": "Environment",
+  "severity": "Attention",
+  "when": { "indicator": "cabin_co2", "agg": "mean", "window": "1d", "op": "gte", "value": 4.0 },
+  "persistence": { "minTriggers": 1 },
+  "reasonTemplate": "Cabin CO₂ averaged {cabin_co2.value:.1f} mmHg over the last day (action level 4 mmHg). High CO₂ can cause headache, poor concentration and tiredness.",
+  "recommendations": ["REC-CABIN-CHECK", "REC-RECHECK-SPO2"],
+  "disclaimer": "Illustrative threshold for the prototype; replace with the mission's environmental limits."
+}

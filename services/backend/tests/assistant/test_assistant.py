@@ -166,7 +166,7 @@ def test_guard_allows_safe_advice() -> None:
 
 class FakeMessages:
     def __init__(self, replies: list[Any]) -> None:
-        self.replies, self.calls = replies, []  # type: list[Any], list[dict[str, Any]]
+        self.replies, self.calls = replies, []
 
     def create(self, **kwargs: Any) -> Any:
         self.calls.append(kwargs)

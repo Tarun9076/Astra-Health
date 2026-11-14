@@ -23,10 +23,12 @@ from astra.api import (
     analytics,
     assistant,
     auth,
+    body,
     catalog,
     checkins,
     crew,
     dashboard,
+    environment,
     measurements,
     realtime,
     reports,
@@ -44,6 +46,7 @@ from astra.config import Settings, settings
 from astra.core.enums import NodeRole
 from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_bundle
 from astra.db.session import init_db, make_engine
+from astra.integrations.noaa_swpc import fetch_protons, latest_10mev
 from astra.realtime.hub import hub
 from astra.services import insights
 from astra.services.reports import ensure_reports
@@ -79,11 +82,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     if cfg.sync_interval_seconds > 0 and cfg.peer_url:
         app.state.sync = SyncEngine(engine, cfg, publish_merge, close_alert_tasks)
         sync_task = asyncio.create_task(_sync_loop(app.state.sync, cfg))
-    weather = None
-    if cfg.node_role == NodeRole.GROUND and cfg.space_weather_interval_minutes > 0 and cfg.nasa_api_key:
-        weather = asyncio.create_task(_space_weather_loop(engine, cfg))
+    weather = noaa = None
+    if cfg.node_role == NodeRole.GROUND and cfg.space_weather_interval_minutes > 0:
+        if cfg.nasa_api_key:
+            weather = asyncio.create_task(_space_weather_loop(engine, cfg))
+        noaa = asyncio.create_task(_proton_flux_loop(app))
     yield
-    for task in (routine, sync_task, weather):
+    for task in (routine, sync_task, weather, noaa):
         if task:
             task.cancel()
     engine.dispose()
@@ -99,6 +104,17 @@ async def _sync_loop(sync: SyncEngine, cfg: Settings) -> None:
             except Exception:  # the peer may be down; never let the loop die
                 logger.exception("Sync pass failed")
             await asyncio.sleep(cfg.sync_interval_seconds)
+
+
+async def _proton_flux_loop(app: FastAPI) -> None:
+    """Ground node: NOAA SWPC ≥10 MeV proton flux every 15 min, for the "space weather now" card."""
+    while True:
+        try:
+            payload = await anyio.to_thread.run_sync(fetch_protons)
+            app.state.proton_flux = latest_10mev(payload)
+        except Exception:  # offline: the endpoint falls back to the cached fixture, labelled as such
+            logger.warning("NOAA proton flux fetch failed; using the cached sample")
+        await asyncio.sleep(15 * 60)
 
 
 async def _space_weather_loop(engine: Engine, cfg: Settings) -> None:
@@ -175,6 +191,8 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(alerts.router)
     app.include_router(assistant.router)
     app.include_router(reports.router)
+    app.include_router(body.router)
+    app.include_router(environment.router)
     app.include_router(sync.router)
     app.include_router(sync.node_router)
     app.include_router(checkins.router)

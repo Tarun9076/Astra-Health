@@ -192,6 +192,28 @@ STEP5_CASES = [
     ("IMM-STRESS-FEVER", {"stress": [7, 8, 8, 7, 8], "body_temp": [36.7, 37.0]}, {}, False),
 ]
 
+STEP10_CASES = [
+    ("ENV-CO2-HIGH", {"cabin_co2": [4.4]}, True),
+    ("ENV-CO2-HIGH", {"cabin_co2": [2.7]}, False),
+    ("ENV-HEAT-HYDRATION", {"cabin_temp": [28.0], "hydration_ml": [1500], "fatigue": [7]}, True),
+    (
+        "ENV-HEAT-HYDRATION",
+        {"cabin_temp": [28.0], "hydration_ml": [2600], "fatigue": [7]},
+        False,
+    ),  # drinking enough
+]
+
+
+@pytest.mark.parametrize(("rule_id", "data", "expected"), STEP10_CASES)
+def test_environment_rules(
+    bundle: ProtocolBundle, rule_id: str, data: dict[str, list[float]], expected: bool
+) -> None:
+    outcome = _run(bundle, rule_id, MemoryContext(data))
+    assert outcome.matched is expected
+    if expected:
+        assert "n/a" not in outcome.reason, outcome.reason
+
+
 FATIGUE_DAY = {"resting_hr": [64, 64, 75], "fatigue": [3, 3, 8], "sleep_hours": [7, 5, 5]}
 FATIGUE_BASE = {
     "resting_hr": _base("resting_hr", 64, 3),

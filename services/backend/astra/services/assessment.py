@@ -22,13 +22,22 @@ from astra.core.baselines import (
 from astra.core.enums import AlertStatus, MeasurementQuality
 from astra.core.protocols import ProtocolBundle
 from astra.core.rules.engine import Point, RuleOutcome, evaluate, indicators_used
-from astra.db.models import Astronaut, HealthAlert, HealthBaseline, HealthMeasurement, Insight, Mission
+from astra.db.models import (
+    Astronaut,
+    EnvironmentReading,
+    HealthAlert,
+    HealthBaseline,
+    HealthMeasurement,
+    Insight,
+    Mission,
+)
 from astra.ml.features import FEATURES
 from astra.services.alerts import AlertChanges, apply_outcomes
 from astra.services.insights import InsightRunner
 from astra.services.wellness import WELLNESS_INDICATORS, compute_wellness, store_wellness
 
-HISTORY_MARGIN = timedelta(days=45)  # 28-day window + 3 skipped days + slack
+HISTORY_MARGIN = timedelta(days=45)
+CABIN_INDICATORS = ("cabin_temp", "cabin_humidity", "cabin_co2")  # 28-day window + 3 skipped days + slack
 
 
 @dataclass
@@ -169,6 +178,18 @@ def load_assessor(
     for r in rows:
         if r.value is not None:
             series[r.indicator_code].append(Point(r.measured_at, r.value))
+    # Habitat cabin sensors are shared by the whole crew (Step 10): same series for every astronaut.
+    cabin = [c for c in CABIN_INDICATORS if c in indicators]
+    if cabin:
+        for e in session.exec(
+            select(EnvironmentReading)
+            .where(
+                col(EnvironmentReading.indicator_code).in_(cabin),
+                col(EnvironmentReading.measured_at) >= since,
+            )
+            .order_by(col(EnvironmentReading.measured_at))
+        ).all():
+            series[e.indicator_code].append(Point(e.measured_at, e.value))
 
     assessor = Assessor(bundle, mission_start, dict(series), limits)
     for ins in session.exec(

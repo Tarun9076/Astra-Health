@@ -254,6 +254,18 @@
         "Radiation"
       ],
       "source": "Illustrative — replace with mission-approved protocol"
+    },
+    {
+      "code": "REC-CABIN-CHECK",
+      "title": "Report the cabin conditions to the crew lead",
+      "body": "Tell the crew lead about the cabin reading so the life-support system can be checked (fans, CO₂ scrubber, temperature control). Move to a well-ventilated module if you feel unwell.",
+      "category": "General",
+      "priority": 2,
+      "dueInHours": 4,
+      "hazards": [
+        "Environment"
+      ],
+      "source": "Illustrative — replace with mission-approved protocol"
     }
   ]
 }

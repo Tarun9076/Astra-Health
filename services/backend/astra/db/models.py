@@ -345,3 +345,29 @@ class SpaceWeatherEvent(SQLModel, table=True):
     instruments: str
     source: str  # donki-live | donki-fixture
     fetched_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+class EnvironmentReading(SQLModel, table=True):
+    """Habitat-wide cabin sensor readings (Step 10): temperature, humidity, CO₂. Shared by the whole crew,
+    so they live outside HealthMeasurement; the rule engine sees them as series for every astronaut."""
+
+    id: str = Field(primary_key=True)
+    indicator_code: str = Field(index=True)
+    value: float
+    unit: str
+    measured_at: datetime = Field(sa_type=UTCDateTime, index=True)
+    module: str = "HAB"  # habitat module / sensor location
+    source: str = "Sensor"  # Sensor | Simulated | Manual
+    is_simulated: bool = False
+    received_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+    origin_node_id: str
+
+
+class WellnessActivity(SQLModel, table=True):
+    """Wellness Center log (Step 10): fluid intake (mL) and breathing exercises (seconds)."""
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    kind: str  # fluid | breathing
+    amount: float
+    at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime, index=True)
