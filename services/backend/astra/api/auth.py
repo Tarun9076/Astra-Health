@@ -11,6 +11,7 @@ from astra.db.session import SessionDep
 from astra.security.deps import CurrentUser
 from astra.security.jwt import TokenClaims, create_access_token
 from astra.security.passwords import verify_password
+from astra.security.ratelimit import LoginLimiter
 
 router = APIRouter(prefix="/api", tags=["auth"])
 
@@ -58,13 +59,24 @@ def _me(session: SessionDep, claims: TokenClaims) -> MeOut:
 @router.post("/auth/login", response_model=LoginOut)
 def login(body: LoginIn, request: Request, session: SessionDep) -> LoginOut:
     """Demo accounts are in services/backend/seed.example.json."""
+    limiter: LoginLimiter = request.app.state.login_limiter
+    client = request.client.host if request.client else "?"
+    wait = limiter.retry_after(body.username, client)
+    if wait:
+        raise HTTPException(
+            status.HTTP_429_TOO_MANY_REQUESTS,
+            "Too many failed sign-in attempts; try again later",
+            headers={"Retry-After": str(wait)},
+        )
     user = session.exec(select(UserAccount).where(UserAccount.username == body.username)).first()
     if (
         not verify_password(body.password, user.password_hash if user else None)
         or user is None
         or not user.is_active
     ):
+        limiter.failure(body.username, client)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Wrong username or password")
+    limiter.success(body.username, client)
     claims = TokenClaims(
         user_id=user.id,
         username=user.username,

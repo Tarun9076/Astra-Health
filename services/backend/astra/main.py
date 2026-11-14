@@ -7,13 +7,13 @@ docs/04-Implementation-Plan.md.
 
 import asyncio
 import logging
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from typing import Literal
 
 import anyio.to_thread
 import httpx
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import Engine
 from sqlmodel import Session
@@ -48,6 +48,7 @@ from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_b
 from astra.db.session import init_db, make_engine
 from astra.integrations.noaa_swpc import fetch_protons, latest_10mev
 from astra.realtime.hub import hub
+from astra.security.ratelimit import LoginLimiter
 from astra.services import insights
 from astra.services.reports import ensure_reports
 from astra.services.routine import ensure_routine_tasks
@@ -60,6 +61,10 @@ logger = logging.getLogger("astra")
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     cfg: Settings = app.state.settings
+    for name, value, default in (("ASTRA_JWT_SECRET", cfg.jwt_secret, "dev-only-change-me"),
+                                 ("ASTRA_SYNC_KEY", cfg.sync_key, "dev-only-sync-key")):  # fmt: skip
+        if value == default:
+            logger.warning("%s is the development default; set a random value in services/backend/.env", name)
     # Fail fast: a broken rule or protocol file raises ProtocolError and the app does not start.
     bundle = load_protocol_bundle(cfg.protocols_path)
     app.state.protocols = bundle
@@ -174,6 +179,22 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.state.settings = cfg
+    app.state.login_limiter = LoginLimiter()
+
+    @app.middleware("http")
+    async def security_headers(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        response = await call_next(request)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        if request.url.path.startswith(("/api/", "/node/")):
+            response.headers.setdefault(
+                "Cache-Control", "no-store"
+            )  # health data must not sit in shared caches
+        return response
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=cfg.cors_origins,
