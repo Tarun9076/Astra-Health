@@ -322,6 +322,7 @@ A transparent weighted index of domain sub-scores (cardiovascular, sleep, behavi
 | Time to detection | Fatigue (onset day 114, ramping over 5 days): heart-rate alert day 116, composite alert day 117. Solar storm: same day (87) |
 | False alarms, healthy crew (120 days) | 4 Attention alerts across 3 astronauts (1 / 1 / 2), 0 Urgent; budget ≤ 2 per astronaut. Unchanged after Step 5 added 10 rules (16 total): the new rules add 0 false alarms after the glucose rule was made repeat-confirmed |
 | ML trend lead time (Step 6) | Recovery-strain trend insight on day 115: 1 day before the heart-rate alert, 2 before the composite. 0 trend insights and 0 ML alerts for the healthy crew |
+| Habitat → Earth latency (Step 9) | Alerts + report on the Ground copy 24.4 s after the link came up (22 s = 11.0 light-minutes × 2 s compression, + ≤ 2 s loop); the instruction back onboard in ≈ 23 s; 0 duplicates after re-delivery |
 | Alerts with full evidence | 100 % (every alert stores rule id + version, values, baseline, σ, z and a rendered reason) |
 | Duplicate readings stored on re-import | 0 of 6,649 |
 

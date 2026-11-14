@@ -48,7 +48,7 @@ gantt
     Step 7 AI assistant + RAG            :done, s7, after s6, 3d
     section Earth and wow
     Step 8 Reports + surgeon dashboard   :done, s8, after s7, 2d
-    Step 9 Offline, Ground node, link sim :s9, after s8, 3d
+    Step 9 Offline, Ground node, link sim :done, s9, after s8, 3d
     Step 10 Body Explorer, wellness, env :s10, after s9, 3d
     section Ship
     Step 11 Hardening and tests          :s11, after s10, 3d
@@ -267,21 +267,60 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
-### Step 9 — Offline-first: PWA, Ground node, deep-space link (Days 21–23) → **M5**
+### Step 9 — Offline-first: PWA, Ground node, deep-space link (Days 21–23) → **M5** ✅
 
 **Tasks**
-- [ ] `vite-plugin-pwa`: app shell + protocols precached; installable.
-- [ ] Dexie outbox for writes + `persistQueryClient` for reads (LLD §12.6); "offline — showing data from 07:42" banner. Test T-UI-02.
-- [ ] Run the backend a second time in **Ground** mode (`ASTRA_NODE_ROLE=Ground`, port 8001, `ground.db`).
-- [ ] `astra/sync/`: outbox writes on every syncable change; sender loop (asyncio task); receiver `POST /api/sync/envelopes` with HMAC + `SyncInbox` idempotency; delayed ACKs.
-- [ ] `astra/sync/link.py`: delay queue, blackouts, compression factor; `PUT /api/admin/link`.
-- [ ] Alert merge by state order; instructions flow Ground → Habitat. Tests T-S-01..03, T-A-03.
-- [ ] `astra/integrations/` (LLD §20): `nasa_donki.py` (SEP events), `horizons.py` (Earth–Mars light time), `noaa_swpc.py` (proton flux), `fixtures.py` (cache + replay). Runs on the Ground node only; `SpaceWeatherEvents` table; tests T-EXT-01..04.
-- [ ] Link delay defaults to the real Horizons light time for the mission date; new SEP events travel to the Habitat as `SpaceWeatherNotice` envelopes (HLD §5.3a).
-- [ ] **Demo Control Panel** (`/admin/sim`): link UP/DOWN, delay (real Horizons value, with a manual override slider), queue size, mission day, "inject fatigue scenario", "replay May 2024 solar storm", reset.
-- [ ] Point surgeon/mission routes at the Ground node (second Vite proxy prefix, e.g. `/ground-api` → 8001); show staleness.
+- [x] `vite-plugin-pwa` 2.0: app shell precached (12 files, ≈ 1 MB, including the bundled emergency procedures); manifest; installable. The service worker exists in production builds only (`npm run build && npm run preview`).
+- [x] Offline reads and writes (LLD §12.6):
+  - `persistQueryClient` keeps the last screens on the device for 24 h; they are cleared on sign-out or user change.
+  - A Dexie outbox holds check-ins (sent later with the same client id, so never stored twice), tied to the user who made them.
+  - An "Offline — showing data saved on this device at 07:42" banner, with a count of items waiting to be sent.
+  - Test T-UI-02 is **not automated yet** (no frontend test runner until Step 11).
+- [x] The backend runs a second time as the **Ground** node (`ASTRA_NODE_ROLE=Ground`, port 8001, `ground.db`).
+  - Seeded ids are stable (UUIDv5 from codes and usernames), so both nodes agree and a token from one works on the other.
+  - The Ground node refuses readings and check-ins (409).
+- [x] `astra/sync/` (envelope, link, merge, engine):
+  - Outbox on every syncable change: measurements, alerts, reports, instructions, ML insights, space weather.
+  - A sync loop every 2 s on both nodes.
+  - Receiver `POST /node/sync/envelopes`, HMAC-signed with `ASTRA_SYNC_KEY`; `SyncInbox` by envelope id makes a re-sent envelope a no-op.
+  - Delayed ACKs (`/node/sync/acks`), and a retry after 2 × delay + 30 s.
+- [x] Link simulation (`astra/sync/link.py`, `LinkState` on the Habitat): Up/Down and delay × compression (2 s per light-minute), controlled by `GET/PUT /api/admin/link`. The Habitat stamps the arrival time on what it sends and refuses (503) Ground traffic while the link is Down.
+  - **Simplified:** no blackout schedule or drop/duplicate rates. Duplicates and lost ACKs are covered by tests instead.
+- [x] Alert merge by state order (Open < Acknowledged < InReview < Resolved/Dismissed; trigger fields follow the newest trigger).
+  - Instructions flow Ground → Habitat; the Habitat reports the delivery time back; acknowledgements flow back too.
+  - Reports become Sent → Delivered.
+  - Tests T-S-01..03 and T-A-03 (`tests/sync/test_sync.py`: two real apps in-process, simulated time).
+- [x] `astra/integrations/`:
+  - DONKI (`nasa_donki.py`) and Horizons (`horizons.py`) were already built.
+  - New `SpaceWeatherEvent` table and `services/space_weather.py`: the Ground node fetches DONKI SEP events every hour (needs `ASTRA_NASA_API_KEY`), stores new ones and queues them for the Habitat. Live check: the key works; 0 SEP events in the last 30 days.
+  - **Not built:** `noaa_swpc.py` (proton flux) and a habitat-side display of the notices (Step 10, environment & radiation).
+- [x] Link delay defaults to the real JPL Horizons Earth–Mars light time for today, from the cached table: 11.0 min on 2026-11-14, i.e. 22 s in demo time.
+- [x] **Demo Control Panel** (`/staff/sim`, Admin), with:
+  - link UP/DOWN;
+  - the real Horizons delay plus a manual override slider and "use today's real light time";
+  - both queues (waiting / in flight / delivered, last received / last ACK);
+  - "inject fatigue episode" and "replay May 2024 solar storm peak" (through the normal intake, so they raise alerts and reports and sync).
+  - **Not built:** a mission-day control and a reset button (the panel shows the rebuild commands).
+- [x] Surgeon and mission-control routes use the Ground node:
+  - Vite proxies `/ground-api` and `/ground-ws` to :8001; the API client rewrites `/api` for those roles.
+  - Earth-copy banner: light-time delay, last received, "link DOWN — newer onboard data is waiting".
+  - Link pill in the header: "Earth link UP · 11.0 light-min · N queued".
+- [x] New live alerts (check-in, wearable readings, scenarios) produce one AlertTriggered report at once, so the report travels with the alerts.
 
-**Done when:** with the link DOWN a check-in raises an alert onboard and the surgeon sees nothing; flip the link UP → after the simulated delay the alert and report appear on Ground exactly once; the surgeon's instruction arrives onboard after the return delay. **Tag `m5-earth-link`.**
+**Done when:** with the link DOWN a check-in raises an alert onboard and the surgeon sees nothing; flip the link UP → after the simulated delay the alert and report appear on Ground exactly once; the surgeon's instruction arrives onboard after the return delay. **Done 2026-11-15** (two live nodes, browser + API):
+1. **Link down:** the check-in raised 4 alerts onboard (fatigue pattern, resting HR, sleep deficit, ML-corroborated). The surgeon's crew grid on Earth still showed AST-001 "All clear", under "Link DOWN — newer onboard data is waiting".
+2. **Link up:** the 4 alerts and the AlertTriggered report (Delivered) appeared on Ground **24.4 s** later (22 s light time + ≤ 2 s loop). The surgeon's open grid switched to Attention live.
+3. **Parity:** both nodes hold 14 alerts and 6,655 readings, with no duplicates; all 7 reports are Delivered on both. The ≈ 6,650 history readings crossed in ≈ 30 s.
+4. **Return path:** the surgeon's In Review reached the Habitat, and the instruction arrived onboard ≈ 23 s after sending. A second instruction appeared on the astronaut's open Overview, without a reload, 24 s after sending; until then Earth showed it as not yet delivered.
+5. **Checks:** 234 backend tests pass (6 new sync tests); ruff, mypy, `tsc`, `vite build` and `oxlint` are clean.
+
+**Not covered:**
+- Offline behaviour was not exercised in the browser (stopping the Habitat server mid-check-in), and there is no automated T-UI-02.
+- The service worker was not tested in a production preview.
+- No visual screenshots: pages were checked through their DOM text.
+- `npm install` reported audit warnings in the PWA build tooling; left as is.
+
+**Tag `m5-earth-link`.**
 
 ---
 

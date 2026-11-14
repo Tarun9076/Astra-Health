@@ -716,6 +716,29 @@ Target ~25 documents: one per hazard, one per body system, sleep, hydration, exe
 
 ## 12. Sync protocol (Habitat ↔ Ground)
 
+**As built (Step 9)** — `astra/sync/` (`envelope.py`, `link.py`, `merge.py`, `engine.py`) and `astra/api/sync.py`:
+- **Transport:** the simulated flight happens at the receiver. A sender POSTs the envelope to the peer at once; the
+  receiver stores it in `SyncInbox` with `deliver_at` and applies it only when that time comes. ACKs travel the same
+  way (`SyncAck`).
+- **Link control:** the link state lives on the Habitat (`LinkState`). The Habitat stamps `X-Astra-Deliver-At` on
+  what it sends, and answers 503 to Ground envelopes and ACKs while the link is Down. The Ground reads the link state
+  from `GET /node/sync/link` each pass.
+- **Authentication:** node-to-node routes (`/node/sync/*`) are outside `/api` and authenticated with an HMAC of the
+  body (`X-Astra-Signature`, key `ASTRA_SYNC_KEY`). The envelope also carries an HMAC of its items.
+- **Loop:** every `ASTRA_SYNC_INTERVAL_SECONDS` (2 s) on both nodes, one pass:
+  1. apply due envelopes;
+  2. send ACKs;
+  3. process due ACKs (outbox → Acked, report → Delivered);
+  4. retry InFlight items older than 2 × delay + 30 s;
+  5. send ≤ 500 Pending items, Urgent first.
+- **Synced entities:** HealthMeasurement, HealthAlert, MedicalReport, MedicalInstruction, Insight, SpaceWeatherEvent.
+  - Not synced: recommendation tasks, check-in records, symptoms and chat messages. Chat is private; symptoms reach
+    Earth as the alerts they raise.
+- **Stable ids:** mission, astronaut and user ids are UUIDv5 from their codes and usernames, so both nodes agree and
+  JWTs work on both (same `ASTRA_JWT_SECRET`).
+- **Not built:** blackout schedule and drop/duplicate rates (tests cover duplicates and lost ACKs); PersonalLimits;
+  recommendation status sync.
+
 ### 12.1 Envelope
 ```json
 { "envelopeId": "0193…", "fromNodeId": "HAB-ARES-1", "toNodeId": "GND-MCC",
@@ -825,10 +848,10 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/crew` → `[{astronaut, status, wellnessIndex, activeAlerts, lastDataAt}]` | surgeon, mission |
 | GET | `/mission/overview` → aggregates only | mission, surgeon |
 | GET | `/environment/current` · `/environment/radiation?astronautId=` | any |
-| GET | `/sync/status` → `{link, delaySec, pendingOut, lastAckAt, lastReceivedAt}` | any |
-| POST | `/sync/envelopes` | node-to-node |
-| PUT | `/admin/link` `{status, oneWayDelayMin, compressionFactor}` | admin |
-| POST | `/admin/sim/scenario` `{scenario, astronautId, startDay}` | admin |
+| GET | `/sync/status` ✅ → `{nodeId, nodeRole, link:{status, realDelayMinutes, delaySource, compressionSecondsPerMinute, oneWaySeconds, horizonsDelayMinutes}, pending, inFlight, acked, lastReceivedAt, lastAckAt}` | any signed-in |
+| POST | `/node/sync/envelopes` ✅ · `/node/sync/acks` ✅ · GET `/node/sync/link` ✅ (outside `/api`, HMAC-signed) | node-to-node |
+| GET/PUT | `/admin/link` ✅ `{status?, realDelayMinutes?, useHorizons?, compressionSecondsPerMinute?}` | admin (Habitat; 409 on Ground) |
+| POST | `/admin/sim/scenario` ✅ `{scenario: fatigue|solar-storm, astronautId}` → `{scenario, readings, newAlerts}` (now, through the normal intake) | admin (Habitat) |
 | POST | `/admin/sim/clock` `{missionDay}` · POST `/admin/reset` | admin |
 
 Generate the TypeScript client from OpenAPI (`openapi-typescript` + `openapi-fetch`) so DTOs never drift.
@@ -899,7 +922,10 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | `AssistantChat` | messages, citation chips, provider badge ("Onboard · offline" / "Earth relay · Claude"), emergency card variant |
 | `EmergencyProtocolCard` | full-screen red, numbered steps, "Notify CMO", "Start timer", works offline (protocols bundled in app). **As built (Step 7):** red card with the numbered steps from `src/lib/emergency.ts`, which bundles `protocols/emergency/*.md` at build time (`import.meta.glob` …`?raw`); timer and Notify buttons not built |
 | `AssistantPage` ✅ | chat (Step 7): suggested questions, provider badge, citation chips linking to the source page, "You could" actions, emergency card inline, offline-only toggle when Claude is configured, side list of all emergency procedures |
-| `LinkStatusPill` | UP/DOWN, delay, queued count |
+| `LinkStatusPill` | UP/DOWN, delay, queued count. **As built:** part of `NodeStatusPill` — "Earth link UP · 11.0 light-min · N queued" |
+| `EarthCopyBanner` ✅ | Earth roles: "Earth copy (Ground node)", light-time delay, last received, link-down warning |
+| `OfflineBanner` ✅ | device offline or Habitat unreachable: "showing data saved on this device at HH:MM", items waiting in the outbox |
+| `DemoControlPage` ✅ | `/staff/sim` (Admin): link toggle, Horizons delay + override, both queues, scenario injection |
 | `BreathingExercise` | 4-7-8 / box breathing animated circle |
 
 ### 15.3 Body region mapping
@@ -1024,10 +1050,10 @@ ASTRA_PROTOCOLS_PATH=../../protocols
 ASTRA_KB_PATH=../../knowledge
 ASTRA_CORS_ORIGINS=["http://localhost:5173"]
 ASTRA_JWT_SECRET=<random 32+ bytes, never committed>
-ASTRA_SYNC_INTERVAL_SECONDS=5
-ASTRA_SYNC_BATCH_SIZE=500
-ASTRA_SYNC_HMAC_KEY=<shared secret, same on both nodes>
-ASTRA_LINK_COMPRESSION_FACTOR=2
+ASTRA_SYNC_INTERVAL_SECONDS=2            # as built; 0 disables (tests)
+ASTRA_SYNC_KEY=<shared secret, same on both nodes>
+ASTRA_LINK_COMPRESSION_SECONDS_PER_MINUTE=2   # 1 light-minute → 2 s of demo time
+ASTRA_SPACE_WEATHER_INTERVAL_MINUTES=60       # Ground: DONKI refresh (needs ASTRA_NASA_API_KEY)
 ASTRA_LLM_PROVIDER=auto            # auto | claude | ollama | template
 ASTRA_LLM_MODEL=claude-opus-5-5
 ASTRA_OLLAMA_URL=http://localhost:11434

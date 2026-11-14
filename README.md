@@ -93,9 +93,19 @@ To try the API in Swagger (http://localhost:8000/docs):
 cd apps/web && npm run dev
 ```
 
-The Ground node (port 8001) is added in Step 9 of the plan; it is the same backend started with `ASTRA_NODE_ROLE=Ground`.
+**Ground node (Earth, port 8001)** — the same backend with another role and database. Seed it once, then start it next to the Habitat. The flight surgeon and mission control use it (the web app proxies `/ground-api` to it); sign in as `admin` for the **Demo control** page (link up/down, light-time delay, scenarios).
 
-**Demo on any date:** delete `habitat.db*`, start the backend, then load the data:
+```bash
+cd services/backend; $env:ASTRA_DATABASE_URL = 'sqlite:///ground.db'; .venv/Scripts/python -m astra.seed --mission-day-today 121
+```
+
+```bash
+cd services/backend; $env:ASTRA_NODE_ROLE = 'Ground'; $env:ASTRA_NODE_ID = 'GND-MCC'; $env:ASTRA_DATABASE_URL = 'sqlite:///ground.db'; $env:ASTRA_PEER_URL = 'http://localhost:8000'; .venv/Scripts/python -m uvicorn astra.main:app --port 8001
+```
+
+(PowerShell. Use a new terminal for each node so the `$env:` values don't leak into the Habitat one.)
+
+**Demo on any date:** delete `habitat.db*` and `ground.db*`, seed both (Ground: command above), start both nodes, then load the data into the Habitat; it reaches the Ground node over the link:
 
 ```bash
 cd services/backend && .venv/Scripts/python -m astra.seed --mission-day-today 121
