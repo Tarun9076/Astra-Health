@@ -1,11 +1,33 @@
-# Simulated crew for ARES-1 (LLD §16). All data generated from this file is labelled SIMULATED.
-# baseline values are [mean, standard deviation].
+# Simulated crew for ARES-1 (LLD §16, §20.4). All data generated from this file is labelled SIMULATED.
+# Baseline values are [mean, standard deviation]. Mission day 1 = mission.start; days ≤ 0 are pre-flight.
+# Calibration sources (verify before quoting in the pitch):
+#   sleep in flight ≈ 6 h/night ............ Barger et al., Lancet Neurology 2014  → inFlightShift.sleep_hours
+#   Mars-surface dose ≈ 0.64 mSv/day ........ Hassler et al., Science 2014 (Curiosity RAD)
+#   neutrons ≈ 30 % of dose (ISS figure) .... CSA, "Monitoring radiation for astronaut health", 2026-02-26
+#   Earth background ≈ 3 mSv/year ........... ≈ 0.008 mSv/day pre-flight
+#   strength decline with countermeasures ... illustrative −0.03 %/day (NASA cites 1–1.5 %/month bone loss without)
+
 mission:
   code: ARES-1
   start: 2026-07-17
   preflightDays: 30
   days: 120
   profile: mars-surface
+  inFlightShift:            # applied to every crew member from mission day 1
+    sleep_hours: -0.6
+  strengthDriftPctPerDay: -0.03
+
+radiation:
+  preflightMsvPerDay: [0.008, 0.001]
+  missionMsvPerDay: [0.64, 0.04]
+  neutronShare: 0.30
+
+defaults:                   # used when a crew member has no value of their own
+  sleep_quality: [7, 1]
+  hydration_ml: [2500, 300]
+  body_weight: [72, 0.4]
+  exercise_sessions: [5, 0.8]
+  strength_index: [100, 1.0]
 
 crew:
   - code: AST-001
@@ -13,6 +35,7 @@ crew:
     baseline:
       resting_hr: [64, 3]
       sleep_hours: [7.1, 0.5]
+      sleep_quality: [7, 1]
       mood: [7, 1]
       stress: [3, 1]
       fatigue: [3, 1]
@@ -22,8 +45,9 @@ crew:
       spo2: [98, 0.7]
       glucose: [92, 8]
       activity_min: [75, 15]
+      body_weight: [78, 0.4]
   - code: AST-002
-    name: "Dr. M. Okafor (simulated)"   # low resting HR: same 85 bpm is abnormal for them
+    name: "Dr. M. Okafor (simulated)"   # low resting HR: the same 85 bpm is abnormal for them
     baseline:
       resting_hr: [55, 2.5]
       sleep_hours: [7.4, 0.4]
@@ -36,8 +60,9 @@ crew:
       spo2: [98, 0.7]
       glucose: [88, 7]
       activity_min: [90, 15]
+      body_weight: [64, 0.4]
   - code: AST-003
-    name: "Eng. L. Fischer (simulated)"  # high resting HR: same 85 bpm is near normal for them
+    name: "Eng. L. Fischer (simulated)"  # high resting HR: the same 85 bpm is near normal for them
     baseline:
       resting_hr: [80, 3]
       sleep_hours: [6.8, 0.5]
@@ -50,24 +75,27 @@ crew:
       spo2: [97, 0.8]
       glucose: [95, 9]
       activity_min: [60, 15]
+      body_weight: [84, 0.5]
 
 events:
-  - scenario: fatigue_onset
+  - scenario: fatigue_onset             # the Day-120 demo story
     astronaut: AST-001
     startDay: 114
     rampDays: 5
     effects:
       sleep_hours: { delta: -2.4 }
+      sleep_quality: { delta: -3 }
       resting_hr: { delta: 22 }
       fatigue: { delta: 5 }
       mood: { delta: -3 }
       stress: { delta: 4 }
-  - scenario: spe_radiation
+  - scenario: spe_radiation             # replays the REAL May 2024 storm (NASA DONKI) from day 87
     startDay: 87
+    replay: donki-sep-2024-05.json      # SEP activity on 4 days (offsets 0, 1, 2, 4) → days 87, 88, 89, 91
     effects:
-      radiation_dose: { multiply: 30, durationHours: 18 }
-  - scenario: sensor_glitch
+      radiation_dose: { multiply: 30 }  # illustrative dose multiplier on SEP days
+  - scenario: sensor_glitch             # a bad wearable reading the system must not alarm on
     astronaut: AST-002
-    day: 60
+    startDay: 60
     effects:
-      heart_rate: { spike: 190, quality: low_signal }
+      heart_rate: { spike: 190, signalQuality: 0.3 }
