@@ -246,3 +246,60 @@ def test_space_weather_events_are_queued_once() -> None:
             session.exec(select(SyncOutbox).where(SyncOutbox.entity_type == "SpaceWeatherEvent")).all()
         ) == len(events)
         assert session.exec(select(SpaceWeatherEvent)).first() is not None
+
+
+def test_tampered_envelope_is_rejected_or_dropped(nodes: dict[str, Any]) -> None:
+    # T-S-03: without the key the body signature fails (401); items changed after signing are dropped
+    n = nodes
+    _fever_checkin(n)
+    n["hab_sync"].run_once(n["gnd"], now=datetime.now(UTC))
+    inbox = _rows(n["gnd"], SyncInbox)[0]
+    envelope = json.loads(inbox.body_json)
+    envelope["envelopeId"] = "tampered-1"
+    envelope["items"][0]["payload"]["value"] = 999.0  # items no longer match the envelope's HMAC
+    body = canonical(envelope)
+    forged = n["gnd"].post("/node/sync/envelopes", content=body, headers={"X-Astra-Signature": "forged"})
+    assert forged.status_code == 401
+    # a peer holding the key but sending altered items: accepted at the door, dropped on delivery
+    assert (
+        n["gnd"]
+        .post("/node/sync/envelopes", content=body, headers=signed_headers(n["hab_cfg"], body))
+        .status_code
+        == 202
+    )
+    n["gnd_sync"].run_once(n["hab"], now=datetime.now(UTC) + timedelta(seconds=DELAY + 1))
+    from astra.db.models import HealthMeasurement
+
+    assert all(m.value != 999.0 for m in _rows(n["gnd"], HealthMeasurement))
+
+
+def test_space_weather_event_reaches_the_habitat(nodes: dict[str, Any]) -> None:
+    # T-EXT-04: a DONKI SEP event stored on the Ground node arrives onboard after the link delay
+    from astra.db.models import SpaceWeatherEvent
+    from astra.integrations.fixtures import DONKI_SEP_MAY_2024, load_fixture
+    from astra.integrations.nasa_donki import parse_sep
+    from astra.services.space_weather import store_events
+
+    n = nodes
+    events = parse_sep(load_fixture(DONKI_SEP_MAY_2024))
+    with Session(n["gnd"].app.state.engine) as session:  # type: ignore[attr-defined]
+        assert store_events(session, events, "donki-fixture") == len(events)
+    assert n["gnd_sync"].run_once(n["hab"], now=datetime.now(UTC)).sent_envelopes == 1
+    assert _rows(n["hab"], SpaceWeatherEvent) == []
+    n["hab_sync"].run_once(n["gnd"], now=datetime.now(UTC) + timedelta(seconds=DELAY + 1))
+    assert {e.id for e in _rows(n["hab"], SpaceWeatherEvent)} == {e.sep_id for e in events}
+
+
+def test_restart_mid_sync_loses_nothing(nodes: dict[str, Any]) -> None:
+    # Edge case: both nodes restart while an envelope is in flight (all state is in the databases)
+    n = nodes
+    _fever_checkin(n)
+    t0 = datetime.now(UTC)
+    assert n["hab_sync"].run_once(n["gnd"], now=t0).sent_envelopes == 1
+    fresh_hab = SyncEngine(n["hab"].app.state.engine, n["hab_cfg"], publish_merge, close_alert_tasks)  # type: ignore[attr-defined]
+    gnd_cfg = n["gnd_sync"].cfg
+    fresh_gnd = SyncEngine(n["gnd"].app.state.engine, gnd_cfg, publish_merge, close_alert_tasks)  # type: ignore[attr-defined]
+    assert fresh_gnd.run_once(n["hab"], now=t0 + timedelta(seconds=DELAY + 1)).delivered == 1
+    fresh_hab.run_once(n["gnd"], now=datetime.now(UTC) + timedelta(seconds=DELAY + 1))
+    assert {o.status for o in _rows(n["hab"], SyncOutbox)} == {"Acked"}
+    assert len(_rows(n["gnd"], HealthAlert)) == 2
