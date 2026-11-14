@@ -257,3 +257,40 @@ class ChatMessage(SQLModel, table=True):
     emergency_protocol_id: str | None = None
     alert_id: str | None = None  # Urgent alert raised from a red-flag report
     created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+class MedicalReport(SQLModel, table=True):
+    """Health report for the flight surgeon (LLD §3.3, Step 8): structured summary + plain-language narrative.
+
+    Generated on the Habitat node and queued for the ground (`TransmissionStatus` moves to Sent /
+    Delivered once the deep-space link exists, Step 9).
+    """
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    type: str  # Daily | Weekly | AlertTriggered | OnDemand
+    period_start: date
+    period_end: date
+    alert_id: str | None = None  # AlertTriggered: the alert that caused it
+    summary_json: str
+    narrative_text: str
+    narrative_provider: str  # claude | template
+    generated_by: str | None = None  # user id for OnDemand; None = system
+    generated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+    transmission_status: str = "Queued"  # Queued | Sent | Delivered
+    origin_node_id: str
+
+
+class MedicalInstruction(SQLModel, table=True):
+    """A flight surgeon's instruction to an astronaut (LLD §3.3); delivered live, then acknowledged."""
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    alert_id: str | None = None
+    from_user_id: str
+    from_name: str
+    text: str
+    created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+    delivered_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    acknowledged_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    origin_node_id: str

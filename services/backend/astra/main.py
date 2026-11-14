@@ -28,12 +28,14 @@ from astra.api import (
     dashboard,
     measurements,
     realtime,
+    reports,
     system,
 )
 from astra.api import (
     insights as insights_api,
 )
 from astra.api.base import ApiModel
+from astra.api.reports import publish_report
 from astra.assistant.service import Assistant
 from astra.config import Settings, settings
 from astra.core.enums import NodeRole
@@ -41,6 +43,7 @@ from astra.core.protocols import ProtocolBundle, ProtocolCounts, load_protocol_b
 from astra.db.session import init_db, make_engine
 from astra.realtime.hub import hub
 from astra.services import insights
+from astra.services.reports import ensure_reports
 from astra.services.routine import ensure_routine_tasks
 
 logger = logging.getLogger("astra")
@@ -64,7 +67,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     )  # fmt: skip
     routine = None
     if cfg.node_role == NodeRole.HABITAT and cfg.routine_interval_minutes > 0:
-        routine = asyncio.create_task(_routine_loop(engine, bundle, cfg.routine_interval_minutes))
+        routine = asyncio.create_task(
+            _routine_loop(engine, bundle, app.state.assistant, cfg.node_id, cfg.routine_interval_minutes)
+        )
     # Step 9 adds the sync loop and the external-data fetchers here.
     yield
     if routine:
@@ -72,20 +77,27 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine.dispose()
 
 
-async def _routine_loop(engine: Engine, bundle: ProtocolBundle, minutes: int) -> None:
-    """Keep each astronaut's daily routine tasks up to date (LLD §8)."""
+async def _routine_loop(
+    engine: Engine, bundle: ProtocolBundle, assistant: Assistant, node_id: str, minutes: int
+) -> None:
+    """Keep daily routine tasks (LLD §8) and automatic medical reports (Step 8) up to date."""
+    narrator = assistant.narrate_report if assistant.claude_configured else None
 
-    def run_once() -> int:
+    def run_once() -> tuple[int, int]:
         with Session(engine) as session:
-            return ensure_routine_tasks(session, bundle)
+            tasks = ensure_routine_tasks(session, bundle)
+            reports = ensure_reports(session, bundle, node_id=node_id, narrator=narrator)
+            for r in reports:
+                publish_report(r)
+            return tasks, len(reports)
 
     while True:
         try:
-            created = await anyio.to_thread.run_sync(run_once)
-            if created:
-                logger.info("Routine tasks created: %s", created)
+            tasks, reports = await anyio.to_thread.run_sync(run_once)
+            if tasks or reports:
+                logger.info("Routine run: %s task(s), %s report(s) created", tasks, reports)
         except Exception:  # never let the scheduler take the app down
-            logger.exception("Routine task run failed")
+            logger.exception("Routine run failed")
         await asyncio.sleep(minutes * 60)
 
 
@@ -126,6 +138,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(insights_api.router)
     app.include_router(alerts.router)
     app.include_router(assistant.router)
+    app.include_router(reports.router)
     app.include_router(checkins.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)

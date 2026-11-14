@@ -131,3 +131,46 @@ def claude_answer(
         return ClaudeAnswer.model_validate_json(text)
     except ValidationError as e:
         raise ProviderError("Claude answer did not match the schema") from e
+
+
+REPORT_PROMPT = (
+    "You write the narrative part of a health report about one astronaut for their flight surgeon. "
+    "Use only the facts in the JSON summary you are given (values vs the astronaut's personal normal, "
+    "alerts, AI insights, adherence, radiation, symptoms, instructions). Be concise and clinical in tone, "
+    "120–220 words, plain prose without headings. Never diagnose, never recommend medication or doses, and "
+    "never change the severity of an alert. Mention that AI insights are advisory. Say that the data is "
+    "simulated. Return JSON with one field, `narrative`."
+)
+
+NARRATIVE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {"narrative": {"type": "string"}},
+    "required": ["narrative"],
+    "additionalProperties": False,
+}
+
+
+def claude_report_narrative(client: anthropic.Anthropic, model: str, summary: dict[str, Any]) -> str:
+    output_config: BetaOutputConfigParam = {
+        "effort": "low",
+        "format": {"type": "json_schema", "schema": NARRATIVE_SCHEMA},
+    }
+    try:
+        response = client.beta.messages.create(
+            model=model,
+            max_tokens=8000,
+            system=REPORT_PROMPT,
+            messages=[{"role": "user", "content": json.dumps(summary, ensure_ascii=False)}],
+            output_config=output_config,
+            betas=["server-side-fallback-2026-07-01"],
+            fallbacks="default",
+        )
+    except anthropic.APIError as e:
+        raise ProviderError("Claude API unavailable for the report narrative") from e
+    if response.stop_reason in ("refusal", "max_tokens"):
+        raise ProviderError(f"Claude narrative stopped: {response.stop_reason}")
+    text = next((b.text for b in response.content if b.type == "text"), None)
+    try:
+        return str(json.loads(text or "")["narrative"])
+    except (ValueError, KeyError) as e:
+        raise ProviderError("Claude narrative did not match the schema") from e

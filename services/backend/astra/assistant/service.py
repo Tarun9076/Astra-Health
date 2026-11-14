@@ -10,13 +10,14 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import anthropic
 
 from astra.assistant.guard import check_answer, needs_escalation, with_escalation, with_medication_note
 from astra.assistant.knowledge import Chunk, Retriever, load_knowledge, tokens
 from astra.assistant.models import AssistantRequest, AssistantResponse, Citation
-from astra.assistant.providers.claude import ProviderError, claude_answer
+from astra.assistant.providers.claude import ProviderError, claude_answer, claude_report_narrative
 from astra.assistant.providers.template import template_answer
 from astra.assistant.redflag import RedFlagHit, RedFlagRouter
 from astra.core.protocols import ProtocolBundle
@@ -155,3 +156,13 @@ class Assistant:
                 "safety_flags": flags,
             }
         )
+
+    def narrate_report(self, summary: dict[str, Any]) -> tuple[str, str]:
+        """Report narrative from Claude, guarded like chat answers. Raises so the caller uses the template."""
+        if self.claude is None:
+            raise ProviderError("Claude is not configured")
+        text = claude_report_narrative(self.claude, self.model, summary)
+        verdict = check_answer(text)
+        if not verdict.ok:
+            raise ProviderError(f"narrative failed the guard: {', '.join(verdict.flags)}")
+        return text, "claude"
