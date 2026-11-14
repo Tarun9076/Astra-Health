@@ -1,20 +1,50 @@
+import type { ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { AppLayout, ASTRONAUT_SECTIONS } from './AppLayout'
+import { AlertsPage } from '../features/alerts/AlertsPage'
+import { LoginPage } from '../features/auth/LoginPage'
+import { CheckinPage } from '../features/checkin/CheckinPage'
+import { OverviewPage } from '../features/overview/OverviewPage'
+import { CrewPage, StaffAstronautPage } from '../features/staff/CrewPage'
+import { AppLayout } from './AppLayout'
+import { Guard, Home } from './Guards'
 import { PlaceholderPage } from './PlaceholderPage'
+import { ASTRONAUT_SECTIONS } from './sections'
 
-// Surgeon (/surgeon), mission (/mission) and demo-control (/admin/sim) shells arrive in Steps 8–9.
+const BUILT: Record<string, ReactNode> = {
+  overview: <OverviewPage />,
+  alerts: <AlertsPage />,
+}
+
 export const router = createBrowserRouter([
-  { path: '/', element: <Navigate to="/astronaut/overview" replace /> },
+  { path: '/', element: <Home /> },
+  { path: '/login', element: <LoginPage /> },
   {
     path: '/astronaut',
-    element: <AppLayout />,
+    element: (
+      <Guard roles={['Astronaut']}>
+        <AppLayout />
+      </Guard>
+    ),
     children: [
       { index: true, element: <Navigate to="overview" replace /> },
+      { path: 'checkin', element: <CheckinPage /> },
       ...ASTRONAUT_SECTIONS.map((s) => ({
         path: s.path,
-        element: <PlaceholderPage num={s.num} title={s.title} blurb={s.blurb} />,
+        element: BUILT[s.path] ?? <PlaceholderPage num={s.num} title={s.title} blurb={s.blurb} />,
       })),
     ],
   },
-  { path: '*', element: <Navigate to="/astronaut/overview" replace /> },
+  {
+    path: '/staff',
+    element: (
+      <Guard roles={['FlightSurgeon', 'MissionControl', 'Admin']}>
+        <AppLayout />
+      </Guard>
+    ),
+    children: [
+      { index: true, element: <CrewPage /> },
+      { path: 'astronaut/:code', element: <StaffAstronautPage /> },
+    ],
+  },
+  { path: '*', element: <Home /> },
 ])

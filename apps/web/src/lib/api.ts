@@ -1,5 +1,23 @@
-// Thin fetch wrapper. In Step 4 this is replaced/augmented by a client generated
-// from the API's OpenAPI document (openapi-typescript), so DTOs never drift.
+// Typed API client. Types are generated from the backend's OpenAPI schema:
+//   services/backend: python -m astra.export_openapi ../../apps/web/openapi.json
+//   apps/web:         npm run gen:api
+import createClient, { type Middleware } from 'openapi-fetch'
+import type { components, paths } from './api-types'
+import { useAuth } from './auth'
+
+type Schemas = components['schemas']
+export type Me = Schemas['MeOut']
+export type Dashboard = Schemas['DashboardOut']
+export type Vital = Schemas['Vital']
+export type AlertSummary = Schemas['AlertSummary']
+export type AlertDetail = Schemas['AlertDetail']
+export type Task = Schemas['TaskOut']
+export type Indicator = Schemas['IndicatorOut']
+export type CheckinIn = Schemas['CheckinIn']
+export type VitalIn = Schemas['VitalIn']
+export type CheckinOut = Schemas['CheckinOut']
+export type Astronaut = Schemas['AstronautOut']
+export type SystemStatus = Schemas['SystemStatus']
 
 export class ApiError extends Error {
   readonly status: number
@@ -10,20 +28,41 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path, { headers: { Accept: 'application/json' } })
-  if (!res.ok) throw new ApiError(res.status, `${res.status} ${res.statusText}`)
-  return (await res.json()) as T
+const auth: Middleware = {
+  onRequest({ request }) {
+    const token = useAuth.getState().token
+    if (token) request.headers.set('Authorization', `Bearer ${token}`)
+    return request
+  },
+  onResponse({ response }) {
+    // An expired or revoked session: sign out so the app returns to the login page.
+    if (response.status === 401 && useAuth.getState().token) useAuth.getState().signOut()
+    return response
+  },
 }
 
-export interface SystemStatus {
-  service: string
-  nodeRole: 'Habitat' | 'Ground'
-  nodeId: string
-  missionCode: string
-  utcNow: string
-  simulatedData: boolean
-  disclaimer: string
+export const api = createClient<paths>({ baseUrl: '' })
+api.use(auth)
+
+function detailOf(error: unknown): string {
+  if (error && typeof error === 'object' && 'detail' in error) {
+    const detail = (error as { detail: unknown }).detail
+    if (typeof detail === 'string') return detail
+    if (Array.isArray(detail)) return detail.map((d) => (d as { msg?: string }).msg ?? '').join('; ')
+  }
+  return 'Request failed'
 }
 
-export const getSystemStatus = () => apiGet<SystemStatus>('/api/system/status')
+/** Await an openapi-fetch call and return its data, or throw an ApiError with the server's message. */
+export async function unwrap<T>(call: Promise<{ data?: T; error?: unknown; response: Response }>): Promise<T> {
+  let result: { data?: T; error?: unknown; response: Response }
+  try {
+    result = await call
+  } catch {
+    throw new ApiError(0, 'Habitat server unreachable')
+  }
+  if (result.error !== undefined || result.data === undefined) {
+    throw new ApiError(result.response.status, detailOf(result.error))
+  }
+  return result.data
+}
