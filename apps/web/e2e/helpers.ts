@@ -18,14 +18,23 @@ export async function signIn(page: Page, username: string): Promise<void> {
 
 /** Range inputs cannot be filled: set the value the way React expects (native setter + input event). */
 export async function setSlider(page: Page, label: string, value: number): Promise<void> {
-  await page.getByLabel(label).evaluate((el, v) => {
+  await page.getByLabel(label, { exact: true }).evaluate((el, v) => {
     const input = el as HTMLInputElement
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set
     setter?.call(input, String(v))
     input.dispatchEvent(new Event('input', { bubbles: true }))
     input.dispatchEvent(new Event('change', { bubbles: true }))
   }, value)
-  await expect(page.getByLabel(label)).toHaveValue(String(value))
+  await expect(page.getByLabel(label, { exact: true })).toHaveValue(String(value))
+}
+
+export async function next(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next' }).click()
+}
+
+/** Mark one measurement group as not measured today (explicit, never silently "normal"). */
+export async function notMeasured(page: Page, group: string): Promise<void> {
+  await page.getByRole('button', { name: `Not measured today : ${group}` }).click()
 }
 
 /** Bearer token of the signed-in user (from the persisted auth store). */
