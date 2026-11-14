@@ -1,182 +1,420 @@
+<div align="center">
+
 # ASTRA HEALTH
 
-**Autonomous Astronaut Health Intelligence & Decision-Support Platform** — a hackathon prototype that turns raw astronaut health measurements into explainable, actionable guidance that works onboard and offline, and forwards reports to flight surgeons on Earth.
+**Health monitoring and decision support for astronauts on long space missions**
 
-> ⚠️ **Not a medical device.** Research/hackathon prototype for clinical *decision support* only. It does not diagnose or prescribe. All thresholds are **illustrative**; all demo data is **simulated**.
+Turns daily health measurements into clear, explained guidance that works onboard, with no internet,<br>
+and sends reports to flight surgeons on Earth when the link allows.
 
-## Repository layout
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-7-3178C6?logo=typescript&logoColor=white)
+![Status](https://img.shields.io/badge/status-hackathon%20prototype-orange)
 
+</div>
+
+> [!WARNING]
+> **This is not a medical device.** ASTRA HEALTH is a hackathon research prototype for clinical *decision support*. It does not diagnose or prescribe. All thresholds are **illustrative** and all crew health data is **simulated**.
+
+---
+
+## Contents
+
+1. [What is ASTRA HEALTH?](#1-what-is-astra-health)
+2. [How it works](#2-how-it-works)
+3. [Quick start](#3-quick-start)
+4. [Using the app](#4-using-the-app)
+5. [Configuration](#5-configuration)
+6. [Tests and quality checks](#6-tests-and-quality-checks)
+7. [Results](#7-results)
+8. [Project structure](#8-project-structure)
+9. [Documentation](#9-documentation)
+10. [Data and sources](#10-data-and-sources)
+11. [Troubleshooting](#11-troubleshooting)
+12. [Contributing](#12-contributing)
+
+---
+
+## 1. What is ASTRA HEALTH?
+
+On a mission to Mars, a message to Earth can take up to 22 minutes each way, and sometimes there is no connection at all. Astronauts need to understand their own health **onboard**, without waiting for a doctor on Earth.
+
+ASTRA HEALTH helps with that in three ways:
+
+| | What it does |
+|---|---|
+| 🩺 **Tracks health** | Heart rate, blood pressure, temperature, oxygen, sleep, mood, stress, symptoms, activity and radiation, from a 2-minute daily check-in and wearable devices. |
+| 📊 **Compares with *your* normal** | Each reading is compared with the astronaut's own normal, not a population average, and changes are explained in plain language. |
+| 🚦 **Raises clear alerts** | **Normal**, **Attention** or **Urgent**. Each alert says what changed, why it matters, what to do and when to get medical help. |
+
+It has two sides:
+
+- **Astronaut app** (on the spacecraft): home summary, guided daily check-in, body systems, trends, guidance, wellness, health history, an AI assistant and offline emergency procedures.
+- **Flight surgeon dashboard** (on Earth): crew overview, communication status, follow-ups, alerts, reports and secure instructions back to the crew.
+
+### Safety by design
+
+| Part | Its only job |
+|---|---|
+| **Rules engine** | Decides how serious something is, using fixed, versioned and testable rules. |
+| **Machine learning** | Only *supports* a finding (anomaly and trend detection). It never raises an Urgent alert on its own. |
+| **AI assistant** | Only *explains*, citing NASA and CSA sources. It never diagnoses, prescribes or overrides an alert. Emergency symptoms skip the AI and go straight to the emergency steps. |
+
+---
+
+## 2. How it works
+
+The same backend runs in two places: the **Habitat node** on the spacecraft and the **Ground node** on Earth.
+
+```mermaid
+flowchart LR
+    subgraph Ship["🚀 Spacecraft: Habitat node (port 8000)"]
+        A["Astronaut web app"] --> B["FastAPI backend"]
+        B --> R["Rules engine<br/>(decides severity)"]
+        B --> M["Machine learning<br/>(supports findings)"]
+        B --> L["AI assistant<br/>(explains)"]
+        B --> D[("SQLite database")]
+    end
+    subgraph Earth["🌍 Earth: Ground node (port 8001)"]
+        G["FastAPI backend"] --> S["Flight surgeon dashboard"]
+    end
+    B <-->|"delayed, sometimes broken link"| G
 ```
-apps/web/                React + Vite + TypeScript + Tailwind PWA (astronaut, surgeon, mission, admin)
-services/backend/        Python 3.12 FastAPI backend (package `astra`): ingestion, baselines, rules, alerts,
-                         ML insights, AI assistant (RAG), WebSockets, Habitat↔Ground sync
-simulator/               Simulated crew data generator (YAML scenarios)
-protocols/               Indicator catalog, versioned rules, recommendations, emergency procedures
-knowledge/               Curated knowledge base (NASA/CSA-sourced notes) for the assistant
-docs/                    TDD, HLD, LLD, Implementation Plan (Markdown + PDF in docs/pdf/)
-tools/docs-pdf/          Regenerates the doc PDFs
+
+**What happens to a single reading:**
+
+```mermaid
+flowchart LR
+    I["Reading<br/>(check-in or device)"] --> V["Checked<br/>(units, valid range)"]
+    V --> N["Compared with<br/>personal normal"]
+    N --> RU["Rules"]
+    RU --> AL["Alert:<br/>Normal / Attention / Urgent"]
+    AL --> E["Plain-language<br/>explanation"]
+    AL --> SY["Sent to Earth<br/>when the link is up"]
 ```
 
-Design docs: start at [docs/README.md](docs/README.md). Build order: [docs/04-Implementation-Plan.md](docs/04-Implementation-Plan.md).
-PDF versions are in `docs/pdf/` (`ASTRA-HEALTH-Design-Docs.pdf` is the complete set). After editing any doc, regenerate them with `cd tools/docs-pdf && npm install && npm run pdf`.
+### Tech stack
 
-## Prerequisites
+| Area | Technology |
+|---|---|
+| **Frontend** | React 19, Vite, TypeScript, Tailwind CSS 4, TanStack Query, Recharts, three.js (3D body model), Dexie (offline queue), installable PWA |
+| **Backend** | Python 3.12, FastAPI, SQLModel + SQLite, WebSockets |
+| **Machine learning** | scikit-learn (Isolation Forest anomaly detection) and trend tests. Runs inside the backend, so there is nothing extra to start. |
+| **AI assistant** | Claude (Anthropic API), with Ollama or offline template answers as fallbacks |
+| **Testing** | pytest, ruff, mypy (strict), Playwright, axe accessibility scans |
 
-Python 3.12 (via [uv](https://docs.astral.sh/uv/)) · Node.js 22+ · Git
+---
 
-## First-time setup
+## 3. Quick start
+
+> [!NOTE]
+> Commands are written for **Windows PowerShell** and run from the project root. On macOS or Linux, replace `.venv/Scripts/python` with `.venv/bin/python`.
+
+### Step 1: Install the prerequisites
+
+| Tool | Version | Get it |
+|---|---|---|
+| Python | 3.12 | installed through **uv** (below) |
+| uv | latest | https://docs.astral.sh/uv/ |
+| Node.js | 22 or newer | https://nodejs.org/ |
+| Git | any | https://git-scm.com/ |
+
+### Step 2: Install the project
 
 ```bash
-cd services/backend && uv venv --python 3.12 .venv && uv pip install --python .venv/Scripts/python.exe -e ".[dev]"
+git clone https://github.com/Tarun9076/Astra-Health.git
 ```
+```bash
+cd Astra-Health/services/backend; uv venv --python 3.12 .venv; uv pip install --python .venv/Scripts/python.exe -e ".[dev]"
+```
+```bash
+cd apps/web; npm install
+```
+
+### Step 3: Add your settings (optional)
+
+The app works **without any keys**: it uses cached space data and offline assistant answers. To enable everything, create the settings file:
 
 ```bash
-cd apps/web && npm install
+cd services/backend; cp .env.example .env
 ```
 
-**Secrets:** the backend reads `services/backend/.env` (git-ignored). If it's missing, copy `services/backend/.env.example` to `.env`, then set:
-- `ASTRA_JWT_SECRET`: a random value
-- `ASTRA_NASA_API_KEY`: a free key from https://api.nasa.gov/
-- `ANTHROPIC_API_KEY`: optional
+Then open `services/backend/.env` and fill in:
 
-The app runs without any keys; it then uses cached data and offline answers.
+| Setting | What it is | Required? |
+|---|---|---|
+| `ASTRA_JWT_SECRET` | Random secret for login tokens. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"` | Recommended |
+| `ASTRA_NASA_API_KEY` | Free key from https://api.nasa.gov/ for live solar-storm data | Optional |
+| `ANTHROPIC_API_KEY` | Enables Claude for the AI assistant | Optional |
 
-## Data
+> [!CAUTION]
+> `.env` holds secrets. It is git-ignored, so never commit it.
 
-Crew health data is **simulated**, because real astronaut medical data is not public. The simulator is calibrated with published spaceflight values. The space environment uses **real data**:
-- NASA DONKI solar-particle events (needs the NASA key)
-- JPL Horizons Earth–Mars light time (no key)
-- NOAA SWPC proton flux (no key)
+### Step 4: Create the demo databases
 
-Responses are cached in `simulator/fixtures/` so the demo works offline. Details: [docs/03-Low-Level-Design.md](docs/03-Low-Level-Design.md) §20.
-
-## Run locally
-
-**Backend, Habitat node** — Swagger UI at http://localhost:8000/docs
+This creates the mission, 3 astronauts and the demo accounts. It only needs to run **once**.
 
 ```bash
-cd services/backend && .venv/Scripts/python -m uvicorn astra.main:app --reload --port 8000
+cd services/backend; .venv/Scripts/python -m astra.seed --mission-day-today 121
 ```
-
-**Load demo data** (once, while the backend is running). First create the mission, crew and demo accounts (from `services/backend/seed.example.json`):
-
 ```bash
-cd services/backend && .venv/Scripts/python -m astra.seed
+cd services/backend; $env:ASTRA_DATABASE_URL = 'sqlite:///ground.db'; .venv/Scripts/python -m astra.seed --mission-day-today 121
 ```
 
-Then post 150 days of simulated crew data (about 6,600 readings, including the real May 2024 solar storm replay). Running it again is safe; duplicates are skipped:
+Run the second command in its own terminal so the `$env:` setting doesn't carry over to the others.
+
+### Step 5: Start the app
+
+Open **three terminals**, one for each part:
+
+**Terminal 1: Habitat backend (spacecraft), http://localhost:8000**
+```bash
+cd services/backend; .venv/Scripts/python -m uvicorn astra.main:app --reload --port 8000
+```
+
+**Terminal 2: Ground backend (Earth), http://localhost:8001.** Only needed for the flight surgeon side.
+```bash
+cd services/backend; $env:ASTRA_NODE_ROLE = 'Ground'; $env:ASTRA_NODE_ID = 'GND-MCC'; $env:ASTRA_DATABASE_URL = 'sqlite:///ground.db'; $env:ASTRA_PEER_URL = 'http://localhost:8000'; .venv/Scripts/python -m uvicorn astra.main:app --port 8001
+```
+
+**Terminal 3: Web app, http://localhost:5173**
+```bash
+cd apps/web; npm run dev
+```
+
+### Step 6: Load the simulated mission data
+
+With the backends running, load 150 days of crew data: about 6,600 readings, including a replay of the real May 2024 solar storm. It is safe to run again, because duplicates are skipped.
 
 ```bash
 services/backend/.venv/Scripts/python simulator/simulate.py seed
 ```
 
-The database is `services/backend/habitat.db` (git-ignored). There are no migrations yet, so after pulling changes to the tables, stop the backend, delete `habitat.db*`, and run the two commands above again.
+History is loaded up to yesterday, so **today's check-in raises alerts live**. The data reaches the Ground node automatically over the simulated link.
 
-**Demo accounts** (from `services/backend/seed.example.json`, local demo only):
+### Step 7: Sign in
+
+Open **http://localhost:5173** and use one of the demo accounts:
 
 | Username | Password | Role |
 |---|---|---|
-| `ast1` / `ast2` / `ast3` | `astra-demo-ast1` / `-ast2` / `-ast3` | Astronaut (AST-001 / 002 / 003) |
+| `ast1` | `astra-demo-ast1` | Astronaut (AST-001) |
+| `ast2` | `astra-demo-ast2` | Astronaut (AST-002) |
+| `ast3` | `astra-demo-ast3` | Astronaut (AST-003) |
 | `surgeon1` | `astra-demo-surgeon` | Flight surgeon |
 | `mission1` | `astra-demo-mission` | Mission control |
-| `admin` | `astra-demo-admin` | Demo operator (simulator) |
+| `admin` | `astra-demo-admin` | Demo operator: link up or down, delay, scenarios |
 
-To try the API in Swagger (http://localhost:8000/docs):
+> [!IMPORTANT]
+> These accounts are for **local demos only**. They come from `services/backend/seed.example.json`. For anything shared, put your own accounts in a git-ignored `seed.local.json`.
+
+**Try this first:** sign in as `ast1` and press **Start daily check-in**. Enter little sleep, high fatigue and a high resting heart rate, and watch the fatigue alerts appear with full explanations.
+
+---
+
+## 4. Using the app
+
+### Astronaut side
+
+The menu is organised by **what you want to do**:
+
+| Section | What it is for |
+|---|---|
+| **Home** | How you are right now, what changed, what to pay attention to and why, key measurements, today's tasks |
+| **My Health** | Body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
+| **Daily Check-in** | Guided measurements in about 2 minutes, with how-to steps, units, validation and symptoms |
+| **My Guidance** | Recommended actions grouped by area, plus every health alert, explained |
+| **Wellness** | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration |
+| **Health History** | Timeline of everything recorded, plus medical reports |
+| **AI Assistant** | Plain-language answers with sources. It never diagnoses or prescribes. |
+| **Emergency procedures** | Always at the bottom of the menu, and stored in the app so it works offline |
+
+Design principles: status is never shown by colour alone (there is always an icon and a word), missing data is never shown as normal, and every number says what it means.
+
+### Flight surgeon side
+
+Sign in as `surgeon1`. The surgeon gets:
+- a **crew overview** with communication status, a "Follow-up needed" list and a crew table;
+- for each astronaut, tabs for Summary, Body, Alerts review, Trends, Health history, Reports and Instructions (messages sent back to the crew).
+
+### Admin (demo control)
+
+Sign in as `admin` to switch the Earth link up or down, change the light-time delay and run scenarios live.
+
+### API documentation
+
+Interactive API docs (Swagger) are at **http://localhost:8000/docs**. To try a protected endpoint:
 1. Call `POST /api/auth/login`.
 2. Copy the `accessToken`.
 3. Click **Authorize** and paste it.
 4. Try `GET /api/astronauts/AST-001/dashboard`.
 
-**Web app** — http://localhost:5173 (proxies `/api` and `/ws` to port 8000). Sign in with a demo account, e.g. `ast1`, then press **Start daily check-in**. Low sleep plus high fatigue and resting heart rate raise the fatigue alerts live.
+---
+
+## 5. Configuration
+
+All settings live in `services/backend/.env`. The full list is in [LLD §18](docs/03-Low-Level-Design.md).
+
+| Setting | Default | Meaning |
+|---|---|---|
+| `ASTRA_NODE_ROLE` | `Habitat` | `Habitat` (spacecraft) or `Ground` (Earth) |
+| `ASTRA_NODE_ID` | `HAB-ARES-1` | Name of this node |
+| `ASTRA_PEER_URL` | `http://localhost:8001` | Address of the other node |
+| `ASTRA_SYNC_KEY` | dev value | Shared secret that signs messages between nodes. Use the same random value on both. |
+| `ASTRA_DATABASE_URL` | `sqlite:///habitat.db` | Database file |
+| `ASTRA_JWT_SECRET` | none | Secret for login tokens |
+| `ASTRA_LLM_PROVIDER` | `auto` | `auto`, `claude`, `ollama` or `template` (offline) |
+| `ASTRA_LLM_MODEL` | `claude-opus-5-5` | Claude model for the assistant |
+| `ANTHROPIC_API_KEY` | none | Enables Claude |
+| `ASTRA_NASA_API_KEY` | none | Enables live NASA DONKI solar-storm data |
+
+**Changed a backend endpoint?** Regenerate the web app's API types:
 
 ```bash
-cd apps/web && npm run dev
+cd services/backend; .venv/Scripts/python -m astra.export_openapi ../../apps/web/openapi.json
 ```
-
-**Ground node (Earth, port 8001)** — the same backend with another role and database. Seed it once, then start it next to the Habitat. The flight surgeon and mission control use it (the web app proxies `/ground-api` to it); sign in as `admin` for the **Demo control** page (link up/down, light-time delay, scenarios).
-
 ```bash
-cd services/backend; $env:ASTRA_DATABASE_URL = 'sqlite:///ground.db'; .venv/Scripts/python -m astra.seed --mission-day-today 121
+cd apps/web; npm run gen:api
 ```
 
-```bash
-cd services/backend; $env:ASTRA_NODE_ROLE = 'Ground'; $env:ASTRA_NODE_ID = 'GND-MCC'; $env:ASTRA_DATABASE_URL = 'sqlite:///ground.db'; $env:ASTRA_PEER_URL = 'http://localhost:8000'; .venv/Scripts/python -m uvicorn astra.main:app --port 8001
-```
+---
 
-(PowerShell. Use a new terminal for each node so the `$env:` values don't leak into the Habitat one.)
+## 6. Tests and quality checks
 
-**Demo on any date:** delete `habitat.db*` and `ground.db*`, seed both (Ground: command above), start both nodes, then load the data into the Habitat; it reaches the Ground node over the link:
-
-```bash
-cd services/backend && .venv/Scripts/python -m astra.seed --mission-day-today 121
-```
-
-```bash
-services/backend/.venv/Scripts/python simulator/simulate.py seed
-```
-
-History is loaded up to yesterday, and past alerts are closed by the simulated flight surgeon, so today's check-in raises alerts live.
-
-**After changing backend endpoints**, regenerate the web app's API types:
-
-```bash
-cd services/backend && .venv/Scripts/python -m astra.export_openapi ../../apps/web/openapi.json
-```
-
-```bash
-cd apps/web && npm run gen:api
-```
-
-## Using the app
-
-Open http://localhost:5173 and sign in as an astronaut (`ast1` / `astra-demo-ast1`) or the flight surgeon (`surgeon1` / `astra-demo-surgeon`). The astronaut side menu is organised by task:
-
-| Section | What it is for |
+| Check | Command |
 |---|---|
-| Home | How you are right now, what changed, what to pay attention to and why, key measurements against your own normal, today's tasks |
-| My Health | Body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for) and trends and charts |
-| Daily Check-in | Guided measurements, about 2 minutes, with how-to, units, validation and symptoms |
-| My Guidance | Recommended actions by area and the health alerts, each explained |
-| Wellness | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration |
-| Health History | Timeline of everything recorded, plus the medical reports |
-| AI Assistant | Plain-language answers with sources; it never diagnoses or prescribes |
-| Emergency procedures | Always at the bottom of the menu; stored in the app, so it works offline |
+| Backend tests | `cd services/backend; .venv/Scripts/python -m pytest` |
+| Lint and types (backend) | `cd services/backend; .venv/Scripts/python -m ruff check astra tests; .venv/Scripts/python -m mypy` |
+| Lint (web) | `cd apps/web; npm run lint` |
+| Type check and build (web) | `cd apps/web; npm run build` |
+| Browser tests and accessibility | `cd apps/web; npm run e2e` |
+| Prototype metrics | `cd services/backend; .venv/Scripts/python -m astra.evaluate` |
 
-The flight surgeon gets a crew overview (communication status, follow-ups, crew table) and per-astronaut tabs. Design details: [LLD §15.4–15.5](docs/03-Low-Level-Design.md).
+**Browser tests:** install the browser once with `npx playwright install chromium`. The tests start their own backend (port 8100, fresh database) and web app (port 5174), so your running demo is not touched. They also run **axe accessibility scans** on every page.
 
-## Tests and checks
+**Prototype metrics** replays the simulated missions and writes [docs/evaluation/EVALUATION.md](docs/evaluation/EVALUATION.md).
 
-```bash
-cd services/backend && .venv/Scripts/python -m pytest
+---
+
+## 7. Results
+
+From [the evaluation report](docs/evaluation/EVALUATION.md). These come from **simulated data**: they measure how the prototype works, not clinical performance.
+
+| What was tested | Result |
+|---|---|
+| Fatigue episode (injected on day 114) | Detected in 2 days; the AI trend note came after 1 day |
+| Real May 2024 solar storm replay | Urgent radiation alert for 3 of 3 crew, the same day |
+| Faulty sensor reading (heart rate 190, weak signal) | Marked "questionable"; correctly **no** alarm |
+| False alarms on healthy crew | At most 2 Attention and 0 Urgent per astronaut over the mission |
+| API speed (150 days × 3 crew) | About 50 ms median for most screens |
+| Daily check-in in the browser | Completed in 38 s |
+| Spacecraft-to-Earth sync | Every item delivered exactly once, even over a broken link |
+
+---
+
+## 8. Project structure
+
+```
+Astra-Health/
+├── apps/web/            React web app (astronaut, flight surgeon, mission control, admin)
+│   ├── src/features/    One folder per screen (home, check-in, body, guidance, history…)
+│   └── e2e/             Playwright browser and accessibility tests
+├── services/backend/    Python FastAPI backend (package "astra")
+│   ├── astra/core/      Pure logic: baselines, rules, validation (no web or database code)
+│   ├── astra/api/       HTTP endpoints
+│   ├── astra/ml/        Anomaly and trend detection
+│   ├── astra/assistant/ AI assistant (retrieval, providers, red-flag safety bypass)
+│   ├── astra/sync/      Habitat ↔ Ground sync over the simulated deep-space link
+│   └── tests/           Backend tests
+├── simulator/           Simulated crew data generator, plus cached real space data
+├── protocols/           Indicators, versioned alert rules, recommendations, emergency procedures
+├── knowledge/           Knowledge base used by the assistant (NASA / CSA sourced)
+├── docs/                Design documents (Markdown, plus PDFs in docs/pdf/)
+└── tools/docs-pdf/      Regenerates the PDFs
 ```
 
-```bash
-cd services/backend && .venv/Scripts/python -m ruff check astra tests && .venv/Scripts/python -m mypy
-```
+---
+
+## 9. Documentation
+
+New here? Read them in this order. Start with [docs/README.md](docs/README.md) for a one-page overview.
+
+| # | Document | Read it to learn |
+|---|---|---|
+| 1 | [Technical Design Document](docs/01-Technical-Design-Document.md) | **Why**: goals, requirements, key decisions, AI safety rules, risks |
+| 2 | [High-Level Design](docs/02-High-Level-Design.md) | **What**: the big picture, the two nodes, components, data flows, screen map |
+| 3 | [Low-Level Design](docs/03-Low-Level-Design.md) | **How**: database, algorithms, alert rules, API, UI design system, test cases |
+| 4 | [Implementation Plan](docs/04-Implementation-Plan.md) | **When**: build steps, milestones, demo script |
+| 📈 | [Evaluation](docs/evaluation/EVALUATION.md) | Measured results of the prototype |
+
+📄 **PDF versions** are in [docs/pdf/](docs/pdf/). `ASTRA-HEALTH-Design-Docs.pdf` has everything in one file. After editing any document, regenerate them:
 
 ```bash
-cd apps/web && npm run build
+cd tools/docs-pdf; npm install; npm run pdf
 ```
 
-Browser end-to-end tests (Playwright; starts its own backend on :8100 with a fresh mission database and Vite on :5174, so the demo servers are not touched). Install the browser once with `npx playwright install chromium`:
+---
 
-```bash
-cd apps/web && npm run e2e
-```
+## 10. Data and sources
 
-Prototype metrics (replays the simulated missions; writes `docs/evaluation/EVALUATION.md`):
+**Crew health data is simulated**, because real astronaut medical data is not public. The simulator is calibrated with published spaceflight values.
 
-```bash
-cd services/backend && .venv/Scripts/python -m astra.evaluate
-```
+**Space environment data is real:**
+- NASA DONKI solar-particle events (needs the NASA key)
+- JPL Horizons Earth–Mars light time (no key)
+- NOAA SWPC proton flux (no key)
 
-## Sources
+Responses are cached in `simulator/fixtures/`, so the demo works offline. Details: [LLD §20](docs/03-Low-Level-Design.md).
 
-Hackathon-provided:
-- NASA HRP — 5 Hazards of Human Spaceflight — https://www.nasa.gov/hrp/hazards/
-- NASA HRP — Risks of Human Spaceflight — http://nasa.gov/hrp/risks/
-- NASA HRP — Ongoing HRP Research — https://www.nasa.gov/hrp/ongoing-hrp-research/
-- CSA — Monitoring radiation for astronaut health — https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp
-- CSA — Why do we conduct science experiments in space? — https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp
+**Hackathon-provided sources:**
+- NASA HRP: [5 Hazards of Human Spaceflight](https://www.nasa.gov/hrp/hazards/)
+- NASA HRP: [Risks of Human Spaceflight](http://nasa.gov/hrp/risks/)
+- NASA HRP: [Ongoing HRP Research](https://www.nasa.gov/hrp/ongoing-hrp-research/)
+- CSA: [Monitoring radiation for astronaut health](https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp)
+- CSA: [Why do we conduct science experiments in space?](https://www.asc-csa.gc.ca/eng/iss/science/why-do-we-conduct-science-experiments-in-space.asp)
 
-Supporting: NASA Human Research Roadmap — https://humanresearchroadmap.nasa.gov/ · NASA-STD-3001 — https://www.nasa.gov/ocho/std-3001/
+**Supporting sources:** [NASA Human Research Roadmap](https://humanresearchroadmap.nasa.gov/) · [NASA-STD-3001](https://www.nasa.gov/ocho/std-3001/)
+
+---
+
+## 11. Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `address already in use` / port busy | Something is already running on that port (8000, 8001 or 5173). Stop it with **Ctrl+C** in its terminal, or close the old terminal. |
+| `The token '&&' is not a valid statement separator` | Windows PowerShell 5.1 doesn't support `&&`. Use `;` instead, as in the commands above. |
+| Flight surgeon sees no data | Start the **Ground** backend (Terminal 2), then check the link is up on the admin **Demo control** page. |
+| Errors after pulling new code that changed the database tables | There are no migrations yet. Stop both backends, delete `services/backend/habitat.db*` and `ground.db*`, then repeat [Step 4](#step-4-create-the-demo-databases) and [Step 6](#step-6-load-the-simulated-mission-data). |
+| Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
+| AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` is set, so it uses offline template answers. This is expected. |
+| `uv` says Python 3.12 not found | Run `uv python install 3.12`, then repeat Step 2. |
+
+---
+
+## 12. Contributing
+
+1. Create a branch from `main`.
+2. Make your change and run the [checks](#6-tests-and-quality-checks). All must pass.
+3. Commit with a [Conventional Commits](https://www.conventionalcommits.org/) message, for example:
+   - `feat(web): add sleep chart`
+   - `fix(api): reject negative heart rate`
+   - `docs: update setup steps`
+   - `test(e2e): cover offline check-in`
+4. If you changed a design document, regenerate the PDFs.
+5. Open a pull request.
+
+**Project rules:**
+- Rules decide severity, ML only supports, the AI only explains.
+- `astra/core` must stay free of web, database and network code.
+- Never commit `.env` or real keys.
+- Keep the "simulated / illustrative / not a diagnosis" wording in every feature.
+
+---
+
+<div align="center">
+
+Built for a NASA-themed hackathon · **Simulated data · Not a medical device**
+
+</div>
