@@ -1,0 +1,78 @@
+# Red-flag phrases for the AI Health Assistant (LLD §11.2, step 1).
+# Checked deterministically BEFORE any AI: a match shows the emergency protocol at once and,
+# unless the question is clearly hypothetical, reports the symptom and raises an Urgent alert.
+# Patterns are regular expressions matched against the lower-cased question (with ’ → ').
+# ⚠️ Illustrative prototype list, not a validated triage tool.
+
+version: 1.0.0
+redFlags:
+  - id: CHEST-PAIN
+    symptom: chest_pain
+    protocol: EMG-CHEST-PAIN
+    title: Chest pain or pressure reported
+    patterns:
+      - "chest (pain|pressure|tightness|tight|hurts|hurting|ache|aches)"
+      - "pain in (my|the) chest"
+      - "chest (feels|is|is feeling|feeling) (tight|heavy|painful|sore|crushed|squeezed)"
+      - "(heart attack)"
+      - "(crushing|squeezing) (pain|feeling)"
+  - id: BREATHING
+    symptom: breathing_difficulty
+    protocol: EMG-LOW-OXYGEN
+    title: Severe breathing difficulty reported
+    patterns:
+      - "(can'?t|cannot|unable to|can not|struggling to|hard to) (breathe|breath|catch my breath)"
+      - "(choking|suffocating|gasping)"
+      - "(lips|fingers) (are |look |turning )?blue"
+  - id: SYNCOPE
+    symptom: fainting
+    protocol: EMG-SYNCOPE
+    title: Fainting reported
+    patterns:
+      - "(passed out|fainted|blacked out|lost consciousness|syncope|keeled over)"
+      - "(about to|going to|gonna) (faint|pass out)"
+  - id: NEURO
+    symptom: neuro_deficit
+    protocol: EMG-NEURO-SYMPTOMS
+    title: Sudden neurological symptoms reported
+    patterns:
+      - "(slurred|slurring) (speech|words)"
+      - "(face|mouth) (is )?(drooping|droops|numb)"
+      - "(can'?t|cannot) (move|feel) (my )?(arm|leg|hand|face|side)"
+      - "(sudden(ly)?|very) confus(ed|ion)"
+      - "(worst|thunderclap) headache"
+      - "(sudden(ly)? (vision loss|loss of vision|blurred vision|blindness)|can'?t see|lost (my )?(vision|sight)|blind in)"
+  - id: BLEEDING
+    symptom: severe_bleeding
+    protocol: EMG-SEVERE-BLEEDING
+    title: Severe bleeding reported
+    patterns:
+      - "(severe|heavy|a lot of|lots of) bleeding"
+      - "bleeding (badly|heavily|a lot|won'?t stop|that won'?t stop|doesn'?t stop)"
+      - "(coughing|vomiting|throwing) up blood"
+  - id: SELF-HARM
+    symptom: self_harm_thoughts
+    protocol: EMG-BEHAVIORAL-CRISIS
+    title: Thoughts of self-harm reported
+    patterns:
+      - "(suicid|self[- ]?harm|hurt myself|harm myself|kill myself|end my life|end it all|don'?t want to (live|be alive))"
+      - "(no reason|no point) (to|in) (live|living|going on)"
+
+# A match is ignored when one of these appears just before it ("no chest pain", "I don't have…").
+negations: ["no", "not", "without", "never", "don't have", "do not have", "haven't", "isn't", "wasn't", "denies"]
+
+# Questions about a symptom rather than reports of it: show the protocol, but don't raise an alert.
+hypothetical:
+  - "what (should|do|would) (i|we|you|someone) do (if|when)"
+  - "what (if|happens if)"
+  - "\\bif (i|someone|a crew ?member|you) (get|gets|have|has|had|feel|feels|start|starts)"
+  - "(signs|symptoms|warning signs) of"
+  - "how (do|would|can) (i|you|we) (know|tell|recogni[sz]e)"
+  - "what causes"
+
+# …unless the person is clearly describing themselves now ("I have", "my chest", "right now", "help").
+reporting:
+  - '\bi(''m| am)? (have|having|got|feel|feeling|think i''?m having)\b'
+  - '\bi''?ve (got|had|been)\b'
+  - '\bmy (chest|heart|arm|face|vision|eye|head)\b'
+  - '(right now|just now|happening now|\bhelp\b)'

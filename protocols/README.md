@@ -7,7 +7,8 @@ Medical "knowledge as data", loaded and cross-checked by the backend at startup 
 | `indicators.json` | 22 indicators: units, conversions, plausible ranges, spread floors (LLD §2) | ✅ Step 1 |
 | `rules/*.json` | Rules in the JSON rule format (LLD §6.1); file name = rule id | ✅ 17 rules (Steps 1, 5, 6) |
 | `recommendations.json` | 21 actions linked from rules and the daily routine (LLD §8) | ✅ Steps 1 + 5 |
-| `emergency/EMG-*.md` | 8 step-by-step emergency procedures (YAML front matter + Markdown), shown offline | ✅ Steps 1 + 5 |
+| `emergency/EMG-*.md` | 10 step-by-step emergency procedures (YAML front matter + Markdown), shown offline and bundled into the web app | ✅ Steps 1, 5, 7 |
+| `redflags.yaml` | Red-flag phrases for the AI assistant → emergency procedure (negations, hypothetical questions) | ✅ Step 7 |
 | `mission-profiles/*.json` | Gravity, comms delay, radiation limit, exercise and hydration targets | ✅ `mars-surface.json` |
 
 ## Editing a rule

@@ -2,7 +2,7 @@
 
 Curated notes that ground the AI Health Assistant (LLD §11.3). Write each note **in your own words** from public NASA sources and list those sources in the front-matter, because the assistant cites them.
 
-Target: about 25 notes, one per hazard, one per body system, plus sleep, hydration, exercise countermeasures, radiation shelter, solar particle events, orthostatic intolerance, vision changes (SANS), stress and coping, nutrition, fever/infection, dizziness and an emergency overview.
+**Status (Step 7): 29 notes, 91 sections**, each citing only the organizer-provided pages below. Target was about 25 notes, one per hazard, one per body system, plus sleep, hydration, exercise countermeasures, radiation shelter, solar particle events, orthostatic intolerance, vision changes (SANS), stress and coping, nutrition, fever/infection, dizziness and an emergency overview.
 
 ## Primary sources (provided by the hackathon organizers)
 
