@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ArrowRight, Check, Timer } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
-import { Button, ErrorNote, Panel } from '../../components/ui/Panel'
+import { Button, ErrorNote, LinkButton, Panel } from '../../components/ui/Panel'
 import { SeverityBadge } from '../../components/ui/Status'
 import { type CheckinIn, type CheckinOut, type VitalIn } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -260,8 +259,8 @@ function Result({ result, seconds }: { result: CheckinOut; seconds: number }) {
         </Panel>
       )}
       <div className="flex flex-wrap gap-3">
-        <Link to="/astronaut/overview"><Button>Go to overview</Button></Link>
-        {alerts.length > 0 && <Link to="/astronaut/alerts"><Button variant="ghost">Open Alerts Center</Button></Link>}
+        <LinkButton to="/astronaut/overview">Go to overview</LinkButton>
+        {alerts.length > 0 && <LinkButton to="/astronaut/alerts" variant="ghost">Open Alerts Center</LinkButton>}
       </div>
     </div>
   )

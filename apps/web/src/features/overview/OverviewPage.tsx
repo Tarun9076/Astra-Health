@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertOctagon, CheckSquare, ChevronRight, ClipboardCheck, Square } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Button, ErrorNote, Loading, Panel } from '../../components/ui/Panel'
+import { ErrorNote, LinkButton, Loading, Panel } from '../../components/ui/Panel'
 import { SeverityBadge, StatusBadge } from '../../components/ui/Status'
 import { INSIGHT_NOTE, InsightList } from '../../components/ui/InsightList'
 import { InstructionsBanner } from '../../components/ui/InstructionsBanner'
@@ -25,6 +25,7 @@ export function OverviewPage({ code, readOnly = false }: { code?: string; readOn
 
   return (
     <div className="max-w-6xl space-y-6">
+      {!readOnly && <h1 className="sr-only">Overview</h1>}
       {!readOnly && <InstructionsBanner code={data.astronautCode} />}
       <div className="grid gap-4 xl:grid-cols-[1fr_26rem]">
         <StatusHeader data={data} readOnly={readOnly} />
@@ -123,11 +124,9 @@ function StatusHeader({ data, readOnly }: { data: Dashboard; readOnly: boolean }
         {data.lastReadingAt && <p className="mt-2 text-xs text-ink-muted">Last reading {timeAgo(data.lastReadingAt)}</p>}
       </div>
       {!readOnly && (
-        <Link to="/astronaut/checkin">
-          <Button>
-            <ClipboardCheck className="h-4 w-4" aria-hidden /> Start daily check-in
-          </Button>
-        </Link>
+        <LinkButton to="/astronaut/checkin">
+          <ClipboardCheck className="h-4 w-4" aria-hidden /> Start daily check-in
+        </LinkButton>
       )}
     </div>
   )

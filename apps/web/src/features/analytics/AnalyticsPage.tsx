@@ -44,6 +44,7 @@ export function AnalyticsPage({ code: forCode, embedded = false }: { code?: stri
     <label className="flex items-center gap-2 text-sm">
       {colour && <span className="inline-block h-0.5 w-4" style={{ background: colour }} aria-hidden />}
       <select value={value} onChange={(e) => set(key, e.target.value)}
+        aria-label={key === 'a' ? 'Indicator' : 'Compare with'}
         className="min-h-10 rounded-lg border border-space-600 bg-space-900 px-2 text-sm outline-none focus:border-accent">
         {INDICATORS.map((c) => <option key={c} value={c}>{name(c)}</option>)}
       </select>

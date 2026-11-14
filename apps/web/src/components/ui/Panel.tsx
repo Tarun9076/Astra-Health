@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 
 export function Panel({ title, action, children, className = '' }: {
   title?: string
@@ -37,24 +38,41 @@ export function ErrorNote({ error }: { error: unknown }) {
   )
 }
 
-export function Button({
-  children,
-  variant = 'primary',
-  className = '',
-  ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'ghost' | 'danger' }) {
+type Variant = 'primary' | 'ghost' | 'danger'
+
+function buttonClass(variant: Variant, className: string): string {
   const styles = {
     primary: 'bg-accent text-space-950 hover:bg-accent/90 disabled:bg-space-600 disabled:text-ink-muted',
     ghost: 'border border-space-600 text-ink hover:bg-space-700 disabled:text-ink-muted',
     danger: 'bg-status-red text-white hover:bg-status-red/90',
   }[variant]
+  return `inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${styles} ${className}`
+}
+
+export function Button({
+  children,
+  variant = 'primary',
+  className = '',
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
   return (
-    <button
-      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${styles} ${className}`}
-      {...props}
-    >
+    <button className={buttonClass(variant, className)} {...props}>
       {children}
     </button>
+  )
+}
+
+/** A navigation link that looks like a button (never a <button> inside an <a>: nested controls confuse screen readers). */
+export function LinkButton({
+  to,
+  children,
+  variant = 'primary',
+  className = '',
+}: { to: string; children: React.ReactNode; variant?: Variant; className?: string }) {
+  return (
+    <Link to={to} className={buttonClass(variant, className)}>
+      {children}
+    </Link>
   )
 }
 
