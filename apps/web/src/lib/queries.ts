@@ -51,6 +51,18 @@ export function useAnalytics(code: string | null | undefined, indicator: string 
   })
 }
 
+export function useAssistantStatus() {
+  return useQuery({ queryKey: ['assistant-status'], queryFn: () => unwrap(api.GET('/api/assistant/status')) })
+}
+
+export function useAssistantHistory() {
+  return useQuery({
+    queryKey: ['assistant-history'],
+    queryFn: () => unwrap(api.GET('/api/assistant/history', { params: { query: { limit: 40 } } })),
+    staleTime: Infinity,
+  })
+}
+
 export function useInsights(code: string | null | undefined, range: '7d' | '30d' | 'mission' = '7d') {
   return useQuery({
     queryKey: ['insights', code, range],

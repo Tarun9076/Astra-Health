@@ -190,6 +190,7 @@ function EvidenceTable({ detail, catalog }: { detail: AlertDetail; catalog: Reco
         <tbody className="font-mono">
           {rows.map(([key, ev]) => {
             const ml = ML_SOURCES[String(ev.indicator)]
+            const reported = ev.agg === 'reported' // red-flag symptom told to the AI assistant
             const meta = ml ? undefined : catalog[String(ev.indicator)]
             const dec = ml ? 2 : (meta?.decimals ?? 1)
             const isCount = String(ev.agg).startsWith('count')
@@ -198,10 +199,10 @@ function EvidenceTable({ detail, catalog }: { detail: AlertDetail; catalog: Reco
             return (
               <tr key={key} className="border-t border-space-700">
                 <td className="py-1.5 pr-3 font-sans">
-                  {ml?.name ?? meta?.name ?? ev.indicator}
+                  {reported ? `Symptom: ${String(ev.indicator).replace(/_/g, ' ')}` : (ml?.name ?? meta?.name ?? ev.indicator)}
                   <span className="block text-[11px] text-ink-muted">{ml ? 'machine learning' : String(ev.agg).replace('_', ' ')}</span>
                 </td>
-                <td className="py-1.5 pr-3">{ev.missing ? 'no data' : `${num(ev.value)} ${unit}`}</td>
+                <td className="py-1.5 pr-3">{reported ? 'reported' : ev.missing ? 'no data' : `${num(ev.value)} ${unit}`}</td>
                 <td className="py-1.5 pr-3">{typeof ev.baseline === 'number' && !isCount ? `${num(ev.baseline)} ± ${num(ev.sigma)}` : '—'}</td>
                 <td className="py-1.5 pr-3">
                   {typeof ev.z === 'number' ? `${ev.z > 0 ? '+' : ''}${ev.z.toFixed(1)}σ`

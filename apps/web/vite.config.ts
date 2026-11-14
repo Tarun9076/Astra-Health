@@ -10,6 +10,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 5173,
+    // Emergency procedures are bundled from ../../protocols (src/lib/emergency.ts).
+    fs: { allow: ['.', '../../protocols'] },
     proxy: {
       '/api': { target: HABITAT_API, changeOrigin: true },
       '/ws': { target: HABITAT_API, changeOrigin: true, ws: true },

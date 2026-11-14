@@ -286,6 +286,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/assistant/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Chat */
+        post: operations["chat_api_assistant_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * History
+         * @description Oldest first, the latest `limit` messages.
+         */
+        get: operations["history_api_assistant_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Assistant Status */
+        get: operations["assistant_status_api_assistant_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/checkins": {
         parameters: {
             query?: never;
@@ -557,6 +611,24 @@ export interface components {
             /** Alerts */
             alerts: components["schemas"]["AlertMarker"][];
         };
+        /** AssistantStatus */
+        AssistantStatus: {
+            /**
+             * Defaultprovider
+             * @enum {string}
+             */
+            defaultProvider: "claude" | "template";
+            /** Claudeconfigured */
+            claudeConfigured: boolean;
+            /** Model */
+            model: string | null;
+            /** Knowledgenotes */
+            knowledgeNotes: number;
+            /** Knowledgechunks */
+            knowledgeChunks: number;
+            /** Redflags */
+            redFlags: number;
+        };
         /** AstronautOut */
         AstronautOut: {
             /** Id */
@@ -574,6 +646,58 @@ export interface components {
              * Format: date
              */
             missionStart: string;
+        };
+        /** ChatIn */
+        ChatIn: {
+            /** Question */
+            question: string;
+            /** Astronautid */
+            astronautId?: string | null;
+            /**
+             * Provider
+             * @default auto
+             * @enum {string}
+             */
+            provider: "auto" | "claude" | "template";
+        };
+        /** ChatOut */
+        ChatOut: {
+            /** Messageid */
+            messageId: string;
+            /** Questionid */
+            questionId: string;
+            /** Answer */
+            answer: string;
+            /** Citations */
+            citations: components["schemas"]["CitationOut"][];
+            /** Suggestedactions */
+            suggestedActions: string[];
+            /** Safetyflags */
+            safetyFlags: string[];
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "llm" | "template" | "emergency";
+            /**
+             * Provider
+             * @enum {string}
+             */
+            provider: "claude" | "template" | "redflag";
+            /** Emergencyprotocolid */
+            emergencyProtocolId: string | null;
+            /** Alertid */
+            alertId?: string | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /**
+             * Disclaimer
+             * @default Health information, not a diagnosis. All data is simulated. In an emergency, follow the protocol.
+             */
+            disclaimer: string;
         };
         /** CheckinIn */
         CheckinIn: {
@@ -619,6 +743,15 @@ export interface components {
             newAlerts: components["schemas"]["AlertSummary"][];
             /** Updatedalerts */
             updatedAlerts: components["schemas"]["AlertSummary"][];
+        };
+        /** CitationOut */
+        CitationOut: {
+            /** Chunkid */
+            chunkId: string;
+            /** Title */
+            title: string;
+            /** Source */
+            source: string;
         };
         /** Contributor */
         Contributor: {
@@ -726,6 +859,35 @@ export interface components {
             protocols: components["schemas"]["ProtocolCounts"] | null;
             /** Websocketclients */
             websocketClients: number;
+        };
+        /** HistoryItem */
+        HistoryItem: {
+            /** Id */
+            id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
+            /** Mode */
+            mode: string | null;
+            /** Provider */
+            provider: string | null;
+            /** Citations */
+            citations: components["schemas"]["CitationOut"][];
+            /** Suggestedactions */
+            suggestedActions: string[];
+            /** Emergencyprotocolid */
+            emergencyProtocolId: string | null;
+            /** Alertid */
+            alertId: string | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
         };
         /** IndicatorOut */
         IndicatorOut: {
@@ -1597,6 +1759,91 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_api_assistant_chat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    history_api_assistant_history_get: {
+        parameters: {
+            query?: {
+                astronautId?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HistoryItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    assistant_status_api_assistant_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantStatus"];
                 };
             };
         };
