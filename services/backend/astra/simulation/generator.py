@@ -191,12 +191,26 @@ class _CrewDay:
         mean, sd = radiation.mission_msv_per_day if self.on_mission else radiation.preflight_msv_per_day
         total = max(mean + sd * self.noise.next(code, "radiation_dose"), 0.0) * radiation_factor
         for channel, dose in (("Total", total), ("Neutron", total * radiation.neutron_share)):
-            yield SimReading(code, "radiation_dose", _round("radiation_dose", dose), "mSv",
-                             self.at(time(23, 55)), f"DOS-{self.number}", channel=channel)  # fmt: skip
+            yield SimReading(
+                code,
+                "radiation_dose",
+                _round("radiation_dose", dose),
+                "mSv",
+                self.at(time(23, 55)),
+                f"DOS-{self.number}",
+                channel=channel,
+            )
 
         # Sensor glitch: one implausible-looking wearable reading with poor signal
         for event in self.events:
             spike = event.effects.get("heart_rate")
             if event.scenario == "sensor_glitch" and spike and self.day == event.start_day:
-                yield SimReading(code, "heart_rate", spike.spike or 190, "bpm", self.at(time(14, 0)),
-                                 f"WR-{self.number}", signal_quality=spike.signal_quality)  # fmt: skip
+                yield SimReading(
+                    code,
+                    "heart_rate",
+                    spike.spike or 190,
+                    "bpm",
+                    self.at(time(14, 0)),
+                    f"WR-{self.number}",
+                    signal_quality=spike.signal_quality,
+                )

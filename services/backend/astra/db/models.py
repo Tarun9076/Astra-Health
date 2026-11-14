@@ -156,6 +156,8 @@ class HealthAlert(SQLModel, table=True):
     resolved_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
     resolution_note: str | None = None
     escalation_required: bool = False
+    protocol: str | None = None  # emergency protocol id for Urgent rules
+    consecutive_clear: int = 0  # evaluations in a row where the rule no longer matched
     version: int = 1
     origin_node_id: str
     updated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
@@ -166,7 +168,7 @@ class RecommendationTask(SQLModel, table=True):
     astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
     alert_id: str | None = Field(default=None, foreign_key="healthalert.id")
     code: str  # REC-… from protocols/recommendations.json
-    status: str = "Pending"  # Pending | Done | Skipped
+    status: str = "Pending"  # Pending | Done | Skipped | Closed (its alert was resolved)
     due_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
     completed_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
     source: str = "Rule"  # Rule | Routine | Surgeon

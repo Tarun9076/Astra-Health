@@ -1,6 +1,8 @@
-"""Store a batch of readings: validate, de-duplicate, persist, audit, queue for sync (HLD §5.1).
+"""Store a batch of readings and assess them (HLD §5.1).
 
-Step 3 adds: update baselines → evaluate rules → alerts → recommendations → WebSocket events.
+validate → de-duplicate → persist (append-only) → evaluate rules on the updated history →
+alerts + recommendation tasks → audit → sync outbox, all in one transaction. The router then
+publishes WebSocket events for the alert changes.
 """
 
 import hashlib
@@ -13,7 +15,7 @@ from sqlmodel import Session, col, select
 
 from astra.core.enums import MeasurementQuality
 from astra.core.ids import uuid7
-from astra.core.indicators import IndicatorCatalog
+from astra.core.protocols import ProtocolBundle
 from astra.core.validation import (
     JUMP_CHECK_INDICATORS,
     JUMP_WINDOW,
@@ -24,6 +26,8 @@ from astra.core.validation import (
     validate_reading,
 )
 from astra.db.models import Astronaut, AuditLog, HealthMeasurement, SyncOutbox
+from astra.services.alerts import AlertChanges
+from astra.services.assessment import assess, evaluation_times
 
 
 @dataclass(frozen=True)
@@ -61,6 +65,8 @@ class BatchOutcome:
     questionable: list[tuple[str, str]] = field(default_factory=list)
     rejected: list[tuple[str, str]] = field(default_factory=list)
     duplicates: list[str] = field(default_factory=list)
+    alerts: AlertChanges = field(default_factory=AlertChanges)
+    evaluations: int = 0
 
 
 ReadingKey = tuple[str, str, datetime, str]  # indicator, channel, measured_at, device
@@ -104,7 +110,7 @@ def _previous_valid(
 
 def ingest_batch(
     session: Session,
-    catalog: IndicatorCatalog,
+    bundle: ProtocolBundle,
     astronaut: Astronaut,
     items: Sequence[IncomingReading],
     *,
@@ -114,6 +120,7 @@ def ingest_batch(
     user_id: str | None = None,
 ) -> BatchOutcome:
     now = now or datetime.now(UTC)
+    catalog = bundle.catalog
     outcome = BatchOutcome()
     ordered = sorted(items, key=lambda i: i.measured_at)
     raws = [i.raw() for i in ordered]
@@ -153,6 +160,7 @@ def ingest_batch(
     results = check_panels([(raw, result) for _, raw, _, result in pending])
 
     # 3. persist everything, including rejected readings (kept as evidence, excluded from analytics)
+    stored: list[HealthMeasurement] = []
     for (item, raw, reading_id, _), result in zip(pending, results, strict=True):
         measurement = HealthMeasurement(
             id=reading_id,
@@ -174,6 +182,7 @@ def ingest_batch(
             origin_node_id=node_id,
         )
         session.add(measurement)
+        stored.append(measurement)
         session.add(
             SyncOutbox(
                 entity_type="HealthMeasurement",
@@ -187,6 +196,13 @@ def ingest_batch(
             outcome.questionable.append((reading_id, result.reason or ""))
         else:
             outcome.rejected.append((reading_id, result.reason or ""))
+
+    # 4. assess: evaluate the rules on the updated history (same transaction)
+    session.flush()
+    assessment = assess(
+        session, bundle, astronaut, evaluation_times(stored, backfill=backfill, now=now), node_id=node_id
+    )
+    outcome.alerts, outcome.evaluations = assessment.changes, assessment.evaluations
 
     session.add(
         AuditLog(
@@ -202,6 +218,7 @@ def ingest_batch(
                     "rejected": len(outcome.rejected),
                     "duplicates": len(outcome.duplicates),
                     "backfill": backfill,
+                    "alertsCreated": len(outcome.alerts.created),
                 }
             ),
         )

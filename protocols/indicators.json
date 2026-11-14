@@ -11,7 +11,7 @@
     {
       "code": "resting_hr", "name": "Resting heart rate", "unit": "bpm",
       "units": { "bpm": { "factor": 1 } },
-      "plausible": { "min": 30, "max": 150 }, "sigmaFloor": 2, "decimals": 0, "worseWhen": "both",
+      "plausible": { "min": 30, "max": 150 }, "sigmaFloor": 3, "decimals": 0, "worseWhen": "both",
       "hazard": "Gravity", "bodySystem": "heart", "collection": "Wearable (derived each morning)"
     },
     {

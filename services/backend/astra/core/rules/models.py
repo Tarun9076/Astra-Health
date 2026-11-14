@@ -19,14 +19,21 @@ from astra.core.enums import AlertCategory, Hazard, Severity
 
 Agg = Literal["latest", "mean", "min", "max", "sum", "count", "slope", "count_z_gte"]
 Op = Literal[
-    "gt", "gte", "lt", "lte", "eq",
+    "gt",
+    "gte",
+    "lt",
+    "lte",
+    "eq",
     "between",  # value <= x <= value2
     "outside",  # x <= value or x >= value2
-    "z_gt", "z_gte", "z_lt", "z_lte",  # robust z-score vs the personal baseline
+    "z_gt",
+    "z_gte",
+    "z_lt",
+    "z_lte",  # robust z-score vs the personal baseline
     "ratio_gte",  # x / baseline median >= value
     "pct_of_limit_gte",  # x as % of the mission limit >= value
     "insight",  # an ML insight exists in the window (Attention rules only)
-]  # fmt: skip
+]
 
 Z_OPS: frozenset[str] = frozenset({"z_gt", "z_gte", "z_lt", "z_lte"})
 RANGE_OPS: frozenset[str] = frozenset({"between", "outside"})

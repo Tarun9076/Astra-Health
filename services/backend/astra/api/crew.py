@@ -4,8 +4,10 @@ from fastapi import APIRouter
 from sqlmodel import col, select
 
 from astra.api.base import ApiModel
+from astra.core.enums import Role
 from astra.db.models import Astronaut, Mission
 from astra.db.session import SessionDep
+from astra.security.deps import CurrentUser
 
 router = APIRouter(prefix="/api", tags=["crew"])
 
@@ -20,13 +22,12 @@ class AstronautOut(ApiModel):
 
 
 @router.get("/astronauts", response_model=list[AstronautOut])
-def list_astronauts(session: SessionDep) -> list[AstronautOut]:
-    """Crew list (auth and role-based filtering arrive in Step 3)."""
-    rows = session.exec(
-        select(Astronaut, Mission)
-        .join(Mission, col(Astronaut.mission_id) == Mission.id)
-        .order_by(Astronaut.code)
-    ).all()
+def list_astronauts(session: SessionDep, user: CurrentUser) -> list[AstronautOut]:
+    """Crew list. Astronauts see only themselves; staff roles see the whole crew."""
+    query = select(Astronaut, Mission).join(Mission, col(Astronaut.mission_id) == Mission.id)
+    if user.role == Role.ASTRONAUT:
+        query = query.where(Astronaut.id == user.astronaut_id)
+    rows = session.exec(query.order_by(Astronaut.code)).all()
     return [
         AstronautOut(
             id=a.id,

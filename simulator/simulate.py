@@ -27,6 +27,7 @@ from astra.integrations.fixtures import (  # noqa: E402
     HORIZONS_MARS_MISSION,
     save_fixture,
 )
+from astra.seed import default_seed_file, load_seed  # noqa: E402
 from astra.simulation.generator import SimReading, generate  # noqa: E402
 from astra.simulation.scenario import DEFAULT_SCENARIO, load_scenario  # noqa: E402
 
@@ -45,6 +46,41 @@ def _chunks(items: list[SimReading], size: int) -> list[list[SimReading]]:
     return [items[i : i + size] for i in range(0, len(items), size)]
 
 
+def _sign_in(client: httpx.Client, role: str) -> dict[str, str]:
+    """Sign in as the first demo user with this role from seed.local.json / seed.example.json."""
+    user = next((u for u in load_seed(default_seed_file()).users if u.role.value == role), None)
+    if user is None:
+        _fail(f"No {role} user in the seed file")
+    response = client.post("/api/auth/login", json={"username": user.username, "password": user.password})
+    if response.status_code != 200:
+        _fail(
+            f"Sign-in as {user.username} failed ({response.status_code}). Did you run: python -m astra.seed ?"
+        )
+    return {"Authorization": f"Bearer {response.json()['accessToken']}"}
+
+
+def _close_past_episodes(client: httpx.Client, codes: list[str], start: date, before_day: int) -> int:
+    """Act as the flight surgeon: review and resolve alerts whose last trigger is before `before_day`."""
+    surgeon = _sign_in(client, "FlightSurgeon")
+    closed = 0
+    for code in codes:
+        alerts = client.get(f"/api/astronauts/{code}/alerts", headers=surgeon).raise_for_status().json()
+        for alert in alerts:
+            last_day = (date.fromisoformat(alert["lastTriggeredAt"][:10]) - start).days + 1
+            if last_day >= before_day:
+                continue
+            url = f"/api/alerts/{alert['id']}"
+            if alert["status"] != "InReview":
+                client.post(f"{url}/review", json={}, headers=surgeon).raise_for_status()
+            note = (
+                f"Past episode (last seen on mission day {last_day}) reviewed and closed "
+                "by the flight surgeon (simulated)."
+            )
+            client.post(f"{url}/resolve", json={"note": note}, headers=surgeon).raise_for_status()
+            closed += 1
+    return closed
+
+
 @app.command("seed")
 def seed_command(
     api: Annotated[str, typer.Option(help="Habitat backend URL")] = "http://localhost:8000",
@@ -52,8 +88,15 @@ def seed_command(
     random_seed: SeedOpt = 42,
     batch_size: Annotated[int, typer.Option(min=1, max=2000)] = 500,
     dry_run: Annotated[bool, typer.Option(help="Generate and count only; post nothing")] = False,
+    close_before_day: Annotated[
+        int,
+        typer.Option(
+            help="Then close alerts last seen before this mission day, as the flight surgeon "
+            "(0 = keep all open)"
+        ),
+    ] = 113,
 ) -> None:
-    """Generate pre-flight + mission data for the whole crew and post it to the backend."""
+    """Generate pre-flight + mission data for the whole crew and post it (the backend raises alerts)."""
     spec = load_scenario(scenario)
     readings = generate(spec, seed=random_seed)
     first = spec.mission.date_of(1 - spec.mission.preflight_days)
@@ -64,30 +107,41 @@ def seed_command(
         return
 
     totals: Counter[str] = Counter()
-    with httpx.Client(base_url=api, timeout=120) as client:
+    with httpx.Client(base_url=api, timeout=300) as client:
         try:
-            crew = {a["code"] for a in client.get("/api/astronauts").raise_for_status().json()}
+            client.get("/health").raise_for_status()
         except httpx.HTTPError as exc:
             _fail(f"Can't reach the backend at {api} ({exc}). Is uvicorn running?")
+        admin = _sign_in(client, "Admin")
+        crew = {a["code"] for a in client.get("/api/astronauts", headers=admin).raise_for_status().json()}
         missing = {c.code for c in spec.crew} - crew
         if missing:
             _fail(f"Astronauts {sorted(missing)} are not in the database. Run: python -m astra.seed")
 
         for code in sorted(per_crew):
             mine = [r for r in readings if r.astronaut == code]
+            alerts = 0
             for chunk in _chunks(mine, batch_size):
                 response = client.post(
                     "/api/measurements/batch",
                     json={"astronautId": code, "items": [r.to_api() for r in chunk]},
-                    headers={"X-Backfill": "true"},
+                    headers=admin | {"X-Backfill": "true"},
                 )
                 if response.status_code != 201:
                     _fail(f"Batch for {code} failed: HTTP {response.status_code}: {response.text[:300]}")
                 body = response.json()
                 for key in ("accepted", "questionable", "rejected", "duplicates"):
                     totals[key] += len(body[key])
-            typer.echo(f"  {code}: posted {len(mine)} readings")
-    typer.echo(f"Done: {dict(totals)}")
+                alerts += len(body["newAlerts"])
+            typer.echo(f"  {code}: posted {len(mine)} readings, {alerts} new alerts")
+        typer.echo(f"Done: {dict(totals)}")
+
+        if close_before_day > 0:
+            closed = _close_past_episodes(client, sorted(per_crew), spec.mission.start, close_before_day)
+            typer.echo(
+                f"Flight surgeon (simulated) closed {closed} past alert(s) "
+                f"last seen before day {close_before_day}"
+            )
 
 
 @app.command()
@@ -126,7 +180,8 @@ def fixtures() -> None:
     rows = horizons.parse_light_time(payload)
     latest = rows[-1].one_way_minutes
     typer.echo(
-        f"Saved {len(rows)} Horizons rows -> {HORIZONS_MARS_MISSION.name} (latest light time {latest:.1f} min)"
+        f"Saved {len(rows)} Horizons rows -> {HORIZONS_MARS_MISSION.name} "
+        f"(latest light time {latest:.1f} min)"
     )
 
 

@@ -7,16 +7,36 @@
   "severity": "Attention",
   "when": {
     "all": [
-      { "indicator": "resting_hr", "agg": "latest", "window": "1d", "op": "z_gte", "value": 2.0 },
       {
-        "indicator": "resting_hr", "as": "resting_hr_repeats",
-        "agg": "count_z_gte", "aggArg": 2.0, "window": "3r", "op": "gte", "value": 2
+        "indicator": "resting_hr",
+        "agg": "latest",
+        "window": "1d",
+        "op": "z_gte",
+        "value": 2.0
+      },
+      {
+        "indicator": "resting_hr",
+        "as": "resting_hr_repeats",
+        "agg": "count_z_gte",
+        "aggArg": 2.0,
+        "window": "3r",
+        "op": "gte",
+        "value": 2
       }
     ]
   },
-  "persistence": { "minTriggers": 1 },
+  "persistence": {
+    "minTriggers": 1
+  },
   "reasonTemplate": "Resting heart rate is {resting_hr.value:.0f} bpm against your normal of {resting_hr.baseline:.0f} bpm ({resting_hr.z:+.1f}σ), and it was raised on {resting_hr_repeats.value:.0f} of your last 3 readings.",
-  "recommendations": ["REC-RECHECK-RHR", "REC-SLEEP-ROUTINE", "REC-HYDRATION", "REC-CARDIO-REVIEW-EXERCISE"],
-  "escalation": { "whenTriggerCountGte": 3 },
+  "recommendations": [
+    "REC-RECHECK-RHR",
+    "REC-SLEEP-ROUTINE",
+    "REC-HYDRATION",
+    "REC-CARDIO-REVIEW-EXERCISE"
+  ],
+  "escalation": {
+    "whenTriggerCountGte": 3
+  },
   "disclaimer": "Illustrative rule for the prototype; not a clinical threshold."
 }

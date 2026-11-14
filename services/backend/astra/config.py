@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # External data (Ground node fetches; cached to files for offline demos).
     nasa_api_key: str | None = None  # api.nasa.gov key for DONKI space weather; empty = disabled
     jwt_secret: str = "dev-only-change-me"  # set a random value in .env
+    access_token_minutes: int = 12 * 60  # long enough for a demo day
+    bcrypt_rounds: int = 12  # tests lower this to 4 for speed
 
 
 settings = Settings()

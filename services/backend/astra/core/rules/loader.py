@@ -46,6 +46,14 @@ def check_rule(
     if rule.protocol is not None and rule.protocol not in protocol_ids:
         problems.append(f"unknown emergency protocol '{rule.protocol}'")
 
+    if rule.persistence.min_triggers != 1:
+        problems.append(
+            "persistence.minTriggers > 1 is not supported yet; express repetition in the rule "
+            "itself (e.g. agg 'count_z_gte' over a '3r' window)"
+        )
+    if rule.severity == "Urgent" and rule.protocol is None:
+        problems.append("Urgent rules must name an emergency protocol")
+
     problems += _check_template(rule.reason_template, set(keys))
     return problems
 

@@ -57,7 +57,7 @@ def load_seed(path: Path) -> SeedData:
     return SeedData.model_validate(json.loads(path.read_text(encoding="utf-8")))
 
 
-def seed_database(session: Session, data: SeedData) -> dict[str, int]:
+def seed_database(session: Session, data: SeedData, *, bcrypt_rounds: int = 12) -> dict[str, int]:
     m = data.mission
     mission = session.exec(select(Mission).where(Mission.code == m.code)).first() or Mission(
         code=m.code, name=m.name, profile_code=m.profile_code, start_date=m.start_date
@@ -88,12 +88,12 @@ def seed_database(session: Session, data: SeedData) -> dict[str, int]:
         if user is None:
             user = UserAccount(
                 username=u.username,
-                password_hash=hash_password(u.password),
+                password_hash=hash_password(u.password, bcrypt_rounds),
                 role=u.role.value,
                 display_name="",
             )
         elif not verify_password(u.password, user.password_hash):
-            user.password_hash = hash_password(u.password)
+            user.password_hash = hash_password(u.password, bcrypt_rounds)
         user.role, user.astronaut_id, user.display_name = u.role.value, astronaut_id, u.display_name
         session.add(user)
     session.commit()
@@ -110,7 +110,7 @@ def main() -> None:
     engine = make_engine(settings.database_url)
     init_db(engine)
     with Session(engine) as session:
-        counts = seed_database(session, load_seed(path))
+        counts = seed_database(session, load_seed(path), bcrypt_rounds=settings.bcrypt_rounds)
     print(f"Seeded {settings.database_url} from {path.name}: {counts}")
 
 

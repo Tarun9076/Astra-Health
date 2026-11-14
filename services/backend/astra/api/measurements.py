@@ -1,23 +1,27 @@
 """Measurement intake and time-series query (LLD §13.2).
 
-Auth arrives in Step 3; until then these routes are open on the local network.
+Posting: an astronaut may post only their own readings; the Admin (simulator / device gateway)
+may post for anyone. Reading: the astronaut themself or a flight surgeon.
 """
 
 from collections.abc import Sequence
 from datetime import UTC, datetime
-from typing import Annotated, Any, Literal
+from typing import Annotated, Literal
 
 import pandas as pd
 from fastapi import APIRouter, Header, HTTPException, Query, Request, status
 from pydantic import AwareDatetime, Field
 from sqlmodel import col, select
 
+from astra.api.alerts import AlertSummary, publish_alert_changes, summarize
 from astra.api.base import ApiModel
-from astra.core.enums import MeasurementQuality, MeasurementSource
+from astra.core.enums import MeasurementQuality, MeasurementSource, Role
 from astra.core.indicators import round_half_up
 from astra.core.protocols import ProtocolBundle
 from astra.db.models import Astronaut, HealthMeasurement
 from astra.db.session import SessionDep
+from astra.realtime.hub import hub
+from astra.security.deps import CurrentUser, ViewableAstronaut
 from astra.services.crew import find_astronaut
 from astra.services.ingestion import IncomingReading, ingest_batch
 
@@ -57,7 +61,8 @@ class MeasurementBatchOut(ApiModel):
     questionable: list[ItemProblem]
     rejected: list[ItemProblem]
     duplicates: list[str]
-    new_alerts: list[dict[str, Any]] = Field(default_factory=list, description="Filled from Step 3")
+    new_alerts: list[AlertSummary] = Field(default_factory=list)
+    evaluations: int = Field(default=0, description="How many times the rules were evaluated")
 
 
 class SeriesPoint(ApiModel):
@@ -95,9 +100,13 @@ def post_measurements(
     body: MeasurementBatchIn,
     request: Request,
     session: SessionDep,
+    user: CurrentUser,
     x_backfill: Annotated[bool, Header(description="true for historical/simulated imports")] = False,
 ) -> MeasurementBatchOut:
     astronaut = _astronaut_or_404(session, body.astronaut_id)
+    own = user.role == Role.ASTRONAUT and user.astronaut_id == astronaut.id
+    if not (own or user.role == Role.ADMIN):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "You can only post your own readings")
     items = [
         IncomingReading(
             id=r.id,
@@ -117,23 +126,33 @@ def post_measurements(
     ]
     outcome = ingest_batch(
         session,
-        _bundle(request).catalog,
+        _bundle(request),
         astronaut,
         items,
         node_id=request.app.state.settings.node_id,
         backfill=x_backfill,
+        user_id=user.user_id,
     )
+    if outcome.accepted or outcome.questionable:
+        hub.publish_from_thread(
+            [f"astronaut:{astronaut.id}", "medical"],
+            "MeasurementRecorded",
+            {"astronautCode": astronaut.code, "count": len(outcome.accepted) + len(outcome.questionable)},
+        )
+    publish_alert_changes(outcome.alerts, astronaut)
     return MeasurementBatchOut(
         accepted=outcome.accepted,
         questionable=[ItemProblem(id=i, reason=r) for i, r in outcome.questionable],
         rejected=[ItemProblem(id=i, reason=r) for i, r in outcome.rejected],
         duplicates=outcome.duplicates,
+        new_alerts=[summarize(a, astronaut.code) for a in outcome.alerts.created],
+        evaluations=outcome.evaluations,
     )
 
 
 @router.get("/astronauts/{astronaut}/measurements", response_model=SeriesOut)
 def get_measurements(
-    astronaut: str,
+    astronaut: ViewableAstronaut,
     request: Request,
     session: SessionDep,
     indicator: Annotated[str, Query(examples=["resting_hr"])],
@@ -143,7 +162,7 @@ def get_measurements(
     channel: Literal["Total", "Charged", "Neutron"] | None = None,
 ) -> SeriesOut:
     """Raw readings (Valid + Questionable, with their quality) or hourly/daily buckets of Valid readings."""
-    crew = _astronaut_or_404(session, astronaut)
+    crew = astronaut
     catalog = _bundle(request).catalog
     if indicator not in catalog:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Unknown indicator '{indicator}'")
