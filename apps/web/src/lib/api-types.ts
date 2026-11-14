@@ -626,6 +626,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/catalog/symptoms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Symptom Catalog */
+        get: operations["symptom_catalog_api_catalog_symptoms_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/checkins": {
         parameters: {
             query?: never;
@@ -657,6 +674,46 @@ export interface paths {
          * @description The astronaut ticks off a recommended action.
          */
         post: operations["complete_task_api_tasks__task_id__complete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/timeline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Timeline
+         * @description Chronological health history (newest first): readings, check-ins, symptoms, alerts, guidance, care.
+         */
+        get: operations["get_timeline_api_astronauts__astronaut__timeline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/guidance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Guidance
+         * @description Recommended actions (open, plus those finished in the last 7 days) and the approved guidance library.
+         */
+        get: operations["get_guidance_api_astronauts__astronaut__guidance_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1061,6 +1118,8 @@ export interface components {
             privateNote?: string | null;
             /** Completedinseconds */
             completedInSeconds?: number | null;
+            /** Symptoms */
+            symptoms?: components["schemas"]["SymptomIn"][];
         };
         /** CheckinOut */
         CheckinOut: {
@@ -1260,6 +1319,64 @@ export interface components {
             /** Reason */
             reason: string | null;
         };
+        /** GuidanceAlert */
+        GuidanceAlert: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Reason */
+            reason: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "Attention" | "Urgent";
+            /** Status */
+            status: string;
+            /** Escalationrequired */
+            escalationRequired: boolean;
+        };
+        /** GuidanceItem */
+        GuidanceItem: {
+            /** Id */
+            id: string;
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Category */
+            category: string;
+            /** Priority */
+            priority: number;
+            /** Status */
+            status: string;
+            /** Dueat */
+            dueAt: string | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Completedat */
+            completedAt: string | null;
+            alert: components["schemas"]["GuidanceAlert"] | null;
+            /** Medicalreview */
+            medicalReview: boolean;
+            /** Source */
+            source: string;
+        };
+        /** GuidanceOut */
+        GuidanceOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Items */
+            items: components["schemas"]["GuidanceItem"][];
+            /** Library */
+            library: components["schemas"]["LibraryItem"][];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1425,6 +1542,19 @@ export interface components {
             generatedAt: string;
             /** Transmissionstatus */
             transmissionStatus: string;
+        };
+        /** LibraryItem */
+        LibraryItem: {
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+            /** Body */
+            body: string;
+            /** Category */
+            category: string;
+            /** Source */
+            source: string;
         };
         /** LinkIn */
         LinkIn: {
@@ -1866,6 +1996,32 @@ export interface components {
             /** Lighttimeminutes */
             lightTimeMinutes: number | null;
         };
+        /** SymptomIn */
+        SymptomIn: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "headache" | "congestion" | "nausea" | "dizziness" | "back_pain" | "muscle_joint_pain" | "vision_change" | "sleep_trouble" | "skin_irritation" | "low_mood" | "chest_pain" | "breathing_difficulty" | "fainting" | "neuro_deficit" | "severe_bleeding";
+            /**
+             * Severity
+             * @description 1 = barely noticeable, 10 = worst imaginable
+             */
+            severity: number;
+            /** Note */
+            note?: string | null;
+        };
+        /** SymptomOption */
+        SymptomOption: {
+            /** Code */
+            code: string;
+            /** Label */
+            label: string;
+            /** Redflag */
+            redFlag: boolean;
+            /** Protocol */
+            protocol: string | null;
+        };
         /** SyncStatus */
         SyncStatus: {
             /** Nodeid */
@@ -1925,6 +2081,41 @@ export interface components {
             /** Alertid */
             alertId: string | null;
         };
+        /** TimelineEvent */
+        TimelineEvent: {
+            /** Id */
+            id: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "Readings" | "Checkin" | "Symptom" | "Alert" | "AlertClosed" | "Recommendation" | "RecommendationDone" | "Insight" | "Instruction" | "Report";
+            /** Title */
+            title: string;
+            /** Detail */
+            detail?: string | null;
+            /** Severity */
+            severity?: ("Attention" | "Urgent") | null;
+            /** Refid */
+            refId?: string | null;
+        };
+        /** TimelineOut */
+        TimelineOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /**
+             * Since
+             * Format: date
+             */
+            since: string;
+            /** Events */
+            events: components["schemas"]["TimelineEvent"][];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1969,6 +2160,14 @@ export interface components {
              * @enum {string}
              */
             worseWhen: "high" | "low" | "both";
+            /** Previousvalue */
+            previousValue?: number | null;
+            /** Previousat */
+            previousAt?: string | null;
+            /** Source */
+            source?: string | null;
+            /** Quality */
+            quality?: string | null;
         };
         /** VitalIn */
         VitalIn: {
@@ -3123,6 +3322,26 @@ export interface operations {
             };
         };
     };
+    symptom_catalog_api_catalog_symptoms_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SymptomOption"][];
+                };
+            };
+        };
+    };
     post_checkin_api_checkins_post: {
         parameters: {
             query?: never;
@@ -3174,6 +3393,70 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TaskOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_timeline_api_astronauts__astronaut__timeline_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimelineOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_guidance_api_astronauts__astronaut__guidance_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuidanceOut"];
                 };
             };
             /** @description Validation Error */

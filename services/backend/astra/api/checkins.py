@@ -18,11 +18,12 @@ from astra.api.reports import publish_report
 from astra.core.enums import MeasurementSource, NodeRole, Role
 from astra.core.ids import new_id
 from astra.core.protocols import ProtocolBundle
-from astra.db.models import Astronaut, RecommendationTask, WellnessCheckin
+from astra.db.models import Astronaut, RecommendationTask, Symptom, WellnessCheckin
 from astra.db.session import SessionDep
 from astra.realtime.hub import hub
 from astra.security.deps import CurrentUser
 from astra.security.jwt import TokenClaims
+from astra.services.alerts import AlertChanges, raise_symptom_alert
 from astra.services.ingestion import IncomingReading, ingest_batch
 from astra.services.reports import report_new_alerts
 from astra.services.routine import complete_checkin_reminder
@@ -38,6 +39,45 @@ class VitalIn(ApiModel):
     unit: str = Field(examples=["bpm"])
 
 
+# Symptoms offered in the daily check-in. The red-flag ones (protocols/redflags.yaml, matched by symptom
+# code) raise an Urgent alert with the emergency protocol, exactly as when reported to the assistant.
+CHECKIN_SYMPTOMS: dict[str, str] = {
+    "headache": "Headache",
+    "congestion": "Blocked nose or head fullness",
+    "nausea": "Nausea or space motion sickness",
+    "dizziness": "Dizziness or light-headedness",
+    "back_pain": "Back pain",
+    "muscle_joint_pain": "Muscle or joint pain",
+    "vision_change": "Change in vision",
+    "sleep_trouble": "Trouble sleeping",
+    "skin_irritation": "Skin rash or irritation",
+    "low_mood": "Feeling low, anxious or irritable",
+    "chest_pain": "Chest pain or pressure",
+    "breathing_difficulty": "Severe difficulty breathing",
+    "fainting": "Fainting or nearly fainting",
+    "neuro_deficit": "Sudden weakness, numbness, confusion or slurred speech",
+    "severe_bleeding": "Severe bleeding",
+}
+SymptomCode = Literal[
+    "headache", "congestion", "nausea", "dizziness", "back_pain", "muscle_joint_pain", "vision_change",
+    "sleep_trouble", "skin_irritation", "low_mood", "chest_pain", "breathing_difficulty", "fainting",
+    "neuro_deficit", "severe_bleeding",
+]  # fmt: skip
+
+
+class SymptomIn(ApiModel):
+    code: SymptomCode
+    severity: int = Field(ge=1, le=10, description="1 = barely noticeable, 10 = worst imaginable")
+    note: str | None = Field(default=None, max_length=300)
+
+
+class SymptomOption(ApiModel):
+    code: str
+    label: str
+    red_flag: bool
+    protocol: str | None
+
+
 class CheckinIn(ApiModel):
     id: str | None = Field(
         default=None, description="UUIDv7 from the client (offline outbox); generated if missing"
@@ -50,6 +90,7 @@ class CheckinIn(ApiModel):
     vitals: list[VitalIn] = Field(default_factory=list, max_length=10)
     private_note: str | None = Field(default=None, max_length=1000, description="Visible to you only")
     completed_in_seconds: int | None = Field(default=None, ge=0, le=3600)
+    symptoms: list[SymptomIn] = Field(default_factory=list, max_length=15)
 
 
 class CheckinOut(ApiModel):
@@ -70,6 +111,67 @@ def _own_astronaut(session: Session, user: TokenClaims) -> Astronaut:
     return astronaut
 
 
+@router.get("/catalog/symptoms", response_model=list[SymptomOption])
+def symptom_catalog(request: Request, user: CurrentUser) -> list[SymptomOption]:
+    flags = {f.symptom: f for f in request.app.state.assistant.redflags.flags}
+    return [
+        SymptomOption(
+            code=c, label=label, red_flag=c in flags, protocol=flags[c].protocol if c in flags else None
+        )
+        for c, label in CHECKIN_SYMPTOMS.items()
+    ]
+
+
+def _record_symptoms(
+    session: Session,
+    request: Request,
+    astronaut: Astronaut,
+    symptoms: list[SymptomIn],
+    checkin_id: str,
+    now: datetime,
+) -> AlertChanges:
+    """Store reported symptoms; red-flag ones raise an Urgent alert (deterministic, no AI)."""
+    changes = AlertChanges()
+    redflags = request.app.state.assistant.redflags
+    flags = {f.symptom: f for f in redflags.flags}
+    for i, sym in enumerate({s.code: s for s in symptoms}.values()):
+        flag = flags.get(sym.code)
+        session.add(
+            Symptom(
+                id=f"{checkin_id}-S{i}",
+                astronaut_id=astronaut.id,
+                symptom_code=sym.code,
+                free_text=sym.note,
+                severity=sym.severity,
+                onset_at=now,
+                red_flag=flag is not None,
+                source="Checkin",
+            )
+        )
+        if flag is None:
+            continue
+        changes.extend(
+            raise_symptom_alert(
+                session,
+                request.app.state.protocols,
+                astronaut,
+                rule_id=f"SYM-{flag.id}",
+                rule_version=redflags.version,
+                title=flag.title,
+                reason=(
+                    f"Reported in the daily check-in: {CHECKIN_SYMPTOMS[sym.code].lower()} "
+                    f"(severity {sym.severity}/10). Follow the emergency protocol."
+                ),
+                protocol=flag.protocol,
+                evidence={"symptom": {"indicator": sym.code, "agg": "reported", "window": "now", "n": 1}},
+                at=now,
+                node_id=request.app.state.settings.node_id,
+            )
+        )
+    session.flush()
+    return changes
+
+
 @router.post("/checkins", status_code=status.HTTP_201_CREATED, response_model=CheckinOut)
 def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: CurrentUser) -> CheckinOut:
     if request.app.state.settings.node_role == NodeRole.GROUND:
@@ -80,6 +182,12 @@ def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: C
     bundle: ProtocolBundle = request.app.state.protocols
     now = datetime.now(UTC).replace(microsecond=0)
     checkin_id = body.id or new_id()
+    existing = session.get(WellnessCheckin, checkin_id)
+    if existing is not None and existing.astronaut_id == astronaut.id:
+        # the outbox re-sent a check-in that was already stored (its first reply was lost): no-op
+        return CheckinOut(
+            checkin_id=checkin_id, accepted=0, questionable=[], rejected=[], new_alerts=[], updated_alerts=[]
+        )
 
     session.add(
         WellnessCheckin(
@@ -129,6 +237,9 @@ def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: C
         now=now,
         user_id=user.user_id,
     )
+
+    symptom_alerts = _record_symptoms(session, request, astronaut, body.symptoms, checkin_id, now)
+    outcome.alerts.extend(symptom_alerts)
 
     hub.publish_from_thread(
         [f"astronaut:{astronaut.id}", "medical"],

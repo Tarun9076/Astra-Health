@@ -1683,6 +1683,36 @@
     ]
    }
   },
+  "/api/catalog/symptoms": {
+   "get": {
+    "tags": [
+     "check-in"
+    ],
+    "summary": "Symptom Catalog",
+    "operationId": "symptom_catalog_api_catalog_symptoms_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/SymptomOption"
+         },
+         "type": "array",
+         "title": "Response Symptom Catalog Api Catalog Symptoms Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
   "/api/checkins": {
    "post": {
     "tags": [
@@ -1760,6 +1790,114 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/TaskOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/timeline": {
+   "get": {
+    "tags": [
+     "history"
+    ],
+    "summary": "Get Timeline",
+    "description": "Chronological health history (newest first): readings, check-ins, symptoms, alerts, guidance, care.",
+    "operationId": "get_timeline_api_astronauts__astronaut__timeline_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "days",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 400,
+       "minimum": 1,
+       "default": 14,
+       "title": "Days"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TimelineOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/guidance": {
+   "get": {
+    "tags": [
+     "history"
+    ],
+    "summary": "Get Guidance",
+    "description": "Recommended actions (open, plus those finished in the last 7 days) and the approved guidance library.",
+    "operationId": "get_guidance_api_astronauts__astronaut__guidance_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/GuidanceOut"
         }
        }
       }
@@ -2858,6 +2996,14 @@
        }
       ],
       "title": "Completedinseconds"
+     },
+     "symptoms": {
+      "items": {
+       "$ref": "#/components/schemas/SymptomIn"
+      },
+      "type": "array",
+      "maxItems": 15,
+      "title": "Symptoms"
      }
     },
     "type": "object",
@@ -3501,6 +3647,173 @@
     ],
     "title": "FlaggedReading"
    },
+   "GuidanceAlert": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     },
+     "severity": {
+      "type": "string",
+      "enum": [
+       "Attention",
+       "Urgent"
+      ],
+      "title": "Severity"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "escalationRequired": {
+      "type": "boolean",
+      "title": "Escalationrequired"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "reason",
+     "severity",
+     "status",
+     "escalationRequired"
+    ],
+    "title": "GuidanceAlert"
+   },
+   "GuidanceItem": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "body": {
+      "type": "string",
+      "title": "Body"
+     },
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "priority": {
+      "type": "integer",
+      "title": "Priority"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "dueAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Dueat"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Createdat"
+     },
+     "completedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Completedat"
+     },
+     "alert": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/GuidanceAlert"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "medicalReview": {
+      "type": "boolean",
+      "title": "Medicalreview"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "code",
+     "title",
+     "body",
+     "category",
+     "priority",
+     "status",
+     "dueAt",
+     "createdAt",
+     "completedAt",
+     "alert",
+     "medicalReview",
+     "source"
+    ],
+    "title": "GuidanceItem"
+   },
+   "GuidanceOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/GuidanceItem"
+      },
+      "type": "array",
+      "title": "Items"
+     },
+     "library": {
+      "items": {
+       "$ref": "#/components/schemas/LibraryItem"
+      },
+      "type": "array",
+      "title": "Library"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "items",
+     "library"
+    ],
+    "title": "GuidanceOut"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -3961,6 +4274,39 @@
      "transmissionStatus"
     ],
     "title": "LatestReport"
+   },
+   "LibraryItem": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "body": {
+      "type": "string",
+      "title": "Body"
+     },
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "title",
+     "body",
+     "category",
+     "source"
+    ],
+    "title": "LibraryItem"
    },
    "LinkIn": {
     "properties": {
@@ -5116,6 +5462,91 @@
     ],
     "title": "SpaceWeatherNow"
    },
+   "SymptomIn": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "enum": [
+       "headache",
+       "congestion",
+       "nausea",
+       "dizziness",
+       "back_pain",
+       "muscle_joint_pain",
+       "vision_change",
+       "sleep_trouble",
+       "skin_irritation",
+       "low_mood",
+       "chest_pain",
+       "breathing_difficulty",
+       "fainting",
+       "neuro_deficit",
+       "severe_bleeding"
+      ],
+      "title": "Code"
+     },
+     "severity": {
+      "type": "integer",
+      "maximum": 10.0,
+      "minimum": 1.0,
+      "title": "Severity",
+      "description": "1 = barely noticeable, 10 = worst imaginable"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "severity"
+    ],
+    "title": "SymptomIn"
+   },
+   "SymptomOption": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "redFlag": {
+      "type": "boolean",
+      "title": "Redflag"
+     },
+     "protocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocol"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "label",
+     "redFlag",
+     "protocol"
+    ],
+    "title": "SymptomOption"
+   },
    "SyncStatus": {
     "properties": {
      "nodeId": {
@@ -5298,6 +5729,111 @@
     ],
     "title": "TaskOut"
    },
+   "TimelineEvent": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "At"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "Readings",
+       "Checkin",
+       "Symptom",
+       "Alert",
+       "AlertClosed",
+       "Recommendation",
+       "RecommendationDone",
+       "Insight",
+       "Instruction",
+       "Report"
+      ],
+      "title": "Kind"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "detail": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Detail"
+     },
+     "severity": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "Attention",
+         "Urgent"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Severity"
+     },
+     "refId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Refid"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "at",
+     "kind",
+     "title"
+    ],
+    "title": "TimelineEvent"
+   },
+   "TimelineOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "since": {
+      "type": "string",
+      "format": "date",
+      "title": "Since"
+     },
+     "events": {
+      "items": {
+       "$ref": "#/components/schemas/TimelineEvent"
+      },
+      "type": "array",
+      "title": "Events"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "since",
+     "events"
+    ],
+    "title": "TimelineOut"
+   },
    "ValidationError": {
     "properties": {
      "loc": {
@@ -5412,6 +5948,51 @@
        "both"
       ],
       "title": "Worsewhen"
+     },
+     "previousValue": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Previousvalue"
+     },
+     "previousAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Previousat"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "quality": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quality"
      }
     },
     "type": "object",

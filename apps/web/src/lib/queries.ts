@@ -179,3 +179,28 @@ export function useWellnessTrend(code: string | null | undefined, range: Range) 
     enabled: Boolean(code),
   })
 }
+
+export function useTimeline(code: string | null | undefined, days: number) {
+  return useQuery({
+    queryKey: ['timeline', code, days],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/timeline', { params: { path: { astronaut: code! }, query: { days } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useGuidance(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['guidance', code],
+    queryFn: () => unwrap(api.GET('/api/astronauts/{astronaut}/guidance', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useSymptomCatalog() {
+  return useQuery({
+    queryKey: ['symptom-catalog'],
+    queryFn: () => unwrap(api.GET('/api/catalog/symptoms')),
+    staleTime: Infinity,
+  })
+}

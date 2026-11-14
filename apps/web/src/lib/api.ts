@@ -38,6 +38,13 @@ export type Radiation = Schemas['RadiationOut']
 export type CabinValue = Schemas['CabinValue']
 export type SpaceWeatherNow = Schemas['SpaceWeatherNow']
 export type LinkState = Schemas['LinkOut']
+export type Timeline = Schemas['TimelineOut']
+export type TimelineEvent = Schemas['TimelineEvent']
+export type Guidance = Schemas['GuidanceOut']
+export type GuidanceItem = Schemas['GuidanceItem']
+export type LibraryItem = Schemas['LibraryItem']
+export type SymptomOption = Schemas['SymptomOption']
+export type SymptomIn = Schemas['SymptomIn']
 
 export class ApiError extends Error {
   readonly status: number

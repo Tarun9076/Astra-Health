@@ -10,7 +10,7 @@ from astra.api.alerts import AlertSummary, TaskOut, summarize, task_out
 from astra.api.base import ApiModel
 from astra.core.alerts import ACTIVE_STATUSES
 from astra.core.protocols import ProtocolBundle
-from astra.db.models import HealthAlert, Mission, RecommendationTask
+from astra.db.models import HealthAlert, HealthMeasurement, Mission, RecommendationTask
 from astra.db.session import SessionDep
 from astra.security.deps import ViewableAstronaut
 from astra.services.assessment import HISTORY_MARGIN, load_assessor
@@ -46,6 +46,10 @@ class Vital(ApiModel):
     z: float | None
     deviation: Literal["normal", "above", "below", "unknown"]
     worse_when: Literal["high", "low", "both"]
+    previous_value: float | None = None  # the reading before this one (any day)
+    previous_at: datetime | None = None
+    source: str | None = None  # Manual | Wearable | Device | Simulated …
+    quality: str | None = None  # Valid | Questionable
 
 
 class WellnessDomain(ApiModel):
@@ -120,6 +124,17 @@ def get_dashboard(astronaut: ViewableAstronaut, request: Request, session: Sessi
         if not points:
             continue
         latest = points[-1]
+        previous = points[-2] if len(points) > 1 else None
+        row = session.exec(
+            select(HealthMeasurement)
+            .where(
+                HealthMeasurement.astronaut_id == astronaut.id,
+                HealthMeasurement.indicator_code == indicator,
+                col(HealthMeasurement.channel).in_(["", "Total"]),
+                HealthMeasurement.measured_at == latest.t,
+            )
+            .limit(1)
+        ).first()
         meta = bundle.catalog.get(indicator)
         base = assessor.baseline(indicator, today)
         z = base.z(latest.value) if base else None
@@ -135,6 +150,10 @@ def get_dashboard(astronaut: ViewableAstronaut, request: Request, session: Sessi
                 z=round(z, 2) if z is not None else None,
                 deviation=_deviation(z) if meta.has_baseline else "unknown",
                 worse_when=meta.worse_when,
+                previous_value=previous.value if previous else None,
+                previous_at=previous.t if previous else None,
+                source=row.source if row else None,
+                quality=row.quality if row else None,
             )
         )
 
