@@ -58,6 +58,20 @@ Responses are cached in `simulator/fixtures/` so the demo works offline. Details
 cd services/backend && .venv/Scripts/python -m uvicorn astra.main:app --reload --port 8000
 ```
 
+**Load demo data** (once, while the backend is running). First create the mission, crew and demo accounts (from `services/backend/seed.example.json`):
+
+```bash
+cd services/backend && .venv/Scripts/python -m astra.seed
+```
+
+Then post 150 days of simulated crew data (about 6,600 readings, including the real May 2024 solar storm replay). Running it again is safe; duplicates are skipped:
+
+```bash
+services/backend/.venv/Scripts/python simulator/simulate.py seed
+```
+
+The database is `services/backend/habitat.db` (git-ignored). Delete it to start fresh.
+
 **Web app** — http://localhost:5173 (proxies `/api` and `/ws` to port 8000)
 
 ```bash

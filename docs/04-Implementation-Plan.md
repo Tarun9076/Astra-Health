@@ -39,7 +39,7 @@ gantt
     section Foundation
     Step 0 Scaffold (done)               :done, s0, 2026-11-14, 1d
     Step 1 Catalog, protocols, core models :done, s1, after s0, 1d
-    Step 2 DB, simulator, ingestion      :s2, after s1, 2d
+    Step 2 DB, simulator, ingestion      :done, s2, after s1, 2d
     Step 3 Baselines, rules, alerts, auth :s3, after s2, 2d
     section Product
     Step 4 Dashboard, check-in, live alerts :s4, after s3, 4d
@@ -96,21 +96,21 @@ Also done: `services/backend/.env` (git-ignored) with a random `ASTRA_JWT_SECRET
 
 ---
 
-### Step 2 — Database, simulator, ingestion API (Days 3–4)
+### Step 2 — Database, simulator, ingestion API (Days 3–4) ✅
 
 **Goal:** realistic history in a real database through the real API.
 
 **Tasks**
-- [ ] `astra/db/models.py`: SQLModel tables for Users, Missions, Astronauts, HealthMeasurements, WellnessCheckins, Symptoms, HealthBaselines, HealthAlerts, Recommendations, AuditLog, SyncOutbox (LLD §3). `astra/db/session.py` with a `get_session` dependency.
-- [ ] Alembic initialised (`alembic init alembic`), first migration. (For the first days `SQLModel.metadata.create_all` is fine; switch to Alembic before Step 9.)
-- [ ] Seed command (`python -m astra.seed`): mission ARES-1, AST-001/002/003, users `ast1/ast2/ast3`, `surgeon1`, `mission1`, `admin` (demo passwords in `seed.example.json`, the real file git-ignored).
-- [ ] `astra/core/validation.py` (LLD §4) + tests T-V-03..05.
-- [ ] Routers: `POST /api/measurements/batch`, `GET /api/astronauts/{id}/measurements?bucket=day` (pandas resampling for buckets).
-- [ ] `simulator/simulate.py seed`: 30 pre-flight + 120 mission days for 3 crew from `crew.yaml` (AR(1) noise + scenario effects), posted in batches with `X-Backfill: true`.
-- [ ] Calibrate the simulator with the published values in LLD §20.4: sleep, bone-loss drift, Mars-surface radiation ≈ 0.64 mSv/day with a ≈ 30 % neutron share. Note each source in `crew.yaml` comments.
-- [ ] Save real-data fixtures once (using your NASA key): `simulator/fixtures/donki-sep-2024-05.json` (May 2024 storm) and `horizons-mars-2026-11.json`. The simulator uses the SEP onset times for the `spe_radiation` scenario instead of a made-up day.
+- [x] `astra/db/models.py`: SQLModel tables for Users, Missions, Astronauts, HealthMeasurements, WellnessCheckins, Symptoms, HealthBaselines, HealthAlerts, Recommendations, AuditLog, SyncOutbox (LLD §3). `astra/db/session.py` with a `get_session` dependency.
+- [ ] *Deferred to before Step 9:* Alembic migrations. Step 2 uses `SQLModel.metadata.create_all` (tables are created at startup).
+- [x] Seed command (`python -m astra.seed`): mission ARES-1, AST-001/002/003, users `ast1/ast2/ast3`, `surgeon1`, `mission1`, `admin` (demo passwords in `seed.example.json`, the real file git-ignored).
+- [x] `astra/core/validation.py` (LLD §4) + tests T-V-03..05.
+- [x] Routers: `POST /api/measurements/batch`, `GET /api/astronauts/{id}/measurements?bucket=day` (pandas resampling for buckets).
+- [x] `simulator/simulate.py seed`: 30 pre-flight + 120 mission days for 3 crew from `crew.yaml` (AR(1) noise + scenario effects), posted in batches with `X-Backfill: true`.
+- [x] Calibrate the simulator with the published values in LLD §20.4: sleep, bone-loss drift, Mars-surface radiation ≈ 0.64 mSv/day with a ≈ 30 % neutron share. Note each source in `crew.yaml` comments.
+- [x] Save real-data fixtures once (using your NASA key): `simulator/fixtures/donki-sep-2024-05.json` (May 2024 storm) and `horizons-mars-2026-07-to-11.json`. The simulator uses the SEP onset times for the `spe_radiation` scenario instead of a made-up day.
 
-**Done when:** `python simulator/simulate.py seed` loads ~150 days × 3 crew, and Swagger UI (`/docs`) shows AST-001's resting-HR series rising from day 114.
+**Done when:** `python simulator/simulate.py seed` loads ~150 days × 3 crew, and Swagger UI (`/docs`) shows AST-001's resting-HR series rising from day 114. **Done 2026-11-14:** 6,649 readings (6,648 accepted, 1 questionable sensor glitch); a re-run stores nothing new; AST-001 resting HR goes 66 → 92 bpm from day 114 to 120. 74 backend tests pass.
 
 ---
 

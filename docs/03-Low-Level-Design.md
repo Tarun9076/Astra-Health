@@ -128,7 +128,13 @@ Scheduled assessments (bone density, balance, cognitive test, immune panel) are 
 
 ## 3. Database schema (SQLModel tables, SQLite; Alembic migrations)
 
-Conventions: PK `Id` = UUIDv7 stored as text (`uuid6.uuid7()` or Python 3.14's `uuid.uuid7()`) unless noted; all timestamps timezone-aware UTC `datetime`; column names below are logical (use snake_case in Python); `OriginNodeId` + `CreatedAt` + `UpdatedAt` + `Version` (int) on every syncable entity.
+**Conventions:**
+- **IDs:** PK `Id` = UUIDv7 stored as text, from `astra/core/ids.py`, a small RFC 9562 implementation (Python 3.12 has no `uuid.uuid7()`), unless noted.
+- **Timestamps:** timezone-aware UTC `datetime`, stored through the `UTCDateTime` column type (`astra/db/types.py`). SQLite drops time zones, so this type re-attaches UTC on read and refuses naive datetimes.
+- **Enum-like columns** store the readable value (e.g. `"Valid"`).
+- **Table names** are SQLModel's defaults (`healthmeasurement`, `useraccount`, …). Tables are created at startup with `create_all`; Alembic comes before Step 9.
+- **Column names** below are logical (snake_case in Python).
+- **Sync fields:** column names below are logical (use snake_case in Python); `OriginNodeId` + `CreatedAt` + `UpdatedAt` + `Version` (int) on every syncable entity.
 
 ### 3.1 Identity & crew
 ```
@@ -162,9 +168,10 @@ Symptoms           (Id, AstronautId, SymptomCode 'dizziness', FreeText NULL, Sev
                     ResolvedAt NULL, BodyRegion NULL, RedFlag BOOL, Source ENUM[Form,Voice,Assistant])
 ExerciseRecords    (Id, AstronautId, Type ENUM[Resistance,Aerobic,Treadmill,Cycle], DurationMin, LoadKg NULL,
                     PerceivedExertion 1-10, PerformedAt)
-RadiationExposures (Id, AstronautId NULL, DoseMsv, Channel ENUM[Total,Charged,Neutron], PeriodStart, PeriodEnd,
-                    EventType ENUM[Background,SPE,EVA], InstrumentType ENUM[PersonalDosimeter,NeutronSpectrometer,AreaMonitor],
-                    DosimeterId)   -- AstronautId NULL = habitat-wide; neutrons ≈ 30 % of ISS radiation (CSA)
+-- Radiation (as built): personal dosimeter readings are HealthMeasurements with indicator radiation_dose
+-- and Channel ∈ {Total, Charged, Neutron} (one row per channel; non-radiation rows use Channel = '').
+-- The unique key is (AstronautId, IndicatorCode, Channel, MeasuredAt, DeviceId). Neutrons ≈ 30 % (CSA).
+-- A separate habitat-wide RadiationExposures/EnvironmentReadings store arrives with the environment panel (Step 10).
 EnvironmentReadings(Id, MissionId, Module 'HAB-A', CabinTempC, HumidityPct, Co2MmHg, MeasuredAt)
 Assessments        (Id, AstronautId, Type ENUM[BoneDensity,Balance,Cognitive,ImmunePanel,Ultrasound,Strength,VisionCheck],
                     DueAt, CompletedAt NULL, ResultJson NULL, ResultSummary NULL, ReviewedBy NULL)
@@ -652,9 +659,10 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 ### 13.2 Astronaut data
 | Method | Path | Role | Body / Query → Response |
 |---|---|---|---|
+| GET | `/astronauts` ✅ | surgeon, mission (Step 3 filters by role) | → `[{id, code, displayName, roleTitle, missionCode, missionStart}]` |
 | GET | `/astronauts/{id}/dashboard` | self, surgeon | → `{status, wellnessIndex, vitals:[{indicator,value,unit,at,baseline,sigma,z,trend}], activeAlerts, tasks, missionDay, lastSyncAt}` |
-| POST | `/measurements/batch` | self, device, admin | `{astronautId, items:[{id, indicator, value, unit, measuredAt, source, deviceId?, panelId?, signalQuality?}]}` → `{accepted:[id], rejected:[{id,reason}], questionable:[{id,reason}], newAlerts:[AlertDto]}` |
-| GET | `/astronauts/{id}/measurements` | self, surgeon | `?indicator=&from=&to=&bucket=raw|hour|day` → `[{t, value, min?, max?, quality}]` |
+| POST | `/measurements/batch` ✅ | self, device, admin | `{astronautId (code or id), items:[{id?, indicator, value, unit, measuredAt (with timezone), source, deviceId?, channel?, panelId?, signalQuality?, motionArtifact?}]}`, header `X-Backfill: true` for imports → 201 `{accepted:[id], questionable:[{id,reason}], rejected:[{id,reason}], duplicates:[id], newAlerts:[AlertDto] (Step 3)}`. Max 2,000 items; duplicates (same id, or same indicator/channel/time/device) are not stored again |
+| GET | `/astronauts/{id}/measurements` ✅ | self, surgeon | `?indicator=&start=&end=&bucket=raw|hour|day&channel=` → `{astronautCode, indicator, unit, bucket, points:[{t, value, min?, max?, n, quality?, channel?}]}`. Raw = Valid + Questionable with their quality; buckets average Valid readings only; radiation defaults to the `Total` channel |
 | POST | `/checkins` | self | `{id, date, sleepHours, sleepQuality, mood, stress, fatigue, symptoms:[...], privateNote?}` → `{checkin, newAlerts, recommendations}` |
 | POST | `/symptoms` | self | `{id, symptomCode, severity, onsetAt, freeText?}` → `{symptom, redFlag, protocolId?, newAlerts}` |
 | POST | `/exercise` | self | `{id, type, durationMin, loadKg?, perceivedExertion}` |
@@ -756,42 +764,66 @@ Dark "mission ops" theme: background `#0B1020`, surface `#121A2E`, text `#E6ECFF
 
 ## 16. Simulator
 
-### 16.1 Scenario YAML
+The generator lives in the backend package (`astra/simulation/`: `scenario.py` and `generator.py`), so scenario tests can call it in-process. `simulator/simulate.py` is a thin command-line tool on top of it. The scenario is `simulator/scenarios/crew.yaml`, which carries its calibration sources as comments (§20.4).
+
+### 16.1 Scenario YAML (excerpt; full file in the repo)
 ```yaml
+mission:
+  code: ARES-1
+  start: 2026-07-17          # mission day 1; days <= 0 are pre-flight
+  preflightDays: 30
+  days: 120
+  profile: mars-surface
+  inFlightShift: { sleep_hours: -0.6 }      # ~6 h/night in flight (Barger 2014)
+  strengthDriftPctPerDay: -0.03
+radiation:
+  preflightMsvPerDay: [0.008, 0.001]        # Earth background
+  missionMsvPerDay: [0.64, 0.04]            # Mars surface (Hassler 2014)
+  neutronShare: 0.30                         # CSA 2026
+defaults: { sleep_quality: [7, 1], hydration_ml: [2500, 300], body_weight: [72, 0.4], exercise_sessions: [5, 0.8], strength_index: [100, 1.0] }
 crew:
   - code: AST-001
     name: "Cmdr. A. Rao (simulated)"
-    baseline: { resting_hr: [64, 3], sleep_hours: [7.1, 0.5], mood: [7, 1], stress: [3, 1], fatigue: [3, 1],
-                bp_sys: [116, 5], bp_dia: [74, 4], body_temp: [36.7, 0.15], spo2: [98, 0.7], glucose: [92, 8],
-                activity_min: [75, 15] }
-mission: { code: ARES-1, start: 2026-07-17, preflightDays: 30, days: 120, profile: mars-surface }
+    baseline: { resting_hr: [64, 3], sleep_hours: [7.1, 0.5], mood: [7, 1], stress: [3, 1], fatigue: [3, 1], … }
 events:
-  - scenario: fatigue_onset
+  - scenario: fatigue_onset                  # AST-001, days 114-120, ramped over 5 days
     astronaut: AST-001
     startDay: 114
-    ramp_days: 5
-    effects:
-      sleep_hours: { delta: -2.4 }
-      resting_hr:  { delta: +22 }
-      fatigue:     { delta: +5 }
-      mood:        { delta: -3 }
-      stress:      { delta: +4 }
-  - scenario: spe_radiation
+    rampDays: 5
+    effects: { sleep_hours: { delta: -2.4 }, sleep_quality: { delta: -3 }, resting_hr: { delta: 22 }, fatigue: { delta: 5 }, mood: { delta: -3 }, stress: { delta: 4 } }
+  - scenario: spe_radiation                  # replays the REAL May 2024 storm (NASA DONKI fixture)
     startDay: 87
-    effects: { radiation_dose: { multiply: 30, duration_hours: 18 } }
+    replay: donki-sep-2024-05.json           # SEP on 4 days (offsets 0,1,2,4) -> days 87, 88, 89, 91
+    effects: { radiation_dose: { multiply: 30 } }
   - scenario: sensor_glitch
     astronaut: AST-002
-    day: 60
-    effects: { heart_rate: { spike: 190, quality: low_signal } }
+    startDay: 60
+    effects: { heart_rate: { spike: 190, signalQuality: 0.3 } }   # must become Questionable, never an alert
 ```
-Generation: per day, value = baseline mean + AR(1) noise (φ = 0.6) + circadian term (HR) + weekly exercise pattern + scenario effect with linear ramp; round to device precision; mark `isSimulated`.
 
-### 16.2 CLI
+### 16.2 How values are generated
+- **Each value** = baseline mean + sd × AR(1) noise (φ = 0.6, so today resembles yesterday). During the mission, `inFlightShift` and the strength drift are added. Then each event's `delta`, multiplied by a linear ramp over `rampDays`. The result is clipped (scores 1–10, SpO₂ ≤ 100) and rounded to device precision.
+- **Daily schedule (UTC):**
+  - 06:00 sleep, 06:30 resting HR
+  - 07:00 blood pressure (bp_sys + bp_dia share a `panelId`)
+  - 07:05 temperature and SpO₂
+  - 07:15 sleep quality, mood, stress, fatigue
+  - 21:00 activity, 22:00 hydration
+  - 23:55 radiation (`Total` and `Neutron` channels)
+- **Less often:** glucose every 3rd day; weight, strength index and exercise sessions weekly.
+- **Determinism:** reading ids are deterministic UUIDv7s, from the timestamp plus a hash of (astronaut, indicator, channel, time). The same seed always produces the same data, and re-posting it is idempotent: the second run reports 100 % duplicates.
+- **Labelling:** all readings are posted with `source: "Simulated"` and the `X-Backfill: true` header, which skips the late-arrival check.
+- **Output for ARES-1:** 6,649 readings (2026-06-17 → 2026-11-13). AST-001's resting HR rises 66 → 92 bpm and sleep falls to about 4 h over days 114–120. Radiation is 0.64 mSv/day, rising to about 19 mSv/day on storm days.
+
+### 16.3 CLI (run from the repo root with the backend's virtual environment)
 ```
-python simulate.py seed   --scenario scenarios/crew.yaml --api http://localhost:8000   # bulk backfill
-python simulate.py stream --astronaut AST-001 --every 5s                                  # live wearable stream
-python simulate.py inject --scenario fatigue_onset --astronaut AST-001 --day 114
+services/backend/.venv/Scripts/python -m astra.seed                         # mission, crew, demo accounts (once)
+services/backend/.venv/Scripts/python simulator/simulate.py seed             # generate + post (Habitat on :8000)
+services/backend/.venv/Scripts/python simulator/simulate.py seed --dry-run   # generate and count only
+services/backend/.venv/Scripts/python simulator/simulate.py preview --astronaut AST-001 --indicator resting_hr
+services/backend/.venv/Scripts/python simulator/simulate.py fixtures         # re-fetch DONKI + Horizons (needs NASA key)
 ```
+`stream` (live wearable feed) and `inject` (start a scenario on demand from the Demo Control Panel) are added in Steps 4 and 9.
 
 ---
 
