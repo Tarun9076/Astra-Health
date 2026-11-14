@@ -44,7 +44,7 @@ gantt
     section Product
     Step 4 Dashboard, check-in, live alerts :done, s4, after s3, 4d
     Step 5 Analytics, recommendations, wellness :done, s5, after s4, 2d
-    Step 6 ML insights                   :s6, after s5, 3d
+    Step 6 ML insights                   :done, s6, after s5, 3d
     Step 7 AI assistant + RAG            :s7, after s6, 3d
     section Earth and wow
     Step 8 Reports + surgeon dashboard   :s8, after s7, 2d
@@ -182,16 +182,26 @@ Today is mission day 121; the history covers days −29…120.
 - **Healthy-crew false alarms:** still 1 / 1 / 2.
 - **Not covered:** a visual screenshot of the charts (the browser window was minimized; the structure was checked through the DOM).
 
-### Step 6 — ML insights (Days 13–15) → **M3**
+### Step 6 — ML insights (Days 13–15) → **M3** ✅
 
 **Tasks**
-- [ ] `astra/ml/features.py` (daily vectors as robust z-scores), `isolation.py` (train/score per astronaut, joblib in `models/`), `trend.py` (Mann–Kendall + Theil–Sen).
-- [ ] `Insights` table; `run_insights(astronaut_id)` scheduled with `BackgroundTasks`, CPU work in `anyio.to_thread.run_sync`, 10 s limit, exceptions logged and swallowed.
-- [ ] Rule `ML-ANOMALY-CORROBORATED` (Attention only).
-- [ ] UI: "AI insights" on Overview and alert detail ("anomaly score 0.82; top contributors: resting HR, sleep, fatigue").
-- [ ] Tests T-ML-01 (fatigue scenario scores high) and T-ML-02 (monkeypatch the ML to raise → API still 201, alerts still raised).
+- [x] `astra/ml/features.py` (daily vectors of robust z-scores; recovery strain), `isolation.py` (per-astronaut Isolation Forest, retrained weekly, versioned by a hash of its training days, joblib in `models/`), `trend.py` (Mann–Kendall + Theil–Sen on recovery strain).
+- [x] `Insight` table; ML runs **inside the assessment**, before the rules, guarded by try/except and a 10 s budget (LLD §10.4 explains why this replaced `BackgroundTasks`).
+- [x] Rule `ML-ANOMALY-CORROBORATED` (Attention only): anomaly ≥ 0.6 **and** rising recovery strain **and** a reading ≥ 2σ out. `op: insight` leaves name `ml_anomaly` / `ml_trend`; the loader refuses them in Urgent rules.
+- [x] UI: "AI insights · last 7 days" on Overview; "What the AI noticed" in the alert detail; ML evidence rows named "AI anomaly score" / "Recovery strain trend". API `GET /api/astronauts/{id}/insights`, `insights` in the alert detail.
+- [x] Tests: T-ML-01 (day 116 scores above the training 95th percentile), T-ML-02 (ML raises → API still 201, alerts still raised), ML unit tests, rule cases, scenario tests.
 
-**Done when:** the fatigue scenario shows a trend insight about a day before the rule alert. **Tag `m3-insightful`.**
+**Done when:** the fatigue scenario shows a trend insight about a day before the rule alert. **Done 2026-11-14:**
+- **Trend insight on day 115** (AST-001: "Sleep, heart rate and how you feel drifted away from your normal together over 10 days…", p = 0.03). The resting-HR alert follows on day 116 and the fatigue composite on day 117.
+- **Healthy crew:** 0 trend insights, 0 ML alerts; false alarms still 1 / 1 / 2.
+- **Checks:** 178 backend tests pass; ruff, mypy, `tsc`, `vite build` and `oxlint` are clean. A full mission replay takes about 30 s with the ML.
+- **In the browser:** the Overview shows the insights with their contributor chips; the ML alert's detail shows the ML evidence rows and five related insights.
+- **Tuning findings** (recorded in LLD §10):
+  - Per-indicator trends fired 5–40 false episodes per healthy astronaut, so the trend runs on a combined recovery-strain score instead.
+  - Isolation Forest scores level off around 0.6–0.7 even for 9σ days, so the anomaly score only corroborates.
+- **Not covered:** a visual screenshot (the browser pane could not draw; the page was checked through its DOM text).
+
+**Tag `m3-insightful`.**
 
 ---
 

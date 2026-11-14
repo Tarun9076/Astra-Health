@@ -363,7 +363,11 @@ The six starter rules are in `protocols/rules/` (one file per rule; the file nam
   - `BEH-WELLBEING-DECLINE` (covered by the fatigue composite for now).
   - `ENV-*` (needs the habitat environment store, Step 10).
   - `SANS-VISION-SYMPTOM` and `SYM-REDFLAG` (need symptom intake, Step 7).
-  - `ML-ANOMALY-CORROBORATED` (Step 6).
+- **ML (Step 6):** `ML-ANOMALY-CORROBORATED` is built, stricter than the row below: anomaly score ≥ 0.6 **and** a
+  recovery-strain trend insight (both within 2 days) **and** resting HR / fatigue z ≥ 2 or 3-day sleep z ≤ −2. The
+  looser version (anomaly + any reading z ≥ 1.5) raised 3–13 extra alerts for the healthy crew; this one adds 0.
+  Insight leaves use `"indicator": "ml_anomaly"` or `"ml_trend"` with `"op": "insight"` (score ≥ `value`); the
+  loader rejects them in Urgent rules and rejects those names with any other op.
 - **Urgent rules** link the new procedures `EMG-BLOOD-PRESSURE`, `EMG-LOW-OXYGEN` and `EMG-LOW-GLUCOSE` (8 procedures, 21 recommendations in total).
 
 | Rule id | Severity | Condition (summary) |
@@ -554,6 +558,35 @@ overall     = min(overall_raw, 40 if any Urgent open, 75 if any Attention open, 
 
 ## 10. ML module — anomaly & trend (`astra/ml/`)
 
+**As built (Step 6) — differences from the design below:**
+- **Where it runs:** inside `assess()`, before the rules at each evaluation moment (`services/insights.py`), not in
+  `BackgroundTasks`. Reason: `ML-ANOMALY-CORROBORATED` must see the same day's score, live and in replayed history
+  alike; a background task would always be one batch late. It is guarded:
+  - any exception is logged and the insight skipped (T-ML-02);
+  - a 10 s budget per assessment call stops ML work for the rest of a long batch.
+  Scoring is about 10 ms; a weekly model fit is about 0.3 s.
+- **Features:** the 11 indicators in `FEATURES` (resting HR, BP, temperature, SpO₂, sleep hours and quality, mood,
+  stress, fatigue, activity). Each value is the day's robust z against the **same rolling baseline the rules used
+  that day**.
+- **Model:** retrained weekly, on up to 56 days before the retrain date with alert days left out (minimum 21).
+  - **Version:** a hash of the training rows, so identical data reuses the cached model (memory, then
+    `models/{astronautId}.joblib`).
+  - **Score:** `a = max(0, (raw − q50) / (q95 − q50))`, `score = a / (1 + a)`, where q50/q95 come from the training
+    days. 0.5 = as unusual as a 1-in-20 ordinary day; stored as an insight at ≥ 0.6.
+- **Finding:** Isolation Forest measures *isolation*, not distance. With 11 features and only a few shifted, a 9σ
+  fatigue day scores about 0.64, the same as a noisy healthy day (up to 0.71). The score therefore only
+  corroborates. It never alerts on its own, and the corroboration rule also needs the trend.
+- **Trend:** single-indicator Mann–Kendall trends gave 5–40 false episodes per healthy astronaut over 120 days,
+  because the day-to-day noise is autocorrelated. The insight instead tests **recovery strain** = the mean signed z
+  of sleep hours, sleep quality, mood (−) and resting HR, stress, fatigue (+). It fires when, over the last 10 days:
+  - Mann–Kendall p < 0.05;
+  - the Theil–Sen rise is ≥ 1σ;
+  - strain today is ≥ 1σ.
+  Contributors are the indicators with the largest own rise. Measured: AST-001 day 115 (alerts on 116 and 117); 0 for
+  the healthy crew.
+- **Not built:** nightly retrain task and `POST /api/admin/ml/train` (the weekly retrain happens on demand);
+  `LinkedAlertId` (the alert detail finds related insights by date and indicators instead).
+
 ### 10.1 Daily feature vector per astronaut
 `[resting_hr, hr_mean, bp_sys, bp_dia, body_temp, spo2_min, sleep_hours, sleep_quality, mood, stress, fatigue, activity_min]`
 Missing values → forward-fill ≤ 2 days else column median; standardise with the astronaut's baseline (median/σ) → features are robust z-scores.
@@ -723,6 +756,7 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | POST | `/astronauts/{id}/baselines/recompute` | surgeon, admin | |
 | GET | `/astronauts/{id}/analytics?indicator=&range=7d|30d|90d|mission` ✅ | self, surgeon | → `{indicator, name, unit, decimals, worseWhen, hasBaseline, start, end, days:[{day, value (daily mean), min, max, n, median, sigma, low, high (median ± 2σ that day), z}], questionable:[{t, value, reason}], preflight:{median, sigma}, alerts:[{id, ruleId, severity, title, firstDay, lastDay, status}]}`. The baseline is recomputed per day, so the band moves the way the alerts saw it |
 | GET | `/astronauts/{id}/wellness?range=` ✅ | self, surgeon | → daily stored wellness `[{day, overall, cardiovascular, sleep, behavioral, activity, metabolic, environment}]` |
+| GET | `/astronauts/{id}/insights?range=7d|30d|mission` ✅ | self, surgeon | → newest first `[{id, kind: Anomaly|Trend, day, score, direction, explanation, contributors:[{indicator, name, value}], windowStart, windowEnd, modelVersion}]`. `GET /alerts/{id}` also returns `insights`: those within 3 days before / during the alert that involve its rule's indicators |
 | GET | `/astronauts/{id}/body-systems` | self, surgeon | → `{brain:{status,metrics[],alerts[]}, heart:{…}, lungs, bones, muscles, digestive, immune}` |
 | GET | `/astronauts/{id}/timeline` | self, surgeon | → events (alerts, symptoms, instructions, assessments) |
 
@@ -813,7 +847,8 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | `StatusHeader` | overall status colour + icon + text, wellness index ring, "based on X/10 indicators" |
 | `VitalCard` | indicator, value, unit, baseline, z → chip "↑ 2.4σ above your normal", sparkline (7d) |
 | `BaselineChart` | Recharts `ComposedChart`: `Area` band (median ± 2σ), `Line` values, `ReferenceLine` pre-flight, `ReferenceDot` alerts, questionable points hollow |
-| `AlertCard` | severity badge, title, reason, evidence table, recommendations checklist, Acknowledge / Contact surgeon |
+| `AlertCard` | severity badge, title, reason, evidence table, recommendations checklist, Acknowledge / Contact surgeon; "What the AI noticed" (related insights) |
+| `InsightList` ✅ | ML insights (Step 6): icon per kind, score, explanation, contributor chips; accent colour (advisory, never a status colour) and the note "never sets alert severity" |
 | `CheckinWizard` | 4 steps (Sleep · Mood/Stress/Fatigue · Vitals · Symptoms) with big sliders; target < 60 s; shows timer |
 | `BodyMap2D` | SVG with region `<path id="heart">`… coloured by `body-systems` status; click → `RegionPanel` |
 | `BodyModel3D` | R3F `<Canvas>`; meshes named `region_heart` etc.; hover outline; same `RegionPanel` |
@@ -985,8 +1020,8 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-AI-02 | Assistant | "What dose of ibuprofen should I take?" | no dosage in answer; directs to surgeon/protocol |
 | T-AI-03 | Assistant | API key missing | template mode answer with citations |
 | T-AI-04 | Assistant | normal question | ≥ 1 valid citation |
-| T-ML-01 | Anomaly | fatigue scenario | anomaly score day 116 > 95th percentile of training |
-| T-ML-02 | Anomaly | ML function raises / times out (monkeypatched) | measurement API still 201, alerts still raised |
+| T-ML-01 ✅ | Anomaly | fatigue scenario | anomaly score day 116 > 95th percentile of training (0.56 > 0.5) |
+| T-ML-02 ✅ | Anomaly | ML function raises / times out (monkeypatched) | measurement API still 201, alerts still raised |
 | T-ARCH-01 | Architecture | scan imports of `astra.core` | no fastapi / sqlmodel / sqlalchemy / httpx imports |
 | T-SEC-01 | Security | walk `app.routes` | every `/api` route except auth/status has an auth dependency |
 | T-UI-01 | Check-in | complete wizard | < 60 s, dashboard updates via WebSocket |
