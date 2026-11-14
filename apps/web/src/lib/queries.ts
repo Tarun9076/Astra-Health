@@ -51,6 +51,36 @@ export function useAnalytics(code: string | null | undefined, indicator: string 
   })
 }
 
+export function useReports(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['reports', code],
+    queryFn: () => unwrap(api.GET('/api/astronauts/{astronaut}/reports', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useReport(id: string | null) {
+  return useQuery({
+    queryKey: ['report', id],
+    queryFn: () => unwrap(api.GET('/api/reports/{report_id}', { params: { path: { report_id: id! } } })),
+    enabled: Boolean(id),
+    staleTime: Infinity,
+  })
+}
+
+export function useInstructions(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['instructions', code],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/instructions', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useCrewSummary() {
+  return useQuery({ queryKey: ['crew-summary'], queryFn: () => unwrap(api.GET('/api/crew/summary')) })
+}
+
 export function useAssistantStatus() {
   return useQuery({ queryKey: ['assistant-status'], queryFn: () => unwrap(api.GET('/api/assistant/status')) })
 }

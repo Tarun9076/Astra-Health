@@ -27,6 +27,10 @@ export type ChatOut = Schemas['ChatOut']
 export type ChatTurn = Schemas['HistoryItem']
 export type ChatCitation = Schemas['CitationOut']
 export type AssistantStatus = Schemas['AssistantStatus']
+export type ReportItem = Schemas['ReportListItem']
+export type Report = Schemas['ReportOut']
+export type Instruction = Schemas['InstructionOut']
+export type CrewStatus = Schemas['CrewStatus']
 
 export class ApiError extends Error {
   readonly status: number

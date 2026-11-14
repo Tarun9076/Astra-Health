@@ -19,9 +19,9 @@ const RANGES: { id: Range; label: string }[] = [
   { id: 'mission', label: 'Mission' },
 ]
 
-export function AnalyticsPage() {
+export function AnalyticsPage({ code: forCode, embedded = false }: { code?: string; embedded?: boolean } = {}) {
   const user = useAuth((s) => s.user)
-  const code = user?.astronautCode
+  const code = forCode ?? user?.astronautCode
   const [params, setParams] = useSearchParams()
   const mode = params.get('mode') === 'single' ? 'single' : 'compare'
   const a = params.get('a') ?? (mode === 'single' ? 'resting_hr' : 'sleep_hours')
@@ -52,14 +52,16 @@ export function AnalyticsPage() {
 
   return (
     <div className="max-w-6xl space-y-4">
-      <div>
-        <p className="font-mono text-sm text-accent">03</p>
-        <h1 className="text-2xl font-semibold">Health Analytics</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Your readings against <em>your own</em> normal. The shaded band is your personal range (median ± 2σ of the
-          previous 4 weeks); shaded periods mark alerts.
-        </p>
-      </div>
+      {!embedded && (
+        <div>
+          <p className="font-mono text-sm text-accent">03</p>
+          <h1 className="text-2xl font-semibold">Health Analytics</h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Your readings against <em>your own</em> normal. The shaded band is your personal range (median ± 2σ of the
+            previous 4 weeks); shaded periods mark alerts.
+          </p>
+        </div>
+      )}
 
       {/* One control row above the charts */}
       <div className="flex flex-wrap items-center gap-3">

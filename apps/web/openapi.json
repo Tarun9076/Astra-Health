@@ -891,6 +891,336 @@
     ]
    }
   },
+  "/api/astronauts/{astronaut}/reports": {
+   "get": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "List Reports",
+    "description": "Newest first.",
+    "operationId": "list_reports_api_astronauts__astronaut__reports_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ReportListItem"
+         },
+         "title": "Response List Reports Api Astronauts  Astronaut  Reports Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "Create Report",
+    "description": "On-demand report for any period up to 31 days (Claude narrative when configured, else template).",
+    "operationId": "create_report_api_astronauts__astronaut__reports_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReportIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ReportOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/reports/{report_id}": {
+   "get": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "Get Report",
+    "operationId": "get_report_api_reports__report_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "report_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Report Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ReportOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/instructions": {
+   "post": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "Send Instruction",
+    "operationId": "send_instruction_api_instructions_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/InstructionIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InstructionOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts/{astronaut}/instructions": {
+   "get": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "List Instructions",
+    "description": "Newest first.",
+    "operationId": "list_instructions_api_astronauts__astronaut__instructions_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/InstructionOut"
+         },
+         "title": "Response List Instructions Api Astronauts  Astronaut  Instructions Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/instructions/{instruction_id}/acknowledge": {
+   "post": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "Acknowledge Instruction",
+    "operationId": "acknowledge_instruction_api_instructions__instruction_id__acknowledge_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "instruction_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Instruction Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/InstructionOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/crew/summary": {
+   "get": {
+    "tags": [
+     "reports"
+    ],
+    "summary": "Crew Summary",
+    "operationId": "crew_summary_api_crew_summary_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CrewStatus"
+         },
+         "type": "array",
+         "title": "Response Crew Summary Api Crew Summary Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
   "/api/checkins": {
    "post": {
     "tags": [
@@ -2054,6 +2384,116 @@
     ],
     "title": "Contributor"
    },
+   "CrewStatus": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "displayName": {
+      "type": "string",
+      "title": "Displayname"
+     },
+     "roleTitle": {
+      "type": "string",
+      "title": "Roletitle"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "GREEN",
+       "YELLOW",
+       "RED"
+      ],
+      "title": "Status"
+     },
+     "urgentAlerts": {
+      "type": "integer",
+      "title": "Urgentalerts"
+     },
+     "attentionAlerts": {
+      "type": "integer",
+      "title": "Attentionalerts"
+     },
+     "lastReadingAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lastreadingat"
+     },
+     "wellnessIndex": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Wellnessindex"
+     },
+     "topAlert": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Topalert"
+     },
+     "alertsAwaitingReview": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Alertsawaitingreview"
+     },
+     "unacknowledgedInstructions": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unacknowledgedinstructions"
+     },
+     "latestReport": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/LatestReport"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "displayName",
+     "roleTitle",
+     "status",
+     "urgentAlerts",
+     "attentionAlerts",
+     "lastReadingAt"
+    ],
+    "title": "CrewStatus"
+   },
    "DashboardOut": {
     "properties": {
      "astronautCode": {
@@ -2633,6 +3073,109 @@
     ],
     "title": "InsightOut"
    },
+   "InstructionIn": {
+    "properties": {
+     "astronautId": {
+      "type": "string",
+      "title": "Astronautid"
+     },
+     "alertId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Alertid"
+     },
+     "text": {
+      "type": "string",
+      "maxLength": 2000,
+      "minLength": 3,
+      "title": "Text"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautId",
+     "text"
+    ],
+    "title": "InstructionIn"
+   },
+   "InstructionOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "alertId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Alertid"
+     },
+     "fromName": {
+      "type": "string",
+      "title": "Fromname"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Createdat"
+     },
+     "deliveredAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Deliveredat"
+     },
+     "acknowledgedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Acknowledgedat"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "alertId",
+     "fromName",
+     "text",
+     "createdAt",
+     "deliveredAt",
+     "acknowledgedAt"
+    ],
+    "title": "InstructionOut"
+   },
    "ItemProblem": {
     "properties": {
      "id": {
@@ -2650,6 +3193,35 @@
      "reason"
     ],
     "title": "ItemProblem"
+   },
+   "LatestReport": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "type": {
+      "type": "string",
+      "title": "Type"
+     },
+     "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generatedat"
+     },
+     "transmissionStatus": {
+      "type": "string",
+      "title": "Transmissionstatus"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "type",
+     "generatedAt",
+     "transmissionStatus"
+    ],
+    "title": "LatestReport"
    },
    "LoginIn": {
     "properties": {
@@ -3078,6 +3650,200 @@
      "sigma"
     ],
     "title": "Reference"
+   },
+   "ReportIn": {
+    "properties": {
+     "start": {
+      "type": "string",
+      "format": "date",
+      "title": "Start"
+     },
+     "end": {
+      "type": "string",
+      "format": "date",
+      "title": "End"
+     }
+    },
+    "type": "object",
+    "required": [
+     "start",
+     "end"
+    ],
+    "title": "ReportIn"
+   },
+   "ReportListItem": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "Daily",
+       "Weekly",
+       "AlertTriggered",
+       "OnDemand"
+      ],
+      "title": "Type"
+     },
+     "periodStart": {
+      "type": "string",
+      "format": "date",
+      "title": "Periodstart"
+     },
+     "periodEnd": {
+      "type": "string",
+      "format": "date",
+      "title": "Periodend"
+     },
+     "alertId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Alertid"
+     },
+     "headline": {
+      "type": "string",
+      "title": "Headline"
+     },
+     "narrativeProvider": {
+      "type": "string",
+      "title": "Narrativeprovider"
+     },
+     "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generatedat"
+     },
+     "transmissionStatus": {
+      "type": "string",
+      "enum": [
+       "Queued",
+       "Sent",
+       "Delivered"
+      ],
+      "title": "Transmissionstatus"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "type",
+     "periodStart",
+     "periodEnd",
+     "alertId",
+     "headline",
+     "narrativeProvider",
+     "generatedAt",
+     "transmissionStatus"
+    ],
+    "title": "ReportListItem"
+   },
+   "ReportOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "type": {
+      "type": "string",
+      "enum": [
+       "Daily",
+       "Weekly",
+       "AlertTriggered",
+       "OnDemand"
+      ],
+      "title": "Type"
+     },
+     "periodStart": {
+      "type": "string",
+      "format": "date",
+      "title": "Periodstart"
+     },
+     "periodEnd": {
+      "type": "string",
+      "format": "date",
+      "title": "Periodend"
+     },
+     "alertId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Alertid"
+     },
+     "headline": {
+      "type": "string",
+      "title": "Headline"
+     },
+     "narrativeProvider": {
+      "type": "string",
+      "title": "Narrativeprovider"
+     },
+     "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generatedat"
+     },
+     "transmissionStatus": {
+      "type": "string",
+      "enum": [
+       "Queued",
+       "Sent",
+       "Delivered"
+      ],
+      "title": "Transmissionstatus"
+     },
+     "narrative": {
+      "type": "string",
+      "title": "Narrative"
+     },
+     "summary": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Summary"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer",
+      "default": "Decision support only — not a diagnosis. All data is simulated."
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "type",
+     "periodStart",
+     "periodEnd",
+     "alertId",
+     "headline",
+     "narrativeProvider",
+     "generatedAt",
+     "transmissionStatus",
+     "narrative",
+     "summary"
+    ],
+    "title": "ReportOut"
    },
    "Role": {
     "type": "string",

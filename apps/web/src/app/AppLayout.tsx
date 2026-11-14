@@ -27,6 +27,23 @@ function useLiveUpdates() {
         void queryClient.invalidateQueries({ queryKey: ['analytics'] })
         void queryClient.invalidateQueries({ queryKey: ['wellness'] })
         void queryClient.invalidateQueries({ queryKey: ['insights'] })
+        void queryClient.invalidateQueries({ queryKey: ['crew-summary'] })
+      }
+      if (['InstructionReceived', 'InstructionAcknowledged'].includes(event.type)) {
+        void queryClient.invalidateQueries({ queryKey: ['instructions'] })
+        void queryClient.invalidateQueries({ queryKey: ['crew-summary'] })
+      }
+      if (event.type === 'ReportGenerated') {
+        void queryClient.invalidateQueries({ queryKey: ['reports'] })
+        void queryClient.invalidateQueries({ queryKey: ['crew-summary'] })
+      }
+      if (event.type === 'InstructionReceived' && role === 'Astronaut') {
+        const p = event.payload as { fromName?: string; text?: string }
+        push({ tone: 'info', title: `Message from ${p.fromName ?? 'the flight surgeon'}`, body: p.text, href: '/astronaut/overview' })
+      }
+      if (event.type === 'InstructionAcknowledged' && role === 'FlightSurgeon') {
+        const p = event.payload as { astronautCode?: string }
+        push({ tone: 'success', title: `${p.astronautCode ?? 'Astronaut'} acknowledged your instruction`, href: p.astronautCode ? `/staff/astronaut/${p.astronautCode}?view=instructions` : undefined })
       }
       if (event.type === 'AlertRaised') {
         const p = event.payload as { id?: string; title?: string; severity?: string; reason?: string; astronautCode?: string }
@@ -58,7 +75,7 @@ export function AppLayout() {
 
   return (
     <div className="flex h-full flex-col">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-space-700 bg-space-950 px-4 py-3">
+      <header className="no-print flex flex-wrap items-center justify-between gap-3 border-b border-space-700 bg-space-950 px-4 py-3">
         <div className="flex items-center gap-4">
           <div>
             <p className="text-lg font-bold tracking-widest text-accent">ASTRA HEALTH</p>
@@ -91,7 +108,7 @@ export function AppLayout() {
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <nav className="flex gap-1 overflow-x-auto border-b border-space-700 bg-space-950 p-2 md:w-60 md:flex-col md:border-r md:border-b-0">
+        <nav className="no-print flex gap-1 overflow-x-auto border-b border-space-700 bg-space-950 p-2 md:w-60 md:flex-col md:border-r md:border-b-0">
           {isAstronaut ? (
             <>
               <NavLink to="/astronaut/checkin" className={navCls}>
@@ -113,12 +130,12 @@ export function AppLayout() {
           )}
         </nav>
 
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-8">
+        <main className="print-area min-h-0 flex-1 overflow-y-auto p-4 md:p-8">
           <Outlet />
         </main>
       </div>
 
-      <footer className="border-t border-space-700 bg-space-950 px-4 py-2 text-center text-[11px] text-ink-muted">
+      <footer className="no-print border-t border-space-700 bg-space-950 px-4 py-2 text-center text-[11px] text-ink-muted">
         Prototype decision support only — not a diagnosis. Thresholds are illustrative; all data is simulated.
       </footer>
       <Toaster />

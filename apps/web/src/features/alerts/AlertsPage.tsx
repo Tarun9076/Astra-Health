@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { CheckSquare, ChevronDown, ChevronRight, ShieldAlert, Square } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { INSIGHT_NOTE, InsightList } from '../../components/ui/InsightList'
@@ -9,12 +10,13 @@ import { useAuth } from '../../lib/auth'
 import { dayOf, formatValue } from '../../lib/mission'
 import { useAlert, useAlerts, useCatalog } from '../../lib/queries'
 
-export function AlertsPage() {
+export function AlertsPage({ code: forCode, staff = false }: { code?: string; staff?: boolean } = {}) {
   const user = useAuth((s) => s.user)
+  const code = forCode ?? user?.astronautCode
   const [params, setParams] = useSearchParams()
   const tab = params.get('tab') === 'history' ? 'all' : 'active'
   const openId = params.get('id')
-  const { data, error, isPending } = useAlerts(user?.astronautCode, tab)
+  const { data, error, isPending } = useAlerts(code, tab)
 
   const setTab = (t: 'active' | 'all') => setParams(t === 'all' ? { tab: 'history' } : {})
   const toggle = (id: string) => {
@@ -26,11 +28,13 @@ export function AlertsPage() {
 
   return (
     <div className="max-w-4xl space-y-4">
-      <div>
-        <p className="font-mono text-sm text-accent">06</p>
-        <h1 className="text-2xl font-semibold">Alerts Center</h1>
-        <p className="mt-1 text-sm text-ink-muted">Each alert shows exactly which readings triggered it, compared with your own normal.</p>
-      </div>
+      {!staff && (
+        <div>
+          <p className="font-mono text-sm text-accent">06</p>
+          <h1 className="text-2xl font-semibold">Alerts Center</h1>
+          <p className="mt-1 text-sm text-ink-muted">Each alert shows exactly which readings triggered it, compared with your own normal.</p>
+        </div>
+      )}
       <div className="flex gap-2" role="tablist">
         {(['active', 'all'] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
@@ -47,7 +51,7 @@ export function AlertsPage() {
       <ul className="space-y-3">
         {data?.map((a) => (
           <li key={a.id}>
-            <AlertCard alert={a} open={openId === a.id} onToggle={() => toggle(a.id)} missionStart={user?.missionStart} />
+            <AlertCard alert={a} open={openId === a.id} onToggle={() => toggle(a.id)} missionStart={user?.missionStart} staff={staff} />
           </li>
         ))}
       </ul>
@@ -55,11 +59,12 @@ export function AlertsPage() {
   )
 }
 
-function AlertCard({ alert, open, onToggle, missionStart }: {
+function AlertCard({ alert, open, onToggle, missionStart, staff }: {
   alert: AlertSummary
   open: boolean
   onToggle: () => void
   missionStart?: string | null
+  staff: boolean
 }) {
   const Chevron = open ? ChevronDown : ChevronRight
   const urgent = alert.severity === 'Urgent'
@@ -80,12 +85,12 @@ function AlertCard({ alert, open, onToggle, missionStart }: {
         </div>
         <Chevron className="mt-1 h-5 w-5 text-ink-muted" aria-hidden />
       </button>
-      {open && <AlertBody id={alert.id} />}
+      {open && <AlertBody id={alert.id} staff={staff} />}
     </div>
   )
 }
 
-function AlertBody({ id }: { id: string }) {
+function AlertBody({ id, staff }: { id: string; staff: boolean }) {
   const { data, error, isPending } = useAlert(id)
   const missionStart = useAuth((s) => s.user?.missionStart)
   const catalog = useCatalog().data ?? {}
@@ -156,11 +161,12 @@ function AlertBody({ id }: { id: string }) {
           {data.reviewedBy && `Reviewed by ${data.reviewedBy}. `}
           {data.resolutionNote}
         </span>
-        {data.status === 'Open' && (
+        {!staff && data.status === 'Open' && (
           <Button onClick={() => acknowledge.mutate()} disabled={acknowledge.isPending}>I've seen this — acknowledge</Button>
         )}
       </div>
       {acknowledge.isError && <ErrorNote error={acknowledge.error} />}
+      {staff && <SurgeonActions alert={data} onDone={refresh} />}
       <p className="text-[11px] text-ink-muted">{data.disclaimer}</p>
     </div>
   )
@@ -214,6 +220,70 @@ function EvidenceTable({ detail, catalog }: { detail: AlertDetail; catalog: Reco
           })}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+type Move = 'review' | 'resolve' | 'dismiss'
+const MOVE_PATH = {
+  review: '/api/alerts/{alert_id}/review',
+  resolve: '/api/alerts/{alert_id}/resolve',
+  dismiss: '/api/alerts/{alert_id}/dismiss',
+} as const
+
+/** Flight-surgeon review (Step 8): In Review → Resolved / Dismissed (note required), plus an instruction. */
+function SurgeonActions({ alert, onDone }: { alert: AlertDetail; onDone: () => void }) {
+  const [note, setNote] = useState('')
+  const [message, setMessage] = useState('')
+  const queryClient = useQueryClient()
+  const move = useMutation({
+    mutationFn: (to: Move) =>
+      unwrap(api.POST(MOVE_PATH[to], { params: { path: { alert_id: alert.id } }, body: { note: note.trim() || null } })),
+    onSuccess: () => {
+      setNote('')
+      onDone()
+      void queryClient.invalidateQueries({ queryKey: ['crew-summary'] })
+    },
+  })
+  const send = useMutation({
+    mutationFn: () =>
+      unwrap(api.POST('/api/instructions', { body: { astronautId: alert.astronautCode, alertId: alert.id, text: message.trim() } })),
+    onSuccess: () => {
+      setMessage('')
+      void queryClient.invalidateQueries({ queryKey: ['instructions'] })
+    },
+  })
+  const active = ['Open', 'Acknowledged', 'InReview'].includes(alert.status)
+  if (!active) return null
+  const canReview = alert.status === 'Open' || alert.status === 'Acknowledged'
+  const canClose = alert.status === 'InReview'
+  return (
+    <div className="space-y-3 rounded-lg border border-accent/40 bg-space-900/60 p-3">
+      <p className="text-xs font-semibold tracking-wider text-accent uppercase">Flight surgeon review</p>
+      <label className="block text-sm">
+        <span className="text-xs text-ink-muted">Note {canClose ? '(required to resolve or dismiss)' : '(optional)'}</span>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={2000}
+          className="mt-1 w-full rounded-lg border border-space-600 bg-space-900 px-3 py-2 text-sm outline-none focus:border-accent" />
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {canReview && <Button onClick={() => move.mutate('review')} disabled={move.isPending}>Start review</Button>}
+        {canClose && <Button onClick={() => move.mutate('resolve')} disabled={move.isPending || !note.trim()}>Resolve</Button>}
+        {(canClose || alert.status === 'Open') && (
+          <Button variant="ghost" onClick={() => move.mutate('dismiss')} disabled={move.isPending || !note.trim()}>Dismiss as false alarm</Button>
+        )}
+      </div>
+      {move.isError && <ErrorNote error={move.error} />}
+      <form onSubmit={(e) => { e.preventDefault(); if (message.trim().length >= 3) send.mutate() }} className="space-y-2 border-t border-space-700 pt-3">
+        <label className="block text-sm">
+          <span className="text-xs text-ink-muted">Send an instruction to {alert.astronautCode} about this alert (shown to them live)</span>
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} maxLength={2000}
+            placeholder="e.g. Rest today, skip the resistance session, recheck resting HR at wake-up."
+            className="mt-1 w-full rounded-lg border border-space-600 bg-space-900 px-3 py-2 text-sm outline-none focus:border-accent" />
+        </label>
+        <Button type="submit" variant="ghost" disabled={send.isPending || message.trim().length < 3}>Send instruction</Button>
+        {send.isSuccess && <span className="ml-2 text-xs text-status-green">Sent and delivered.</span>}
+        {send.isError && <ErrorNote error={send.error} />}
+      </form>
     </div>
   )
 }

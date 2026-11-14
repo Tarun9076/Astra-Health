@@ -340,6 +340,118 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/astronauts/{astronaut}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Reports
+         * @description Newest first.
+         */
+        get: operations["list_reports_api_astronauts__astronaut__reports_get"];
+        put?: never;
+        /**
+         * Create Report
+         * @description On-demand report for any period up to 31 days (Claude narrative when configured, else template).
+         */
+        post: operations["create_report_api_astronauts__astronaut__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Report */
+        get: operations["get_report_api_reports__report_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instructions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Instruction */
+        post: operations["send_instruction_api_instructions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/instructions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Instructions
+         * @description Newest first.
+         */
+        get: operations["list_instructions_api_astronauts__astronaut__instructions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/instructions/{instruction_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge Instruction */
+        post: operations["acknowledge_instruction_api_instructions__instruction_id__acknowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/crew/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Crew Summary */
+        get: operations["crew_summary_api_crew_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/checkins": {
         parameters: {
             query?: never;
@@ -762,6 +874,35 @@ export interface components {
             /** Value */
             value: number;
         };
+        /** CrewStatus */
+        CrewStatus: {
+            /** Code */
+            code: string;
+            /** Displayname */
+            displayName: string;
+            /** Roletitle */
+            roleTitle: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "GREEN" | "YELLOW" | "RED";
+            /** Urgentalerts */
+            urgentAlerts: number;
+            /** Attentionalerts */
+            attentionAlerts: number;
+            /** Lastreadingat */
+            lastReadingAt: string | null;
+            /** Wellnessindex */
+            wellnessIndex?: number | null;
+            /** Topalert */
+            topAlert?: string | null;
+            /** Alertsawaitingreview */
+            alertsAwaitingReview?: number | null;
+            /** Unacknowledgedinstructions */
+            unacknowledgedInstructions?: number | null;
+            latestReport?: components["schemas"]["LatestReport"] | null;
+        };
         /** DashboardOut */
         DashboardOut: {
             /** Astronautcode */
@@ -948,12 +1089,57 @@ export interface components {
             /** Modelversion */
             modelVersion: string;
         };
+        /** InstructionIn */
+        InstructionIn: {
+            /** Astronautid */
+            astronautId: string;
+            /** Alertid */
+            alertId?: string | null;
+            /** Text */
+            text: string;
+        };
+        /** InstructionOut */
+        InstructionOut: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /** Alertid */
+            alertId: string | null;
+            /** Fromname */
+            fromName: string;
+            /** Text */
+            text: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Deliveredat */
+            deliveredAt: string | null;
+            /** Acknowledgedat */
+            acknowledgedAt: string | null;
+        };
         /** ItemProblem */
         ItemProblem: {
             /** Id */
             id: string;
             /** Reason */
             reason: string;
+        };
+        /** LatestReport */
+        LatestReport: {
+            /** Id */
+            id: string;
+            /** Type */
+            type: string;
+            /**
+             * Generatedat
+             * Format: date-time
+             */
+            generatedAt: string;
+            /** Transmissionstatus */
+            transmissionStatus: string;
         };
         /** LoginIn */
         LoginIn: {
@@ -1118,6 +1304,106 @@ export interface components {
             median: number;
             /** Sigma */
             sigma: number;
+        };
+        /** ReportIn */
+        ReportIn: {
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+        };
+        /** ReportListItem */
+        ReportListItem: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "Daily" | "Weekly" | "AlertTriggered" | "OnDemand";
+            /**
+             * Periodstart
+             * Format: date
+             */
+            periodStart: string;
+            /**
+             * Periodend
+             * Format: date
+             */
+            periodEnd: string;
+            /** Alertid */
+            alertId: string | null;
+            /** Headline */
+            headline: string;
+            /** Narrativeprovider */
+            narrativeProvider: string;
+            /**
+             * Generatedat
+             * Format: date-time
+             */
+            generatedAt: string;
+            /**
+             * Transmissionstatus
+             * @enum {string}
+             */
+            transmissionStatus: "Queued" | "Sent" | "Delivered";
+        };
+        /** ReportOut */
+        ReportOut: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "Daily" | "Weekly" | "AlertTriggered" | "OnDemand";
+            /**
+             * Periodstart
+             * Format: date
+             */
+            periodStart: string;
+            /**
+             * Periodend
+             * Format: date
+             */
+            periodEnd: string;
+            /** Alertid */
+            alertId: string | null;
+            /** Headline */
+            headline: string;
+            /** Narrativeprovider */
+            narrativeProvider: string;
+            /**
+             * Generatedat
+             * Format: date-time
+             */
+            generatedAt: string;
+            /**
+             * Transmissionstatus
+             * @enum {string}
+             */
+            transmissionStatus: "Queued" | "Sent" | "Delivered";
+            /** Narrative */
+            narrative: string;
+            /** Summary */
+            summary: {
+                [key: string]: unknown;
+            };
+            /**
+             * Disclaimer
+             * @default Decision support only — not a diagnosis. All data is simulated.
+             */
+            disclaimer: string;
         };
         /**
          * Role
@@ -1844,6 +2130,218 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AssistantStatus"];
+                };
+            };
+        };
+    };
+    list_reports_api_astronauts__astronaut__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportListItem"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_report_api_astronauts__astronaut__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_api_reports__report_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_instruction_api_instructions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InstructionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstructionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_instructions_api_astronauts__astronaut__instructions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstructionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_instruction_api_instructions__instruction_id__acknowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                instruction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstructionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    crew_summary_api_crew_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CrewStatus"][];
                 };
             };
         };

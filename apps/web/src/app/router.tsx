@@ -4,6 +4,7 @@ import { AlertsPage } from '../features/alerts/AlertsPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { CheckinPage } from '../features/checkin/CheckinPage'
 import { OverviewPage } from '../features/overview/OverviewPage'
+import { ReportsPage } from '../features/reports/ReportsPage'
 import { CrewPage, StaffAstronautPage } from '../features/staff/CrewPage'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
@@ -17,6 +18,7 @@ const BUILT: Record<string, ReactNode> = {
   alerts: <AlertsPage />,
   analytics: <AnalyticsRoute />,
   assistant: <AssistantRoute />,
+  reports: <ReportsPage />,
 }
 
 export const router = createBrowserRouter([
