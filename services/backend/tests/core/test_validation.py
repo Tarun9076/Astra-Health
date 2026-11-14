@@ -58,7 +58,10 @@ def test_sudden_jump_within_ten_minutes_is_questionable(bundle: ProtocolBundle) 
 
 def test_radiation_channels(bundle: ProtocolBundle) -> None:
     assert _check(bundle, _r("radiation_dose", 0.2, "mSv", channel="Neutron")) == (Q.VALID, None)
-    assert _check(bundle, _r("radiation_dose", 0.2, "mSv", channel="Gamma")) == (Q.REJECTED, "unknown_channel")
+    assert _check(bundle, _r("radiation_dose", 0.2, "mSv", channel="Gamma")) == (
+        Q.REJECTED,
+        "unknown_channel",
+    )
     assert _check(bundle, _r("heart_rate", 70, "bpm", channel="Total")) == (Q.REJECTED, "channel_not_allowed")
 
 

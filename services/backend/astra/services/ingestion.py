@@ -119,7 +119,9 @@ def ingest_batch(
     raws = [i.raw() for i in ordered]
     ids = [_reading_id(i, r, astronaut.id) for i, r in zip(ordered, raws, strict=True)]
 
-    existing_ids = set(session.exec(select(HealthMeasurement.id).where(col(HealthMeasurement.id).in_(ids))).all())
+    existing_ids = set(
+        session.exec(select(HealthMeasurement.id).where(col(HealthMeasurement.id).in_(ids))).all()
+    )
     existing_keys: set[ReadingKey] = set()
     if raws:
         rows = session.exec(

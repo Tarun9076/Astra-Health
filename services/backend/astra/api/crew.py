@@ -23,7 +23,9 @@ class AstronautOut(ApiModel):
 def list_astronauts(session: SessionDep) -> list[AstronautOut]:
     """Crew list (auth and role-based filtering arrive in Step 3)."""
     rows = session.exec(
-        select(Astronaut, Mission).join(Mission, col(Astronaut.mission_id) == Mission.id).order_by(Astronaut.code)
+        select(Astronaut, Mission)
+        .join(Mission, col(Astronaut.mission_id) == Mission.id)
+        .order_by(Astronaut.code)
     ).all()
     return [
         AstronautOut(

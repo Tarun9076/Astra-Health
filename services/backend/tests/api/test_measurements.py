@@ -45,7 +45,11 @@ def test_batch_sorts_readings_into_accepted_questionable_rejected(seeded_client:
     )
     assert len(body["accepted"]) == 2
     assert [p["reason"] for p in body["questionable"]] == ["low_signal"]
-    assert sorted(p["reason"] for p in body["rejected"]) == ["bp_inconsistent", "bp_inconsistent", "implausible"]
+    assert sorted(p["reason"] for p in body["rejected"]) == [
+        "bp_inconsistent",
+        "bp_inconsistent",
+        "implausible",
+    ]
     assert body["newAlerts"] == []
 
 
@@ -81,10 +85,22 @@ def test_naive_timestamp_is_refused(seeded_client: TestClient) -> None:
 def test_daily_buckets_average_valid_readings_only(seeded_client: TestClient) -> None:
     day = datetime(2026, 11, 10, tzinfo=UTC)
     items = [
-        {"indicator": "resting_hr", "value": v, "unit": "bpm", "measuredAt": (day + timedelta(hours=h)).isoformat()}
+        {
+            "indicator": "resting_hr",
+            "value": v,
+            "unit": "bpm",
+            "measuredAt": (day + timedelta(hours=h)).isoformat(),
+        }
         for v, h in ((60, 6), (64, 7), (68, 8))
     ]
-    items.append({"indicator": "resting_hr", "value": 400, "unit": "bpm", "measuredAt": (day + timedelta(hours=9)).isoformat()})
+    items.append(
+        {
+            "indicator": "resting_hr",
+            "value": 400,
+            "unit": "bpm",
+            "measuredAt": (day + timedelta(hours=9)).isoformat(),
+        }
+    )
     _post(seeded_client, items, backfill=True)
 
     series = seeded_client.get(
@@ -97,7 +113,9 @@ def test_daily_buckets_average_valid_readings_only(seeded_client: TestClient) ->
 def test_radiation_is_stored_per_channel(seeded_client: TestClient) -> None:
     _post(seeded_client, [_reading("radiation_dose", 640, "uSv", 0),
                           _reading("radiation_dose", 0.19, "mSv", 0, channel="Neutron")])  # fmt: skip
-    total = seeded_client.get("/api/astronauts/AST-001/measurements", params={"indicator": "radiation_dose"}).json()
+    total = seeded_client.get(
+        "/api/astronauts/AST-001/measurements", params={"indicator": "radiation_dose"}
+    ).json()
     neutron = seeded_client.get(
         "/api/astronauts/AST-001/measurements", params={"indicator": "radiation_dose", "channel": "Neutron"}
     ).json()

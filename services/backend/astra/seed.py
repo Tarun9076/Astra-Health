@@ -71,7 +71,11 @@ def seed_database(session: Session, data: SeedData) -> dict[str, int]:
         astronaut = session.exec(select(Astronaut).where(Astronaut.code == a.code)).first() or Astronaut(
             code=a.code, display_name=a.display_name, role_title=a.role_title, mission_id=mission.id
         )
-        astronaut.display_name, astronaut.role_title, astronaut.mission_id = a.display_name, a.role_title, mission.id
+        astronaut.display_name, astronaut.role_title, astronaut.mission_id = (
+            a.display_name,
+            a.role_title,
+            mission.id,
+        )
         session.add(astronaut)
         crew[a.code] = astronaut
     session.flush()
@@ -83,7 +87,10 @@ def seed_database(session: Session, data: SeedData) -> dict[str, int]:
         user = session.exec(select(UserAccount).where(UserAccount.username == u.username)).first()
         if user is None:
             user = UserAccount(
-                username=u.username, password_hash=hash_password(u.password), role=u.role.value, display_name=""
+                username=u.username,
+                password_hash=hash_password(u.password),
+                role=u.role.value,
+                display_name="",
             )
         elif not verify_password(u.password, user.password_hash):
             user.password_hash = hash_password(u.password)
@@ -95,7 +102,9 @@ def seed_database(session: Session, data: SeedData) -> dict[str, int]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--file", type=Path, default=None, help="seed JSON (default: seed.local.json or example)")
+    parser.add_argument(
+        "--file", type=Path, default=None, help="seed JSON (default: seed.local.json or example)"
+    )
     args = parser.parse_args()
     path = args.file or default_seed_file()
     engine = make_engine(settings.database_url)

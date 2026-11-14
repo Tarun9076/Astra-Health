@@ -138,5 +138,7 @@ def check_panels(items: Sequence[tuple[RawReading, ValidationResult]]) -> list[V
         sys_v, dia_v = results[sys_i].value, results[dia_i].value
         if sys_v is not None and dia_v is not None and sys_v <= dia_v:
             for i in (sys_i, dia_i):
-                results[i] = replace(results[i], quality=MeasurementQuality.REJECTED, reason="bp_inconsistent")
+                results[i] = replace(
+                    results[i], quality=MeasurementQuality.REJECTED, reason="bp_inconsistent"
+                )
     return results

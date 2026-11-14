@@ -3,6 +3,7 @@
 Auth arrives in Step 3; until then these routes are open on the local network.
 """
 
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal
 
@@ -34,7 +35,9 @@ class ReadingIn(ApiModel):
     channel: Literal["Total", "Charged", "Neutron"] | None = Field(
         default=None, description="Radiation dosimeter channel (radiation_dose only)"
     )
-    panel_id: str | None = Field(default=None, description="Groups readings taken together, e.g. bp_sys + bp_dia")
+    panel_id: str | None = Field(
+        default=None, description="Groups readings taken together, e.g. bp_sys + bp_dia"
+    )
     signal_quality: float | None = Field(default=None, ge=0, le=1)
     motion_artifact: bool = False
 
@@ -164,27 +167,31 @@ def get_measurements(
 
     if bucket == "raw":
         points = [
-            SeriesPoint(t=r.measured_at, value=r.value, quality=r.quality, channel=r.channel or None) for r in rows
+            SeriesPoint(t=r.measured_at, value=r.value, quality=r.quality, channel=r.channel or None)
+            for r in rows
         ]
     else:
         points = _bucketed(rows, "D" if bucket == "day" else "h", meta.decimals)
-    return SeriesOut(astronaut_code=crew.code, indicator=indicator, unit=meta.unit, bucket=bucket, points=points)
+    return SeriesOut(
+        astronaut_code=crew.code, indicator=indicator, unit=meta.unit, bucket=bucket, points=points
+    )
 
 
-def _bucketed(rows: list[HealthMeasurement] | Any, freq: str, decimals: int) -> list[SeriesPoint]:
+def _bucketed(rows: Sequence[HealthMeasurement], freq: str, decimals: int) -> list[SeriesPoint]:
     data = [(r.measured_at, r.value) for r in rows if r.value is not None]
     if not data:
         return []
     frame = pd.DataFrame(data, columns=["t", "value"]).set_index("t")
     stats = frame["value"].resample(freq).agg(["mean", "min", "max", "count"])
     stats = stats[stats["count"] > 0]
+    columns = zip(stats.index, stats["mean"], stats["min"], stats["max"], stats["count"], strict=True)
     return [
         SeriesPoint(
-            t=ts.to_pydatetime().astimezone(UTC),
-            value=round_half_up(float(row["mean"]), decimals),
-            min=float(row["min"]),
-            max=float(row["max"]),
-            n=int(row["count"]),
+            t=pd.Timestamp(ts).to_pydatetime().astimezone(UTC),
+            value=round_half_up(float(mean), decimals),
+            min=float(low),
+            max=float(high),
+            n=int(count),
         )
-        for ts, row in stats.iterrows()
+        for ts, mean, low, high, count in columns
     ]

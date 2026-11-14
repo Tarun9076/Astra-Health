@@ -58,7 +58,12 @@ class HealthMeasurement(SQLModel, table=True):
     __table_args__ = (
         Index("ix_measurement_series", "astronaut_id", "indicator_code", "measured_at"),
         UniqueConstraint(
-            "astronaut_id", "indicator_code", "channel", "measured_at", "device_id", name="uq_measurement_reading"
+            "astronaut_id",
+            "indicator_code",
+            "channel",
+            "measured_at",
+            "device_id",
+            name="uq_measurement_reading",
         ),
     )
 

@@ -20,7 +20,9 @@ class SepEvent:
     instruments: tuple[str, ...]
 
 
-def fetch_sep(start: date, end: date, api_key: str, client: httpx.Client | None = None) -> list[dict[str, Any]]:
+def fetch_sep(
+    start: date, end: date, api_key: str, client: httpx.Client | None = None
+) -> list[dict[str, Any]]:
     params = {"startDate": start.isoformat(), "endDate": end.isoformat(), "api_key": api_key}
     http = client or httpx.Client(timeout=30)
     try:
