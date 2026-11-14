@@ -194,10 +194,13 @@ Insights          (Id, AstronautId, Kind ENUM[Anomaly,Trend], IndicatorCodes, Sc
 Recommendations   (Id, AstronautId, AlertId NULL, Code 'REC-SLEEP-ROUTINE', Title, Body, Category,
                    Priority, DueAt NULL, Status ENUM[Pending,Done,Skipped], CompletedAt NULL, Source ENUM[Rule,Routine,Surgeon])
 MedicalInstructions(Id, AstronautId, AlertId NULL, FromUserId, Text, CreatedAt, DeliveredAt NULL,
-                   AcknowledgedAt NULL, OriginNodeId)
+                   AcknowledgedAt NULL, OriginNodeId)   -- as built: + FromName; DeliveredAt = CreatedAt while the
+                   -- surgeon uses the Habitat node (Step 9 sets it when the envelope arrives)
 MedicalReports    (Id, AstronautId, Type ENUM[Daily,Weekly,AlertTriggered,OnDemand], PeriodStart, PeriodEnd,
                    SummaryJson, NarrativeText NULL, NarrativeProvider NULL, GeneratedAt,
                    TransmissionStatus ENUM[Queued,Sent,Delivered])
+                   -- as built (Step 8): + AlertId NULL, GeneratedBy NULL, OriginNodeId; narrative always present
+                   -- (template when Claude is unavailable)
 MedicalActions    (Id, AlertId, ActionTaken, PerformedBy, PerformedAt)
 WellnessScores    (AstronautId, Date, Overall, CardioScore, SleepScore, BehavioralScore, ActivityScore,
                    MetabolicScore, EnvironmentScore, CapReason NULL)   PK(AstronautId, Date)
@@ -520,6 +523,12 @@ Rules (as built in `astra/core/alerts.py` + `astra/services/alerts.py`):
   "source": "Illustrative — replace with mission behavioural-health protocol" }
 ```
 - On alert creation → materialise its `recommendations[]` into `Recommendations` rows (skip if same code Pending for that astronaut).
+- **Reports (Step 8):** the same loop also runs `astra/services/reports.py` `ensure_reports`:
+  - yesterday's daily report (when there is data);
+  - the last complete Monday–Sunday week;
+  - one AlertTriggered report per active Urgent or escalated alert.
+  It is idempotent and publishes `ReportGenerated`. The narrative comes from Claude when configured (guarded),
+  else from the template.
 - **Routine engine** (as built, `astra/services/routine.py`): runs on the Habitat node every `ASTRA_ROUTINE_INTERVAL_MINUTES` (default 15; 0 disables, as in tests). It is idempotent and creates today's missing tasks:
   - the check-in reminder, until today's check-in is submitted (submitting ticks it off);
   - a daily hydration log;
@@ -802,9 +811,10 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/astronauts/{id}/recommendations?status=pending` | self, surgeon (pending tasks are part of the dashboard for now) |
 | POST | `/tasks/{taskId}/complete` ✅ | self | marks a recommendation task Done |
 | POST | `/recommendations/{id}/complete` / `/skip` | self |
-| POST | `/instructions` `{astronautId, alertId?, text}` | surgeon |
-| GET | `/astronauts/{id}/instructions` · POST `/instructions/{id}/acknowledge` | self, surgeon |
-| GET | `/astronauts/{id}/reports` · GET `/reports/{id}` · POST `/astronauts/{id}/reports` `{type, from, to}` | self, surgeon |
+| POST | `/instructions` `{astronautId, alertId?, text}` ✅ → 201 instruction; pushed live as `InstructionReceived` to the astronaut and medical groups | surgeon |
+| GET | `/astronauts/{id}/instructions` ✅ · POST `/instructions/{id}/acknowledge` ✅ (→ `InstructionAcknowledged` event) | self, surgeon (list); astronaut self (acknowledge) |
+| GET | `/astronauts/{id}/reports` ✅ (newest first: `{id, type, periodStart, periodEnd, alertId, headline, narrativeProvider, generatedAt, transmissionStatus}`) · GET `/reports/{id}` ✅ (+ `narrative`, `summary`, `disclaimer`; audited for surgeons) · POST `/astronauts/{id}/reports` ✅ `{start, end}` (≤ 31 days; type OnDemand) | self, surgeon |
+| GET | `/crew/summary` ✅ → per astronaut `{code, displayName, roleTitle, status, urgentAlerts, attentionAlerts, lastReadingAt}` + for surgeons `{wellnessIndex (live), topAlert, alertsAwaitingReview, unacknowledgedInstructions, latestReport}` | surgeon, mission control (status only), admin |
 
 ### 13.4 Assistant, crew, environment, sync, admin
 | Method | Path | Role |
@@ -877,7 +887,11 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | `StatusHeader` | overall status colour + icon + text, wellness index ring, "based on X/10 indicators" |
 | `VitalCard` | indicator, value, unit, baseline, z → chip "↑ 2.4σ above your normal", sparkline (7d) |
 | `BaselineChart` | Recharts `ComposedChart`: `Area` band (median ± 2σ), `Line` values, `ReferenceLine` pre-flight, `ReferenceDot` alerts, questionable points hollow |
-| `AlertCard` | severity badge, title, reason, evidence table, recommendations checklist, Acknowledge / Contact surgeon; "What the AI noticed" (related insights) |
+| `AlertCard` | severity badge, title, reason, evidence table, recommendations checklist, Acknowledge / Contact surgeon; "What the AI noticed" (related insights). Staff mode (Step 8): `SurgeonActions` — Start review / Resolve / Dismiss with note, and "send an instruction about this alert" |
+| `CrewPage` ✅ | crew grid (Step 8): one card per astronaut, status-coloured border, alerts, live wellness index, data-as-of, awaiting-review and instruction counts, latest report |
+| `StaffAstronautPage` ✅ | tabs Summary (Overview read-only) · Alerts review · Trends (Analytics) · Reports · Instructions (send + delivered/acknowledged list) |
+| `ReportView` ✅ | narrative + readings-vs-normal table + alerts, wellness, adherence, radiation, AI insights; Print / PDF via a print stylesheet (`.no-print`, `.print-area`) |
+| `InstructionsBanner` ✅ | astronaut Overview: unacknowledged instructions, live via WebSocket, "Got it — acknowledge" |
 | `InsightList` ✅ | ML insights (Step 6): icon per kind, score, explanation, contributor chips; accent colour (advisory, never a status colour) and the note "never sets alert severity" |
 | `CheckinWizard` | 4 steps (Sleep · Mood/Stress/Fatigue · Vitals · Symptoms) with big sliders; target < 60 s; shows timer |
 | `BodyMap2D` | SVG with region `<path id="heart">`… coloured by `body-systems` status; click → `RegionPanel` |
@@ -971,6 +985,11 @@ services/backend/.venv/Scripts/python simulator/simulate.py fixtures         # r
 ---
 
 ## 17. Authorisation matrix
+
+**As built (Step 8):** every flight-surgeon read of an astronaut's data (`/astronauts/{id}/…` GETs) writes a
+`SurgeonRead` audit entry, at most once per 10 minutes per surgeon, astronaut and kind of data. Report reads,
+generated reports and instructions are audited too. Mission control's crew summary carries status, alert counts and
+data time only.
 
 | Resource / action | Astronaut (self) | Astronaut (other) | Flight Surgeon | Mission Control | Admin |
 |---|---|---|---|---|---|

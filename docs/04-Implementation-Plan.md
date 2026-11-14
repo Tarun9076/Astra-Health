@@ -47,7 +47,7 @@ gantt
     Step 6 ML insights                   :done, s6, after s5, 3d
     Step 7 AI assistant + RAG            :done, s7, after s6, 3d
     section Earth and wow
-    Step 8 Reports + surgeon dashboard   :s8, after s7, 2d
+    Step 8 Reports + surgeon dashboard   :done, s8, after s7, 2d
     Step 9 Offline, Ground node, link sim :s9, after s8, 3d
     Step 10 Body Explorer, wellness, env :s10, after s9, 3d
     section Ship
@@ -236,15 +236,34 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
-### Step 8 — Medical reports & Flight Surgeon dashboard (Days 19–20)
+### Step 8 — Medical reports & Flight Surgeon dashboard (Days 19–20) ✅
 
 **Tasks**
-- [ ] `astra/services/reports.py`: daily, weekly, alert-triggered `SummaryJson` + narrative (LLM or template).
-- [ ] Reports page with print-to-PDF stylesheet and Queued/Sent/Delivered status.
-- [ ] Surgeon routes: **Crew grid** (status, wellness index, alerts, "data as of"), **Astronaut detail** (summary, trends, alerts, reports, instructions), **Alert review** (In Review / Resolve / Dismiss with note), **Send instruction**.
-- [ ] Audit entries for surgeon reads. (Surgeon UI still talks to the Habitat node; Step 9 moves it.)
+- [x] `astra/services/reports.py`:
+  - Daily, weekly, alert-triggered and on-demand reports. Each has a `SummaryJson` (values vs the personal normal, alerts, AI insights, wellness, adherence, radiation, red-flag symptoms, instructions) and a narrative.
+  - The narrative comes from Claude when a key is set (facts from the summary only, guarded like chat), else from a deterministic template.
+  - Automatic reports come from the 15-minute routine loop and are idempotent: yesterday's daily, the last complete Mon–Sun week, and one per active Urgent or escalated alert.
+  - Every report is queued in the sync outbox; alert reports for Urgent alerts get priority 1.
+- [x] Reports page (astronaut 07, and the surgeon's Reports tab): list with a Queued/Sent/Delivered chip, the report view (summary, readings-vs-normal table, alerts, wellness, adherence, radiation, AI insights), "New (last 7 days)", and **Print / PDF** with a print stylesheet that prints only the report. Statuses stay *Queued* until the deep-space link exists (Step 9).
+- [x] Surgeon routes:
+  - **Crew grid** (`GET /api/crew/summary`): status, live wellness index, alert counts, top alert, alerts awaiting review, unacknowledged instructions, latest report and "data as of". Mission control sees status, counts and data time only.
+  - **Astronaut detail** with tabs: Summary, Alerts review, Trends, Reports, Instructions.
+  - **Alert review**: Start review / Resolve / Dismiss with a note, plus "send an instruction about this alert".
+  - **Send instruction** (`POST /api/instructions`), pushed live to the astronaut (`InstructionReceived`). It appears as a banner and toast on their Overview; they acknowledge it, and the surgeon gets a live toast.
+- [x] Audit entries for surgeon reads: `SurgeonRead` for any astronaut data read (once per 10 minutes per surgeon, astronaut and kind of data, so the grid's refreshes don't flood the log). `ReportRead`, `ReportGenerated`, `InstructionSent` and `InstructionAcknowledged` are also audited. (The surgeon UI still talks to the Habitat node; Step 9 moves it.)
 
-**Done when:** the surgeon reviews the fatigue alert, reads the report, sends an instruction, and the astronaut sees it live.
+**Done when:** the surgeon reviews the fatigue alert, reads the report, sends an instruction, and the astronaut sees it live. **Done 2026-11-15** (live demo data, mission day 121):
+1. The astronaut's check-in (sleep 4.5 h, resting HR 91, fatigue 8) raised the fatigue-pattern, resting-HR, sleep-deficit and ML-corroborated alerts. The crew grid turned AST-001 to Attention, with "3 alert(s) awaiting your review".
+2. The surgeon started review of the fatigue alert (In review).
+3. The surgeon generated and read a report: "resting heart rate 83 bpm vs normal 64 (+5.3σ, latest 91); sleep duration 4.5 h vs normal 6.2 (−3.1σ)…; AI insights: rising recovery strain on 6 day(s) from 2026-11-09".
+4. The surgeon sent an instruction about the alert.
+5. The astronaut's Overview, open in the browser and never reloaded, showed "Message from Flight Surgeon (demo)" as a banner and a toast. Acknowledging it updated the surgeon's Instructions tab to "acknowledged".
+
+- **Checks:** 228 backend tests pass; ruff, mypy, `tsc`, `vite build` and `oxlint` are clean.
+- **Not covered:**
+  - Visual screenshots (the browser pane could not draw; the pages were checked through their DOM text).
+  - The Claude-written narrative ran only with a mocked SDK client (no key on this machine).
+  - The printed PDF layout was not inspected.
 
 ---
 
