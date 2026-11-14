@@ -118,6 +118,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/astronauts/{astronaut}/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Analytics */
+        get: operations["get_analytics_api_astronauts__astronaut__analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/wellness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Wellness Trend
+         * @description Daily wellness index (stored at each assessment).
+         */
+        get: operations["get_wellness_trend_api_astronauts__astronaut__wellness_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/astronauts/{astronaut}/alerts": {
         parameters: {
             query?: never;
@@ -389,6 +426,29 @@ export interface components {
              */
             disclaimer: string;
         };
+        /** AlertMarker */
+        AlertMarker: {
+            /** Id */
+            id: string;
+            /** Ruleid */
+            ruleId: string;
+            /** Severity */
+            severity: string;
+            /** Title */
+            title: string;
+            /**
+             * Firstday
+             * Format: date
+             */
+            firstDay: string;
+            /**
+             * Lastday
+             * Format: date
+             */
+            lastDay: string;
+            /** Status */
+            status: string;
+        };
         /**
          * AlertStatus
          * @enum {string}
@@ -434,6 +494,43 @@ export interface components {
             escalationRequired: boolean;
             /** Protocol */
             protocol: string | null;
+        };
+        /** AnalyticsOut */
+        AnalyticsOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Indicator */
+            indicator: string;
+            /** Name */
+            name: string;
+            /** Unit */
+            unit: string;
+            /** Decimals */
+            decimals: number;
+            /**
+             * Worsewhen
+             * @enum {string}
+             */
+            worseWhen: "high" | "low" | "both";
+            /** Hasbaseline */
+            hasBaseline: boolean;
+            /**
+             * Start
+             * Format: date
+             */
+            start: string;
+            /**
+             * End
+             * Format: date
+             */
+            end: string;
+            /** Days */
+            days: components["schemas"]["DayPoint"][];
+            /** Questionable */
+            questionable: components["schemas"]["FlaggedReading"][];
+            preflight: components["schemas"]["Reference"] | null;
+            /** Alerts */
+            alerts: components["schemas"]["AlertMarker"][];
         };
         /** AstronautOut */
         AstronautOut: {
@@ -525,11 +622,50 @@ export interface components {
             lastReadingAt: string | null;
             /** Wellnessindex */
             wellnessIndex?: number | null;
+            wellness?: components["schemas"]["WellnessOut"] | null;
             /**
              * Simulateddata
              * @default true
              */
             simulatedData: boolean;
+        };
+        /** DayPoint */
+        DayPoint: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number | null;
+            /** Min */
+            min: number | null;
+            /** Max */
+            max: number | null;
+            /** N */
+            n: number;
+            /** Median */
+            median?: number | null;
+            /** Sigma */
+            sigma?: number | null;
+            /** Low */
+            low?: number | null;
+            /** High */
+            high?: number | null;
+            /** Z */
+            z?: number | null;
+        };
+        /** FlaggedReading */
+        FlaggedReading: {
+            /**
+             * T
+             * Format: date-time
+             */
+            t: string;
+            /** Value */
+            value: number | null;
+            /** Reason */
+            reason: string | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -745,6 +881,13 @@ export interface components {
              */
             motionArtifact: boolean;
         };
+        /** Reference */
+        Reference: {
+            /** Median */
+            median: number;
+            /** Sigma */
+            sigma: number;
+        };
         /**
          * Role
          * @enum {string}
@@ -887,6 +1030,55 @@ export interface components {
              */
             unit: string;
         };
+        /** WellnessDay */
+        WellnessDay: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Overall */
+            overall: number | null;
+            /** Cardiovascular */
+            cardiovascular: number | null;
+            /** Sleep */
+            sleep: number | null;
+            /** Behavioral */
+            behavioral: number | null;
+            /** Activity */
+            activity: number | null;
+            /** Metabolic */
+            metabolic: number | null;
+            /** Environment */
+            environment: number | null;
+        };
+        /** WellnessDomain */
+        WellnessDomain: {
+            /** Domain */
+            domain: string;
+            /** Score */
+            score: number | null;
+            /** Reasons */
+            reasons: string[];
+        };
+        /** WellnessOut */
+        WellnessOut: {
+            /** Overall */
+            overall: number | null;
+            /** Capreason */
+            capReason: string | null;
+            /** Indicatorsseen */
+            indicatorsSeen: number;
+            /** Indicatorstotal */
+            indicatorsTotal: number;
+            /** Domains */
+            domains: components["schemas"]["WellnessDomain"][];
+            /**
+             * Note
+             * @default Wellness index — a summary of your readings vs your own normal, not a clinical score.
+             */
+            note: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -1027,6 +1219,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_analytics_api_astronauts__astronaut__analytics_get: {
+        parameters: {
+            query: {
+                indicator: string;
+                range?: "7d" | "30d" | "90d" | "mission";
+            };
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnalyticsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_wellness_trend_api_astronauts__astronaut__wellness_get: {
+        parameters: {
+            query?: {
+                range?: "7d" | "30d" | "90d" | "mission";
+            };
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WellnessDay"][];
                 };
             };
             /** @description Validation Error */

@@ -205,6 +205,149 @@
     }
    }
   },
+  "/api/astronauts/{astronaut}/analytics": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Get Analytics",
+    "operationId": "get_analytics_api_astronauts__astronaut__analytics_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "indicator",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "examples": [
+        "resting_hr"
+       ],
+       "title": "Indicator"
+      }
+     },
+     {
+      "name": "range",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "7d",
+        "30d",
+        "90d",
+        "mission"
+       ],
+       "type": "string",
+       "default": "30d",
+       "title": "Range"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AnalyticsOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/wellness": {
+   "get": {
+    "tags": [
+     "analytics"
+    ],
+    "summary": "Get Wellness Trend",
+    "description": "Daily wellness index (stored at each assessment).",
+    "operationId": "get_wellness_trend_api_astronauts__astronaut__wellness_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "range",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "7d",
+        "30d",
+        "90d",
+        "mission"
+       ],
+       "type": "string",
+       "default": "30d",
+       "title": "Range"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/WellnessDay"
+         },
+         "title": "Response Get Wellness Trend Api Astronauts  Astronaut  Wellness Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/astronauts/{astronaut}/alerts": {
    "get": {
     "tags": [
@@ -1036,6 +1179,51 @@
     ],
     "title": "AlertDetail"
    },
+   "AlertMarker": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "ruleId": {
+      "type": "string",
+      "title": "Ruleid"
+     },
+     "severity": {
+      "type": "string",
+      "title": "Severity"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "firstDay": {
+      "type": "string",
+      "format": "date",
+      "title": "Firstday"
+     },
+     "lastDay": {
+      "type": "string",
+      "format": "date",
+      "title": "Lastday"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "ruleId",
+     "severity",
+     "title",
+     "firstDay",
+     "lastDay",
+     "status"
+    ],
+    "title": "AlertMarker"
+   },
    "AlertStatus": {
     "type": "string",
     "enum": [
@@ -1141,6 +1329,101 @@
      "protocol"
     ],
     "title": "AlertSummary"
+   },
+   "AnalyticsOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "indicator": {
+      "type": "string",
+      "title": "Indicator"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "decimals": {
+      "type": "integer",
+      "title": "Decimals"
+     },
+     "worseWhen": {
+      "type": "string",
+      "enum": [
+       "high",
+       "low",
+       "both"
+      ],
+      "title": "Worsewhen"
+     },
+     "hasBaseline": {
+      "type": "boolean",
+      "title": "Hasbaseline"
+     },
+     "start": {
+      "type": "string",
+      "format": "date",
+      "title": "Start"
+     },
+     "end": {
+      "type": "string",
+      "format": "date",
+      "title": "End"
+     },
+     "days": {
+      "items": {
+       "$ref": "#/components/schemas/DayPoint"
+      },
+      "type": "array",
+      "title": "Days"
+     },
+     "questionable": {
+      "items": {
+       "$ref": "#/components/schemas/FlaggedReading"
+      },
+      "type": "array",
+      "title": "Questionable"
+     },
+     "preflight": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Reference"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "alerts": {
+      "items": {
+       "$ref": "#/components/schemas/AlertMarker"
+      },
+      "type": "array",
+      "title": "Alerts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "indicator",
+     "name",
+     "unit",
+     "decimals",
+     "worseWhen",
+     "hasBaseline",
+     "start",
+     "end",
+     "days",
+     "questionable",
+     "preflight",
+     "alerts"
+    ],
+    "title": "AnalyticsOut"
    },
    "AstronautOut": {
     "properties": {
@@ -1402,13 +1685,23 @@
      "wellnessIndex": {
       "anyOf": [
        {
-        "type": "number"
+        "type": "integer"
        },
        {
         "type": "null"
        }
       ],
       "title": "Wellnessindex"
+     },
+     "wellness": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/WellnessOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
      },
      "simulatedData": {
       "type": "boolean",
@@ -1430,6 +1723,154 @@
      "lastReadingAt"
     ],
     "title": "DashboardOut"
+   },
+   "DayPoint": {
+    "properties": {
+     "day": {
+      "type": "string",
+      "format": "date",
+      "title": "Day"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "min": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Min"
+     },
+     "max": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max"
+     },
+     "n": {
+      "type": "integer",
+      "title": "N"
+     },
+     "median": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Median"
+     },
+     "sigma": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sigma"
+     },
+     "low": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Low"
+     },
+     "high": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "High"
+     },
+     "z": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Z"
+     }
+    },
+    "type": "object",
+    "required": [
+     "day",
+     "value",
+     "min",
+     "max",
+     "n"
+    ],
+    "title": "DayPoint"
+   },
+   "FlaggedReading": {
+    "properties": {
+     "t": {
+      "type": "string",
+      "format": "date-time",
+      "title": "T"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "t",
+     "value",
+     "reason"
+    ],
+    "title": "FlaggedReading"
    },
    "HTTPValidationError": {
     "properties": {
@@ -1998,6 +2439,24 @@
     ],
     "title": "ReadingIn"
    },
+   "Reference": {
+    "properties": {
+     "median": {
+      "type": "number",
+      "title": "Median"
+     },
+     "sigma": {
+      "type": "number",
+      "title": "Sigma"
+     }
+    },
+    "type": "object",
+    "required": [
+     "median",
+     "sigma"
+    ],
+    "title": "Reference"
+   },
    "Role": {
     "type": "string",
     "enum": [
@@ -2396,6 +2855,192 @@
      "unit"
     ],
     "title": "VitalIn"
+   },
+   "WellnessDay": {
+    "properties": {
+     "day": {
+      "type": "string",
+      "format": "date",
+      "title": "Day"
+     },
+     "overall": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Overall"
+     },
+     "cardiovascular": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cardiovascular"
+     },
+     "sleep": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sleep"
+     },
+     "behavioral": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Behavioral"
+     },
+     "activity": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Activity"
+     },
+     "metabolic": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Metabolic"
+     },
+     "environment": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Environment"
+     }
+    },
+    "type": "object",
+    "required": [
+     "day",
+     "overall",
+     "cardiovascular",
+     "sleep",
+     "behavioral",
+     "activity",
+     "metabolic",
+     "environment"
+    ],
+    "title": "WellnessDay"
+   },
+   "WellnessDomain": {
+    "properties": {
+     "domain": {
+      "type": "string",
+      "title": "Domain"
+     },
+     "score": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Score"
+     },
+     "reasons": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Reasons"
+     }
+    },
+    "type": "object",
+    "required": [
+     "domain",
+     "score",
+     "reasons"
+    ],
+    "title": "WellnessDomain"
+   },
+   "WellnessOut": {
+    "properties": {
+     "overall": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Overall"
+     },
+     "capReason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Capreason"
+     },
+     "indicatorsSeen": {
+      "type": "integer",
+      "title": "Indicatorsseen"
+     },
+     "indicatorsTotal": {
+      "type": "integer",
+      "title": "Indicatorstotal"
+     },
+     "domains": {
+      "items": {
+       "$ref": "#/components/schemas/WellnessDomain"
+      },
+      "type": "array",
+      "title": "Domains"
+     },
+     "note": {
+      "type": "string",
+      "title": "Note",
+      "default": "Wellness index — a summary of your readings vs your own normal, not a clinical score."
+     }
+    },
+    "type": "object",
+    "required": [
+     "overall",
+     "capReason",
+     "indicatorsSeen",
+     "indicatorsTotal",
+     "domains"
+    ],
+    "title": "WellnessOut"
    }
   },
   "securitySchemes": {

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Button, ErrorNote, Loading, Panel } from '../../components/ui/Panel'
 import { SeverityBadge, StatusBadge } from '../../components/ui/Status'
 import { VitalCard } from '../../components/ui/VitalCard'
+import { WellnessCard } from '../../components/ui/WellnessCard'
 import { api, unwrap, type Dashboard, type Task } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { dayOf, timeAgo } from '../../lib/mission'
@@ -22,7 +23,10 @@ export function OverviewPage({ code, readOnly = false }: { code?: string; readOn
 
   return (
     <div className="max-w-6xl space-y-6">
-      <StatusHeader data={data} readOnly={readOnly} />
+      <div className="grid gap-4 xl:grid-cols-[1fr_26rem]">
+        <StatusHeader data={data} readOnly={readOnly} />
+        {data.wellness && <WellnessCard wellness={data.wellness} />}
+      </div>
 
       {urgent.length > 0 && (
         <section className="rounded-xl border-2 border-status-red bg-status-red/10 p-4" role="alert">

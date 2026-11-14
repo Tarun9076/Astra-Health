@@ -24,6 +24,8 @@ function useLiveUpdates() {
         void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
         void queryClient.invalidateQueries({ queryKey: ['alerts'] })
         void queryClient.invalidateQueries({ queryKey: ['alert'] })
+        void queryClient.invalidateQueries({ queryKey: ['analytics'] })
+        void queryClient.invalidateQueries({ queryKey: ['wellness'] })
       }
       if (event.type === 'AlertRaised') {
         const p = event.payload as { id?: string; title?: string; severity?: string; reason?: string; astronautCode?: string }

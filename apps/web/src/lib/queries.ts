@@ -35,3 +35,27 @@ export function useCatalog() {
     select: (rows: Indicator[]) => Object.fromEntries(rows.map((r) => [r.code, r])) as Record<string, Indicator>,
   })
 }
+
+export type Range = '7d' | '30d' | '90d' | 'mission'
+
+export function useAnalytics(code: string | null | undefined, indicator: string | null, range: Range) {
+  return useQuery({
+    queryKey: ['analytics', code, indicator, range],
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/astronauts/{astronaut}/analytics', {
+          params: { path: { astronaut: code! }, query: { indicator: indicator!, range } },
+        }),
+      ),
+    enabled: Boolean(code && indicator),
+  })
+}
+
+export function useWellnessTrend(code: string | null | undefined, range: Range) {
+  return useQuery({
+    queryKey: ['wellness', code, range],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/wellness', { params: { path: { astronaut: code! }, query: { range } } })),
+    enabled: Boolean(code),
+  })
+}

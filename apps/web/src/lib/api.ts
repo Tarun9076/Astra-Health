@@ -18,6 +18,10 @@ export type VitalIn = Schemas['VitalIn']
 export type CheckinOut = Schemas['CheckinOut']
 export type Astronaut = Schemas['AstronautOut']
 export type SystemStatus = Schemas['SystemStatus']
+export type Analytics = Schemas['AnalyticsOut']
+export type AnalyticsDay = Schemas['DayPoint']
+export type WellnessDay = Schemas['WellnessDay']
+export type Wellness = Schemas['WellnessOut']
 
 export class ApiError extends Error {
   readonly status: number
