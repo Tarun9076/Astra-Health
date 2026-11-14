@@ -88,7 +88,7 @@ astra-health/
 | Code | Name | Canonical unit | Accepted input units | Plausible range (reject outside) | Spread floor σ_min ⚠️ | Hazard / system | Collection |
 |---|---|---|---|---|---|---|---|
 | `heart_rate` | Heart rate | bpm | bpm | 25–250 | 3 | gravity / heart | wearable, continuous |
-| `resting_hr` | Resting heart rate | bpm | bpm | 30–150 | 2 | gravity / heart | derived (wearable, morning) |
+| `resting_hr` | Resting heart rate | bpm | bpm | 30–150 | 3 (was 2; see §5.4) | gravity / heart | derived (wearable, morning) |
 | `bp_sys` | Systolic BP | mmHg | mmHg, kPa (×7.50062) | 60–260 | 4 | gravity / heart | BP monitor, daily |
 | `bp_dia` | Diastolic BP | mmHg | mmHg, kPa | 30–160 | 3 | gravity / heart | BP monitor, daily |
 | `body_temp` | Body temperature | °C | °C, °F ((F−32)×5/9) | 30–43 | 0.15 | environment / immune | thermometer, daily |
@@ -263,16 +263,22 @@ Inputs: valid readings of (astronaut, indicator); config windowDays (default 28)
      - readings with Quality != Valid
      - days where an Open/InReview alert existed for this indicator (don't learn the abnormal as normal)
      - the most recent 3 days (so a developing trend doesn't drag the baseline with it)
-3. If count < minSamples → fall back to Preflight baseline; if none → catalog population default (flag "provisional").
+3. On the mission, the window never reaches back before the mission start date.
+   If count < minSamples → fall back to the Preflight baseline (physiology only — environment-driven
+   indicators with no sigmaFloor, e.g. radiation, have no fallback: Earth's normal isn't Mars's);
+   if there is no fallback → no baseline (z-score conditions stay unknown, so no alert).
 4. median = Median(xs)
    mad    = Median(|x - median|)
    sigma  = max(1.4826 * mad, sigmaFloor[indicator])
-5. Store HealthBaseline(Source=Rolling). Recompute nightly (mission midnight) and on demand.
+5. Store HealthBaseline (Source=Rolling and Preflight) after each assessment run.
 ```
 Deviation for any value `x`:  `z = (x − median) / sigma`.
 
 ### 5.2 Pre-flight baseline
 Seeded by the simulator as 30 days of "pre-flight" readings (Source=Preflight). Shown in analytics as a dashed reference line ("pre-flight normal") — this is how the *Digital Health Twin* compares "now vs start of mission".
+
+### 5.4 Tuning finding: the spread floor (Step 3)
+The healthy-crew scenario test (T-SC-01) showed repeated heart-rate false alarms with `resting_hr` σ_min = 2 bpm. Because day-to-day values are correlated, the 28-day MAD collapses in calm stretches. σ then fell to 2 bpm against a true day-to-day variation of about 3 bpm, so ordinary 84–86 bpm days scored +3σ for someone whose normal is 80. Raising σ_min to 3 bpm (typical day-to-day variation of resting HR) cut false alarms to one 2-day episode per affected astronaut, without delaying real detection: the fatigue scenario result is unchanged. The rule threshold itself was **not** tuned.
 
 ### 5.3 Interface
 ```python
@@ -390,6 +396,12 @@ Eval(node):
         else compare v
         evidence[indicator] = {agg, window, value: v, baseline: median, sigma, z}
 ```
+As built (`astra/core/rules/engine.py`):
+- `evaluate(rules, ctx) -> list[RuleOutcome(rule, matched, evidence, reason)]`, with no I/O inside.
+- **Windows:** `Nd` = readings in (asOf − N days, asOf]; `Nr` = the last N readings ≤ asOf; `mission` = since the mission start.
+- **Missing values** render as "n/a" in reason templates instead of failing.
+- **Evidence** also records `n`, the number of readings in the window.
+
 Pure function: `evaluate(rules: Sequence[Rule], ctx: EvaluationContext) -> list[Finding]`; no I/O inside. `EvaluationContext` is a `Protocol`, so tests pass an in-memory implementation and the app passes a DB-backed one.
 
 ### 6.4 Python shapes (Pydantic v2)
@@ -461,9 +473,13 @@ stateDiagram-v2
     Resolved --> [*]
     Dismissed --> [*]
 ```
-Rules:
-- **Dedupe key** = (AstronautId, RuleId) among non-terminal states.
-- **Severity upgrade**: if a related Urgent rule (same category) matches while an Attention alert is open → create the Urgent alert and link (`RelatedAlertId`); Attention stays.
+Rules (as built in `astra/core/alerts.py` + `astra/services/alerts.py`):
+- **When rules run:** after every intake batch, inside the same transaction. Live readings are evaluated once, at the newest reading. Backfilled history is evaluated once per day touched (end of day), oldest first, so past episodes raise alerts as they would have live (`astra/services/assessment.py`).
+- **Dedupe key** = (AstronautId, RuleId) among non-terminal states. A re-match updates `LastTriggeredAt`, `TriggerCount`, evidence and reason; re-evaluating the same moment never double-counts.
+- **New alert →** recommendation tasks (skipped if the same task is already pending), an audit entry, and an outbox item (priority 1 for Urgent). **Resolved or Dismissed →** that alert's pending tasks close (`Closed`).
+- **Auto-resolve:** `ConsecutiveClear` counts evaluations in a row where the rule no longer matched. An *acknowledged* Attention alert resolves once it reaches 3 and its last trigger was ≥ 24 h ago.
+- **Days covered by an alert** are excluded from that indicator's baseline.
+- **Severity upgrade**: an Urgent rule (e.g. `TH-FEVER-HIGH`) raises its own alert next to the Attention one (`TH-FEVER`); explicit `RelatedAlertId` linking is deferred.
 - **Urgent alerts never auto-resolve.**
 - **Escalation**: `EscalationRequired = true` when Severity = Urgent, or `TriggerCount ≥ rule.escalation.whenTriggerCountGte`, or astronaut presses "Contact surgeon". Escalation → generate `AlertTriggered` report + enqueue with priority.
 - **Every transition** writes `AuditLog` and emits `AlertUpdated` over the WebSocket hub, and enqueues an outbox item.
@@ -652,15 +668,15 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 ### 13.1 Auth & profile
 | Method | Path | Role | Notes |
 |---|---|---|---|
-| POST | `/auth/login` | public | `{username,password}` → `{accessToken, refreshToken, user}` |
-| POST | `/auth/refresh` | public | |
-| GET | `/me` | any | user + astronaut + mission |
+| POST | `/auth/login` ✅ | public | `{username, password}` → `{accessToken, tokenType: "bearer", expiresIn, user:{userId, username, role, displayName, astronautId, astronautCode}}`. JWT (HS256, `ASTRA_JWT_SECRET`), valid 12 h for demo days. An unknown user and a wrong password give the same 401 and take the same time |
+| POST | `/auth/refresh` | public | deferred (sign in again) |
+| GET | `/me` ✅ | any | the signed-in user |
 
 ### 13.2 Astronaut data
 | Method | Path | Role | Body / Query → Response |
 |---|---|---|---|
 | GET | `/astronauts` ✅ | surgeon, mission (Step 3 filters by role) | → `[{id, code, displayName, roleTitle, missionCode, missionStart}]` |
-| GET | `/astronauts/{id}/dashboard` | self, surgeon | → `{status, wellnessIndex, vitals:[{indicator,value,unit,at,baseline,sigma,z,trend}], activeAlerts, tasks, missionDay, lastSyncAt}` |
+| GET | `/astronauts/{id}/dashboard` ✅ | self, surgeon | → `{astronautCode, displayName, missionCode, missionDay, status: GREEN|YELLOW|RED, statusReason, activeAlerts:[AlertSummary], vitals:[{indicator, name, value, unit, measuredAt, baseline, sigma, z, deviation: normal|above|below|unknown, worseWhen}], tasks:[Task], lastReadingAt, wellnessIndex (Step 5), simulatedData}`. RED = any active Urgent alert; YELLOW = any active Attention alert |
 | POST | `/measurements/batch` ✅ | self, device, admin | `{astronautId (code or id), items:[{id?, indicator, value, unit, measuredAt (with timezone), source, deviceId?, channel?, panelId?, signalQuality?, motionArtifact?}]}`, header `X-Backfill: true` for imports → 201 `{accepted:[id], questionable:[{id,reason}], rejected:[{id,reason}], duplicates:[id], newAlerts:[AlertDto] (Step 3)}`. Max 2,000 items; duplicates (same id, or same indicator/channel/time/device) are not stored again |
 | GET | `/astronauts/{id}/measurements` ✅ | self, surgeon | `?indicator=&start=&end=&bucket=raw|hour|day&channel=` → `{astronautCode, indicator, unit, bucket, points:[{t, value, min?, max?, n, quality?, channel?}]}`. Raw = Valid + Questionable with their quality; buckets average Valid readings only; radiation defaults to the `Total` channel |
 | POST | `/checkins` | self | `{id, date, sleepHours, sleepQuality, mood, stress, fatigue, symptoms:[...], privateNote?}` → `{checkin, newAlerts, recommendations}` |
@@ -674,12 +690,12 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 ### 13.3 Alerts, recommendations, instructions, reports
 | Method | Path | Role |
 |---|---|---|
-| GET | `/astronauts/{id}/alerts?status=active|all` | self, surgeon |
-| GET | `/alerts/{alertId}` (with evidence, insights, recommendations, actions) | self, surgeon |
-| POST | `/alerts/{alertId}/acknowledge` | self |
-| POST | `/alerts/{alertId}/review` `{note?}` | surgeon |
-| POST | `/alerts/{alertId}/resolve` `{note}` | surgeon |
-| POST | `/alerts/{alertId}/dismiss` `{note}` | surgeon |
+| GET | `/astronauts/{id}/alerts?status=active|all` ✅ | self, surgeon |
+| GET | `/alerts/{alertId}` ✅ (evidence, recommendation tasks, emergency protocol text, acknowledgement / review / resolution fields) | self, surgeon |
+| POST | `/alerts/{alertId}/acknowledge` ✅ | self (Astronaut role) |
+| POST | `/alerts/{alertId}/review` `{note?}` ✅ | surgeon |
+| POST | `/alerts/{alertId}/resolve` `{note}` ✅ | surgeon (from InReview; note required, else 409) |
+| POST | `/alerts/{alertId}/dismiss` `{note}` ✅ | surgeon |
 | POST | `/alerts/{alertId}/escalate` | self |
 | GET | `/astronauts/{id}/recommendations?status=pending` | self, surgeon |
 | POST | `/recommendations/{id}/complete` / `/skip` | self |
@@ -707,7 +723,7 @@ Generate the TypeScript client from OpenAPI (`openapi-typescript` + `openapi-fet
 
 ## 14. WebSocket hub `/ws`
 
-Connect with `ws://host/ws?token=<jwt>`. The server validates the token, then joins the socket to groups by role: `astronaut:{id}` (astronaut), `medical` (flight surgeon), `mission`, `admin`. Every message is JSON `{"type": "<Event>", "payload": {...}, "at": "<utc>"}`. `astra/realtime/hub.py` keeps `dict[group, set[WebSocket]]` and exposes `await hub.publish(groups, type, payload)`. The client sends `{"type":"ping"}` every 25 s; the server answers `pong` (keeps proxies from closing idle sockets).
+As built: a socket without a valid token is closed with code 1008. Connect with `ws://host/ws?token=<jwt>`. The server validates the token, then joins the socket to groups by role: `astronaut:{id}` (astronaut), `medical` (flight surgeon), `mission`, `admin`. Every message is JSON `{"type": "<Event>", "payload": {...}, "at": "<utc>"}`. `astra/realtime/hub.py` keeps `dict[group, set[WebSocket]]` and exposes `await hub.publish(groups, type, payload)`. The client sends `{"type":"ping"}` every 25 s; the server answers `pong` (keeps proxies from closing idle sockets).
 | Event | Payload | Sent to |
 |---|---|---|
 | `MeasurementRecorded` | `{astronautId, indicator, value, at, z}` | astronaut, medical |
@@ -823,7 +839,8 @@ services/backend/.venv/Scripts/python simulator/simulate.py seed --dry-run   # g
 services/backend/.venv/Scripts/python simulator/simulate.py preview --astronaut AST-001 --indicator resting_hr
 services/backend/.venv/Scripts/python simulator/simulate.py fixtures         # re-fetch DONKI + Horizons (needs NASA key)
 ```
-`stream` (live wearable feed) and `inject` (start a scenario on demand from the Demo Control Panel) are added in Steps 4 and 9.
+- **`seed` signs in** with the demo accounts from the seed file: Admin to post the data, then FlightSurgeon to review and resolve alerts last seen before mission day 113 (`--close-before-day`, 0 keeps them open). The resolution note is marked "(simulated)". The demo therefore opens with only the current fatigue episode active.
+- **`stream`** (live wearable feed) and **`inject`** (start a scenario on demand from the Demo Control Panel) are added in Steps 4 and 9.
 
 ---
 
@@ -840,7 +857,12 @@ services/backend/.venv/Scripts/python simulator/simulate.py fixtures         # r
 | Crew overview | own card | ❌ | ✅ | ✅ (aggregate) | ✅ |
 | Link control / scenarios | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-Implement as FastAPI dependencies in `astra/security/deps.py`: `current_user` (decodes the JWT), `require_role(*roles)`, and `require_self_or_medical(astronaut_id)` (the token's `astronaut_id` claim must equal the route id unless the role is FlightSurgeon). Add them to every router; a test walks `app.routes` and fails if a route under `/api` (except `/api/auth/*` and `/api/system/status`) has no auth dependency. Every surgeon read of medical detail writes `AuditLog(Action="ReadMedical")`.
+As built in `astra/security/deps.py`:
+- **`current_user`** decodes the bearer JWT and checks the account is still active.
+- **`require_role(*roles)`** restricts a route to the given roles.
+- **`viewable_astronaut`** is the path dependency for `/astronauts/{astronaut}/…`: the astronaut themself or a flight surgeon.
+- **Posting measurements:** the astronaut (own data) or Admin (simulator / device gateway).
+- **Test T-SEC-01** reads the OpenAPI schema and fails if any `/api` operation, other than `/api/auth/login` and `/api/system/status`, lacks the bearer security requirement. FastAPI 0.162 wraps included routers, so the schema is used rather than `app.routes`. Every surgeon read of medical detail writes `AuditLog(Action="ReadMedical")`.
 
 ---
 
@@ -909,7 +931,8 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-SEC-01 | Security | walk `app.routes` | every `/api` route except auth/status has an auth dependency |
 | T-UI-01 | Check-in | complete wizard | < 60 s, dashboard updates via WebSocket |
 | T-UI-02 | Offline | stop API, submit check-in, restart | outbox flushed, single record |
-| T-SC-01 | Scenario | healthy crew 120 days | 0 Urgent, ≤ 2 Attention (false-alarm budget) |
+| T-SC-01 | Scenario | healthy crew 120 days | 0 Urgent, ≤ 2 Attention (false-alarm budget). **Measured (Step 3):** AST-001 1, AST-002 1, AST-003 2 Attention; 0 Urgent |
+| T-SC-02 | Scenario | ARES-1 (fatigue + storm + glitch) | **Measured:** sleep deficit from day 111, CV-RHR day 116, BEH-FATIGUE-COMPOSITE day 117 (onset 114); RAD-SPE-EVENT Urgent days 87–91 for all 3 crew (the real May 2024 storm days); glitch Questionable, no alert |
 | T-EXT-01 | Integrations | parse `donki-sep-2024-05.json` fixture | 14 SEP events with onset times; no network call |
 | T-EXT-02 | Integrations | `ASTRA_NASA_API_KEY` empty | app starts; DONKI client disabled; fixtures still replayable |
 | T-EXT-03 | Integrations | Horizons fixture for 2026-11-14 | one-way light time ≈ 11.0 min → link delay set from it |

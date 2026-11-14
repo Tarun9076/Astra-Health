@@ -23,7 +23,7 @@
 | Milestone | Day | What you can demo |
 |---|---|---|
 | **M0 — Repo ready** ✅ | 1 | Monorepo scaffolded: FastAPI backend + React shell run together; tests pass |
-| **M1 — Health brain** | 6 | 120 days of simulated crew data in SQLite; baselines + rules produce the right alerts in unit/scenario tests; Swagger UI shows them |
+| **M1 — Health brain** ✅ | 6 | 120 days of simulated crew data in SQLite; baselines + rules produce the right alerts in unit/scenario tests; Swagger UI shows them |
 | **M2 — Walking skeleton** | 10 | Log in as astronaut → Overview → do a check-in → alert appears live (WebSocket) with explanation |
 | **M3 — Insightful** | 15 | Analytics charts with baseline bands; recommendations; ML anomaly/trend insights |
 | **M4 — Assistant** | 18 | Chat with citations; red-flag emergency card; works with *and* without internet |
@@ -40,7 +40,7 @@ gantt
     Step 0 Scaffold (done)               :done, s0, 2026-11-14, 1d
     Step 1 Catalog, protocols, core models :done, s1, after s0, 1d
     Step 2 DB, simulator, ingestion      :done, s2, after s1, 2d
-    Step 3 Baselines, rules, alerts, auth :s3, after s2, 2d
+    Step 3 Baselines, rules, alerts, auth :done, s3, after s2, 2d
     section Product
     Step 4 Dashboard, check-in, live alerts :s4, after s3, 4d
     Step 5 Analytics, recommendations, wellness :s5, after s4, 2d
@@ -114,23 +114,29 @@ Also done: `services/backend/.env` (git-ignored) with a random `ASTRA_JWT_SECRET
 
 ---
 
-### Step 3 — Baselines, rule engine, alerts, auth (Days 5–6) → **M1**
+### Step 3 — Baselines, rule engine, alerts, auth (Days 5–6) → **M1** ✅
 
 **Goal:** the health brain works and is proven by tests.
 
 **Tasks**
-- [ ] `astra/core/baselines.py` (robust median/MAD, floors, exclusions) + tests T-B-01..04.
-- [ ] `astra/core/rules/engine.py` — `evaluate(rules, ctx)` pure function + an in-memory `EvaluationContext` for tests; tests T-R-01..06 (incl. T-R-03, the "same 85 bpm, different astronaut" case).
-- [ ] `astra/core/alerts.py` (state machine, merge order) + `astra/services/alerts.py` (dedupe, escalation, audit) + tests T-A-01, T-A-02.
-- [ ] `astra/services/recommendations.py` materialising rule recommendations.
-- [ ] `astra/services/ingestion.py`: save → update baselines → evaluate rules → upsert alerts → recommendations → audit → outbox → publish WebSocket events.
-- [ ] Routers: `GET /api/astronauts/{id}/dashboard`, `/alerts`, `GET /api/alerts/{id}`.
-- [ ] Auth: `POST /api/auth/login` (PyJWT + bcrypt), `astra/security/deps.py` (`current_user`, `require_role`, `require_self_or_medical`) + test T-SEC-01.
-- [ ] **Scenario tests** (`tests/scenarios/`): generate the healthy and fatigue crews in-process with the simulator's generator and assert expected alerts (T-R-04, T-SC-01).
+- [x] `astra/core/baselines.py` (robust median/MAD, floors, exclusions, pre-flight fallback) + tests T-B-01..04.
+- [x] `astra/core/rules/engine.py` — `evaluate(rules, ctx)` pure function + an in-memory `EvaluationContext` for tests; tests T-R-01..05 (incl. T-R-03, the "same 85 bpm, different astronaut" case). T-R-06 (sensor glitch) is a scenario test.
+- [x] `astra/core/alerts.py` (state machine, merge order) + `astra/services/alerts.py` (dedupe, escalation, auto-resolve, audit, outbox) + tests T-A-01..03.
+- [x] Recommendation tasks created with each alert (in `astra/services/alerts.py`) and closed when the alert is resolved.
+- [x] `astra/services/assessment.py` + ingestion: save → evaluate rules on the updated history (once per day for backfill) → alerts → tasks → baselines stored → audit → outbox; the router publishes WebSocket events.
+- [x] Routers: `GET /api/astronauts/{id}/dashboard`, `GET /api/astronauts/{id}/alerts`, `GET /api/alerts/{id}`, plus `acknowledge` (astronaut) and `review` / `resolve` / `dismiss` (flight surgeon).
+- [x] Auth: `POST /api/auth/login` + `GET /api/me` (PyJWT + bcrypt), `astra/security/deps.py` (`current_user`, `require_role`, `viewable_astronaut`), WebSocket requires `?token=`; test T-SEC-01.
+- [x] **Scenario tests** (`tests/scenarios/`): the full ARES-1 mission and a healthy crew run through the real intake + assessment (T-R-04, T-R-06, T-SC-01).
+- [x] Simulator CLI signs in (admin to post, flight surgeon to close past episodes before day 113).
 
-**Done when:** scenario tests are green; Swagger shows AST-001 on day 117 with a YELLOW `BEH-FATIGUE-COMPOSITE` alert and full evidence, and AST-002 GREEN. **Tag `m1-health-brain`.**
+**Done when:** scenario tests are green; Swagger shows AST-001 with a YELLOW `BEH-FATIGUE-COMPOSITE` alert and full evidence, and AST-002 GREEN. **Done 2026-11-14:**
+- **Tests:** 119 backend tests pass in about 15 s; ruff and strict mypy are clean.
+- **Live:** AST-001 is YELLOW with sleep deficit (from day 111), heart rate (day 116) and the fatigue pattern (day 117; reason: *4.4 h sleep vs 6.1 h normal, 92 bpm vs 64, fatigue 9/10*). AST-002 and AST-003 are GREEN.
+- **Storm:** the real May 2024 storm raised an Urgent alert for all crew on days 87–91.
+- **Healthy crew:** 1, 1 and 2 Attention alerts per astronaut (within the budget of 2).
+- **Finding:** resting-HR σ_min raised 2 → 3 bpm to stop false alarms (LLD §5.4).
 
----
+**Tag `m1-health-brain`.**
 
 ### Step 4 — Web: login, Overview, check-in, alerts, live updates (Days 7–10) → **M2**
 

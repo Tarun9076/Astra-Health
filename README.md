@@ -70,7 +70,22 @@ Then post 150 days of simulated crew data (about 6,600 readings, including the r
 services/backend/.venv/Scripts/python simulator/simulate.py seed
 ```
 
-The database is `services/backend/habitat.db` (git-ignored). Delete it to start fresh.
+The database is `services/backend/habitat.db` (git-ignored). There are no migrations yet, so after pulling changes to the tables, stop the backend, delete `habitat.db*`, and run the two commands above again.
+
+**Demo accounts** (from `services/backend/seed.example.json`, local demo only):
+
+| Username | Password | Role |
+|---|---|---|
+| `ast1` / `ast2` / `ast3` | `astra-demo-ast1` / `-ast2` / `-ast3` | Astronaut (AST-001 / 002 / 003) |
+| `surgeon1` | `astra-demo-surgeon` | Flight surgeon |
+| `mission1` | `astra-demo-mission` | Mission control |
+| `admin` | `astra-demo-admin` | Demo operator (simulator) |
+
+To try the API in Swagger (http://localhost:8000/docs):
+1. Call `POST /api/auth/login`.
+2. Copy the `accessToken`.
+3. Click **Authorize** and paste it.
+4. Try `GET /api/astronauts/AST-001/dashboard`.
 
 **Web app** — http://localhost:5173 (proxies `/api` and `/ws` to port 8000)
 

@@ -304,6 +304,16 @@ A transparent weighted index of domain sub-scores (cardiovascular, sleep, behavi
 
 **Prototype evaluation metrics** (report these in the pitch): scenario detection rate, false-alarm count on the healthy crew, median time-to-detection (sim days), check-in completion time, % alerts with full evidence, sync duplicates (target 0).
 
+**Measured so far (Step 3, simulated ARES-1 mission, seed 42):**
+
+| Metric | Result |
+|---|---|
+| Scenario detection | 2 / 2 injected episodes detected (fatigue, solar storm); the sensor glitch was correctly *not* alarmed |
+| Time to detection | Fatigue (onset day 114, ramping over 5 days): heart-rate alert day 116, composite alert day 117. Solar storm: same day (87) |
+| False alarms, healthy crew (120 days) | 4 Attention alerts across 3 astronauts (1 / 1 / 2), 0 Urgent; budget ≤ 2 per astronaut |
+| Alerts with full evidence | 100 % (every alert stores rule id + version, values, baseline, σ, z and a rendered reason) |
+| Duplicate readings stored on re-import | 0 of 6,649 |
+
 ---
 
 ## 10. Deployment (hackathon)
