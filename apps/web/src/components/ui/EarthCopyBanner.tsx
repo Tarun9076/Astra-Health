@@ -9,7 +9,7 @@ export function EarthCopyBanner() {
   const link = data.link
   const down = link?.status === 'Down'
   return (
-    <div className={`no-print flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-xs ${down ? 'border-status-red/40 bg-status-red/10' : 'border-space-700 bg-space-950'}`}>
+    <div className={`no-print flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-4 py-2 text-xs ${down ? 'border-status-red/40 bg-status-red/10' : 'border-line bg-surface'}`}>
       <span className="inline-flex items-center gap-1.5 font-semibold"><Globe2 className="h-4 w-4 text-accent" aria-hidden /> Earth copy (Ground node)</span>
       <span className="text-ink-muted">
         Data from the Habitat arrives after the light-time delay

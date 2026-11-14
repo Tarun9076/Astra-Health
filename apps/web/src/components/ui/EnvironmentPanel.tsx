@@ -26,7 +26,7 @@ export function EnvironmentPanel({ code }: { code: string }) {
           {env.error && <ErrorNote error={env.error} />}
           <ul className="grid gap-3 sm:grid-cols-3">
             {env.data?.map((c) => (
-              <li key={c.indicator} className="rounded-lg border border-space-700 p-3">
+              <li key={c.indicator} className="rounded-lg border border-line p-3">
                 <p className="flex items-center gap-1 text-xs text-ink-muted"><ThermometerSun className="h-3.5 w-3.5" aria-hidden /> {c.name}</p>
                 <p className={`font-mono text-xl ${c.status === 'out_of_range' ? 'text-status-yellow' : ''}`}>
                   {c.value != null ? formatValue(c.value, c.unit === 'mmHg' ? 2 : c.unit === '%' ? 0 : 1) : '—'}
@@ -50,7 +50,7 @@ export function EnvironmentPanel({ code }: { code: string }) {
               <div>
                 <p className="flex items-center justify-between"><span className="flex items-center gap-1"><Radiation className="h-4 w-4 text-accent" aria-hidden /> Mission total</span>
                   <span className="font-mono">{r.missionTotalMsv.toFixed(1)} / {r.limitMsv ?? '—'} mSv</span></p>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-space-700" role="meter" aria-valuenow={r.pctOfLimit ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="Share of the mission dose limit">
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-subtle" role="meter" aria-valuenow={r.pctOfLimit ?? 0} aria-valuemin={0} aria-valuemax={100} aria-label="Share of the mission dose limit">
                   <div className="h-full bg-accent" style={{ width: `${Math.min(100, r.pctOfLimit ?? 0)}%` }} />
                 </div>
                 <p className="mt-1 text-xs text-ink-muted">{r.pctOfLimit?.toFixed(0)} % of the mission limit{r.neutronShare != null && ` · neutrons ${(r.neutronShare * 100).toFixed(0)} % of the dose`}</p>

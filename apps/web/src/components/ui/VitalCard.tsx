@@ -25,7 +25,7 @@ export function VitalCard({ vital }: { vital: Vital }) {
   const Icon = chip.icon
   return (
     <div
-      className={`rounded-xl border p-4 ${concerning ? 'border-status-yellow/50 bg-status-yellow/5' : 'border-space-700 bg-space-800'}`}
+      className={`rounded-xl border p-4 ${concerning ? 'border-status-yellow/50 bg-status-yellow/5' : 'border-line bg-surface'}`}
     >
       <p className="text-xs font-medium uppercase tracking-wider text-ink-muted">{vital.name}</p>
       <p className="mt-1 font-mono text-3xl font-semibold">

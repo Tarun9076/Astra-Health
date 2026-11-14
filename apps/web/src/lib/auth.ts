@@ -51,5 +51,5 @@ export const useAuth = create<AuthState>()(
 
 export function homeFor(user: Me | null): string {
   if (!user) return '/login'
-  return user.role === 'Astronaut' ? '/astronaut/overview' : '/staff'
+  return user.role === 'Astronaut' ? '/astronaut/home' : '/staff'
 }

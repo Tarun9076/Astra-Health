@@ -22,8 +22,8 @@ function Region({ id, label, children, regions, selected, onSelect }: RegionProp
   }
   return (
     <g role="button" tabIndex={0} aria-label={`${label}: ${STATUS_LABEL[status]}`} aria-pressed={active}
-      onClick={() => onSelect(id)} onKeyDown={onKey} className="cursor-pointer outline-none [&:focus-visible>*]:stroke-white"
-      fill={STATUS_FILL[status]} fillOpacity={active ? 0.85 : 0.45} stroke={active ? '#e6ecff' : STATUS_FILL[status]}
+      onClick={() => onSelect(id)} onKeyDown={onKey} className="cursor-pointer outline-none [&:focus-visible>*]:stroke-[#146eb8] [&:focus-visible>*]:[stroke-width:4]"
+      fill={STATUS_FILL[status]} fillOpacity={active ? 0.9 : 0.55} stroke={active ? '#172033' : STATUS_FILL[status]}
       strokeWidth={active ? 2.5 : 1}>
       <title>{label} — {STATUS_LABEL[status]}</title>
       {children}
@@ -42,7 +42,7 @@ export function BodyMap2D({ regions, selected, onSelect }: {
   return (
     <svg viewBox="0 0 240 500" className="mx-auto h-[28rem] w-auto max-w-full" role="group" aria-label="Body map">
       {/* silhouette (radiation = whole body: outline colour) */}
-      <g fill="#1c2742" stroke={STATUS_FILL[whole]} strokeOpacity={selected === 'whole_body' ? 1 : 0.5}
+      <g fill="#e2e8f0" stroke={STATUS_FILL[whole]} strokeOpacity={selected === 'whole_body' ? 1 : 0.5}
         strokeWidth={selected === 'whole_body' ? 3 : 1.5}>
         <circle cx="120" cy="56" r="36" />
         <rect x="108" y="88" width="24" height="18" rx="6" />

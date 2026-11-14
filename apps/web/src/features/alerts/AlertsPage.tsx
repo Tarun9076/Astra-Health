@@ -1,12 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { CheckSquare, ChevronDown, ChevronRight, ShieldAlert, Square } from 'lucide-react'
+import { AlertOctagon, CheckCircle2, CheckSquare, ChevronDown, ChevronRight, ShieldAlert, Square, TriangleAlert } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import { INSIGHT_NOTE, InsightList } from '../../components/ui/InsightList'
 import { Button, ErrorNote, Loading, Panel, ProtocolSteps } from '../../components/ui/Panel'
 import { AlertStatusChip, SeverityBadge } from '../../components/ui/Status'
 import { api, unwrap, type AlertDetail, type AlertSummary, type Indicator } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
+import { evidenceLines, mainIndicator } from '../../lib/alertText'
+import { infoFor } from '../../lib/indicators'
 import { dayOf, formatValue } from '../../lib/mission'
 import { useAlert, useAlerts, useCatalog } from '../../lib/queries'
 
@@ -28,25 +30,19 @@ export function AlertsPage({ code: forCode, staff = false }: { code?: string; st
 
   return (
     <div className="max-w-4xl space-y-4">
-      {!staff && (
-        <div>
-          <p className="font-mono text-sm text-accent">06</p>
-          <h1 className="text-2xl font-semibold">Alerts Center</h1>
-          <p className="mt-1 text-sm text-ink-muted">Each alert shows exactly which readings triggered it, compared with your own normal.</p>
-        </div>
-      )}
-      <div className="flex gap-2" role="tablist">
+      {!staff && <LevelsLegend />}
+      <div className="flex gap-1" role="group" aria-label="Show">
         {(['active', 'all'] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
-            className={`min-h-10 rounded-lg px-4 text-sm ${tab === t ? 'bg-space-700 text-ink' : 'text-ink-muted hover:bg-space-800'}`}>
-            {t === 'active' ? 'Active' : 'History'}
+          <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}
+            className={`min-h-10 rounded-lg px-4 text-sm font-medium ${tab === t ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+            {t === 'active' ? 'Open alerts' : 'All alerts, including closed'}
           </button>
         ))}
       </div>
       {isPending && <Loading />}
       {error && <ErrorNote error={error} />}
       {data && data.length === 0 && (
-        <Panel><p className="text-sm text-ink-muted">{tab === 'active' ? 'No active alerts. All clear.' : 'No alerts yet.'}</p></Panel>
+        <Panel><p className="flex items-center gap-2 text-sm"><CheckCircle2 className="h-5 w-5 text-status-green" aria-hidden />{tab === 'active' ? 'No open alerts. Your status is Normal.' : 'No alerts yet.'}</p></Panel>
       )}
       <ul className="space-y-3">
         {data?.map((a) => (
@@ -69,7 +65,7 @@ function AlertCard({ alert, open, onToggle, missionStart, staff }: {
   const Chevron = open ? ChevronDown : ChevronRight
   const urgent = alert.severity === 'Urgent'
   return (
-    <div className={`rounded-xl border bg-space-800 ${urgent && open ? 'border-status-red/60' : 'border-space-700'}`}>
+    <div className={`rounded-xl border bg-surface ${urgent && open ? 'border-status-red/60' : 'border-line'}`}>
       <button onClick={onToggle} aria-expanded={open} className="flex w-full items-start gap-3 p-4 text-left">
         <SeverityBadge severity={alert.severity} />
         <div className="min-w-0 flex-1">
@@ -79,7 +75,7 @@ function AlertCard({ alert, open, onToggle, missionStart, staff }: {
           <p className="mt-1 text-sm text-ink-muted">{alert.reason}</p>
           <p className="mt-1 text-xs text-ink-muted">
             {missionStart && `Day ${dayOf(missionStart, alert.firstTriggeredAt)}–${dayOf(missionStart, alert.lastTriggeredAt)} · `}
-            seen {alert.triggerCount}× · {alert.ruleId} v{alert.ruleVersion}
+            seen {alert.triggerCount}×{staff && ` · ${alert.ruleId} v${alert.ruleVersion}`}
             {alert.escalationRequired && ' · flagged for the flight surgeon'}
           </p>
         </div>
@@ -113,7 +109,7 @@ function AlertBody({ id, staff }: { id: string; staff: boolean }) {
   if (error) return <div className="px-4 pb-4"><ErrorNote error={error} /></div>
 
   return (
-    <div className="space-y-4 border-t border-space-700 p-4">
+    <div className="space-y-4 border-t border-line p-4">
       {data.emergencyProtocol && (
         <div className="rounded-lg border-2 border-status-red/70 bg-status-red/10 p-4">
           <p className="mb-2 flex items-center gap-2 font-semibold text-status-red">
@@ -124,11 +120,16 @@ function AlertBody({ id, staff }: { id: string; staff: boolean }) {
         </div>
       )}
 
-      <EvidenceTable detail={data} catalog={catalog} />
+      <Explanation detail={data} catalog={catalog} />
+
+      <details open={staff} className="rounded-lg border border-line p-3">
+        <summary className="cursor-pointer text-sm font-medium text-accent">Technical details (rule {data.ruleId} v{data.ruleVersion}, exact values)</summary>
+        <div className="mt-3"><EvidenceTable detail={data} catalog={catalog} /></div>
+      </details>
 
       {data.insights && data.insights.length > 0 && (
         <div>
-          <h3 className="mb-2 text-xs font-semibold tracking-wider text-ink-muted uppercase">What the AI noticed</h3>
+          <h3 className="mb-2 text-xs font-semibold tracking-wider text-ink-muted uppercase">Supporting pattern from machine learning (never decides on its own)</h3>
           <InsightList insights={data.insights} missionStart={missionStart} />
           <p className="mt-2 text-xs text-ink-muted">{INSIGHT_NOTE}</p>
         </div>
@@ -141,7 +142,7 @@ function AlertBody({ id, staff }: { id: string; staff: boolean }) {
             {data.recommendations.map((t) => (
               <li key={t.id}>
                 <button disabled={t.status !== 'Pending' || complete.isPending} onClick={() => complete.mutate(t.id)}
-                  className="flex min-h-12 w-full items-start gap-3 rounded-lg p-2 text-left hover:bg-space-700/40 disabled:hover:bg-transparent">
+                  className="flex min-h-12 w-full items-start gap-3 rounded-lg p-2 text-left hover:bg-subtle/40 disabled:hover:bg-transparent">
                   {t.status === 'Pending' ? <Square className="mt-0.5 h-5 w-5 shrink-0 text-ink-muted" aria-hidden />
                     : <CheckSquare className="mt-0.5 h-5 w-5 shrink-0 text-status-green" aria-hidden />}
                   <span>
@@ -203,7 +204,7 @@ function EvidenceTable({ detail, catalog }: { detail: AlertDetail; catalog: Reco
             const unit = ml ? ml.unit : isCount ? 'readings' : meta?.unit === 'score' ? '/10' : (meta?.unit ?? '')
             const num = (v: unknown) => (typeof v === 'number' ? formatValue(v, Math.max(dec, 1)) : '—')
             return (
-              <tr key={key} className="border-t border-space-700">
+              <tr key={key} className="border-t border-line">
                 <td className="py-1.5 pr-3 font-sans">
                   {reported ? `Symptom: ${String(ev.indicator).replace(/_/g, ' ')}` : (ml?.name ?? meta?.name ?? ev.indicator)}
                   <span className="block text-[11px] text-ink-muted">{ml ? 'machine learning' : String(ev.agg).replace('_', ' ')}</span>
@@ -258,12 +259,12 @@ function SurgeonActions({ alert, onDone }: { alert: AlertDetail; onDone: () => v
   const canReview = alert.status === 'Open' || alert.status === 'Acknowledged'
   const canClose = alert.status === 'InReview'
   return (
-    <div className="space-y-3 rounded-lg border border-accent/40 bg-space-900/60 p-3">
+    <div className="space-y-3 rounded-lg border border-accent/40 bg-canvas/60 p-3">
       <p className="text-xs font-semibold tracking-wider text-accent uppercase">Flight surgeon review</p>
       <label className="block text-sm">
         <span className="text-xs text-ink-muted">Note {canClose ? '(required to resolve or dismiss)' : '(optional)'}</span>
         <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} maxLength={2000}
-          className="mt-1 w-full rounded-lg border border-space-600 bg-space-900 px-3 py-2 text-sm outline-none focus:border-accent" />
+          className="mt-1 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-accent" />
       </label>
       <div className="flex flex-wrap gap-2">
         {canReview && <Button onClick={() => move.mutate('review')} disabled={move.isPending}>Start review</Button>}
@@ -273,17 +274,64 @@ function SurgeonActions({ alert, onDone }: { alert: AlertDetail; onDone: () => v
         )}
       </div>
       {move.isError && <ErrorNote error={move.error} />}
-      <form onSubmit={(e) => { e.preventDefault(); if (message.trim().length >= 3) send.mutate() }} className="space-y-2 border-t border-space-700 pt-3">
+      <form onSubmit={(e) => { e.preventDefault(); if (message.trim().length >= 3) send.mutate() }} className="space-y-2 border-t border-line pt-3">
         <label className="block text-sm">
           <span className="text-xs text-ink-muted">Send an instruction to {alert.astronautCode} about this alert (shown to them live)</span>
           <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} maxLength={2000}
             placeholder="e.g. Rest today, skip the resistance session, recheck resting HR at wake-up."
-            className="mt-1 w-full rounded-lg border border-space-600 bg-space-900 px-3 py-2 text-sm outline-none focus:border-accent" />
+            className="mt-1 w-full rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-accent" />
         </label>
         <Button type="submit" variant="ghost" disabled={send.isPending || message.trim().length < 3}>Send instruction</Button>
         {send.isSuccess && <span className="ml-2 text-xs text-status-green">Sent and delivered.</span>}
         {send.isError && <ErrorNote error={send.error} />}
       </form>
     </div>
+  )
+}
+
+/** NORMAL / ATTENTION / URGENT explained once, with icon + word + colour. */
+function LevelsLegend() {
+  const levels = [
+    { icon: CheckCircle2, cls: 'text-status-green', name: 'Normal', text: 'Readings are within your own normal range.' },
+    { icon: TriangleAlert, cls: 'text-status-yellow', name: 'Attention', text: 'A rule noticed a change. Follow the recommended actions; no emergency.' },
+    { icon: AlertOctagon, cls: 'text-status-red', name: 'Urgent', text: 'A safety limit or emergency symptom. Follow the emergency procedure now.' },
+  ]
+  return (
+    <ul className="grid gap-2 sm:grid-cols-3" aria-label="Alert levels">
+      {levels.map((l) => (
+        <li key={l.name} className="flex items-start gap-2 rounded-xl border border-line bg-surface p-3 text-sm">
+          <l.icon className={`mt-0.5 h-5 w-5 shrink-0 ${l.cls}`} aria-hidden />
+          <span><span className={`font-semibold ${l.cls}`}>{l.name.toUpperCase()}</span><span className="block text-xs text-ink-muted">{l.text}</span></span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** Every alert in plain words: what happened, the measurement vs normal, why it matters, what to do, medical help. */
+function Explanation({ detail, catalog }: { detail: AlertDetail; catalog: Record<string, Indicator> }) {
+  const lines = evidenceLines(detail, catalog)
+  const main = mainIndicator(detail)
+  const info = main ? infoFor(main) : undefined
+  const urgent = detail.severity === 'Urgent'
+  const measurement = lines.length ? (
+    <ul className="space-y-0.5">{lines.map((l, i) => <li key={i}><span className="font-medium">{l.label}:</span> {l.text}</li>)}</ul>
+  ) : '—'
+  const rows: [string, React.ReactNode][] = [
+    ['What happened', detail.reason],
+    ['Measurement', measurement],
+    ...(info ? [['Why it matters', info.why] as [string, React.ReactNode]] : []),
+    ['What to do', urgent ? 'Follow the emergency procedure above, then the steps below.' : detail.recommendations.some((t) => t.status === 'Pending') ? 'Do the recommended actions below, then repeat the measurement in your next check-in.' : 'Keep doing your daily check-in so any change is noticed early.'],
+    ['Medical help', urgent ? 'Needed now: call the crew medical officer. The flight surgeon has been alerted.' : detail.escalationRequired ? 'The flight surgeon has been notified because this keeps happening and will review it.' : (info?.help ?? 'Not needed unless it gets worse or you feel unwell.')],
+  ]
+  return (
+    <dl className="grid gap-3 sm:grid-cols-[9rem_1fr]">
+      {rows.map(([k, v]) => (
+        <div key={k} className="contents">
+          <dt className="text-xs font-semibold tracking-wide text-ink-muted uppercase sm:pt-0.5">{k}</dt>
+          <dd className="text-sm">{v}</dd>
+        </div>
+      ))}
+    </dl>
   )
 }

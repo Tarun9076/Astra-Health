@@ -25,7 +25,7 @@ export function Toaster() {
           </>
         )
         return (
-          <div key={t.id} className={`pointer-events-auto flex items-start gap-3 rounded-xl border bg-space-800 p-3 shadow-lg ${cls}`}>
+          <div key={t.id} className={`pointer-events-auto flex items-start gap-3 rounded-xl border bg-surface p-3 shadow-lg ${cls}`}>
             {t.href ? (
               <Link to={t.href} className="flex flex-1 items-start gap-3" onClick={() => dismiss(t.id)}>
                 {body}

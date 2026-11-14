@@ -85,7 +85,7 @@ export function ReportsPage({ code: forCode, embedded = false }: { code?: string
             {reports.data?.map((r) => (
               <li key={r.id}>
                 <button onClick={() => select(r.id)} aria-current={current === r.id}
-                  className={`w-full rounded-lg p-2 text-left ${current === r.id ? 'bg-space-700' : 'hover:bg-space-700/50'}`}>
+                  className={`w-full rounded-lg p-2 text-left ${current === r.id ? 'bg-subtle' : 'hover:bg-subtle/50'}`}>
                   <span className="flex items-center justify-between gap-2 text-sm font-medium">
                     {TYPE_LABEL[r.type]} · {r.periodStart === r.periodEnd ? r.periodStart : `${r.periodStart} → ${r.periodEnd}`}
                   </span>
@@ -148,7 +148,7 @@ export function ReportView({ report }: { report: Report }) {
             </thead>
             <tbody className="font-mono">
               {s.indicators.map((i) => (
-                <tr key={i.indicator} className="border-t border-space-700">
+                <tr key={i.indicator} className="border-t border-line">
                   <td className="py-1 pr-3 font-sans">{i.name} <span className="text-ink-muted">({i.n})</span></td>
                   <td className="py-1 pr-3">{num(i.mean)} <span className="text-ink-muted">({num(i.min)}–{num(i.max)})</span> {unit(i.unit)}</td>
                   <td className="py-1 pr-3">{num(i.latest)}</td>

@@ -57,7 +57,7 @@ export default function BodyModel3D({ regions, selected, onSelect }: {
           ] as [Vec3, Vec3][]).map(([pos, s], i) => (
             <mesh key={i} position={pos} scale={s}>
               <sphereGeometry args={[1, 32, 24]} />
-              <meshStandardMaterial color="#1c2742" emissive={shell} emissiveIntensity={selected === 'whole_body' ? 0.35 : 0.05}
+              <meshStandardMaterial color="#cbd5e1" emissive={shell} emissiveIntensity={selected === 'whole_body' ? 0.35 : 0.05}
                 transparent opacity={0.28} depthWrite={false} />
             </mesh>
           ))}
@@ -81,7 +81,7 @@ export default function BodyModel3D({ regions, selected, onSelect }: {
         <OrbitControls enablePan={false} minDistance={2} maxDistance={5} target={[0, 0.95, 0]} />
       </Canvas>
       {hovered && (
-        <p className="pointer-events-none absolute top-2 left-2 rounded bg-space-950/90 px-2 py-1 text-xs">
+        <p className="pointer-events-none absolute top-2 left-2 rounded bg-surface/90 px-2 py-1 text-xs">
           {regions?.find((r) => r.id === hovered)?.title ?? hovered} · {STATUS_LABEL[statusOf(regions, hovered)]}
         </p>
       )}

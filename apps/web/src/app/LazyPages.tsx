@@ -20,7 +20,7 @@ export function AssistantRoute() {
 export function AnalyticsRoute() {
   return (
     <Suspense fallback={<p className="text-sm text-ink-muted">Loading charts…</p>}>
-      <AnalyticsPage />
+      <AnalyticsPage embedded />
     </Suspense>
   )
 }
@@ -36,7 +36,7 @@ function Page({ children }: { children: React.ReactNode }) {
 
 export const CrewRoute = () => <Page><CrewPage /></Page>
 export const StaffAstronautRoute = () => <Page><StaffAstronautPage /></Page>
-export const ReportsRoute = () => <Page><ReportsPage /></Page>
+export const ReportsRoute = () => <Page><ReportsPage embedded /></Page>
 export const DemoControlRoute = () => <Page><DemoControlPage /></Page>
 
 const BodyExplorerPage = lazy(() => import('../features/body/BodyExplorerPage').then((m) => ({ default: m.BodyExplorerPage })))
@@ -44,3 +44,11 @@ const WellnessCenterPage = lazy(() => import('../features/wellness/WellnessCente
 
 export const BodyRoute = () => <Page><BodyExplorerPage /></Page>
 export const WellnessRoute = () => <Page><WellnessCenterPage /></Page>
+
+const AlertsPage = lazy(() => import('../features/alerts/AlertsPage').then((m) => ({ default: m.AlertsPage })))
+const GuidancePage = lazy(() => import('../features/guidance/GuidancePage').then((m) => ({ default: m.GuidancePage })))
+const HistoryPage = lazy(() => import('../features/history/HistoryPage').then((m) => ({ default: m.HistoryPage })))
+
+export const AlertsRoute = () => <Page><AlertsPage /></Page>
+export const GuidanceRoute = () => <Page><GuidancePage /></Page>
+export const HistoryRoute = () => <Page><HistoryPage /></Page>

@@ -1,5 +1,5 @@
 // Charts for Health Analytics. Colour roles validated with the dataviz skill's validator on the app's
-// dark surface #121a2e: series blue #3987e5 + magenta #d55181 pass every check (CVD ΔE 15.9, normal 26.5,
+// light surface: series blue #1f6fd1 + magenta #c2417a pass every check (CVD ΔE 14.1, normal 26.3,
 // contrast ≥ 3:1). Magenta was chosen over orange because amber/red are reserved for alert status here.
 // The personal-normal band is neutral (not a data colour); alert periods use status colours with a text label.
 import type { ReactElement } from 'react'
@@ -29,7 +29,7 @@ const axisProps = {
 
 function TipBox({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-lg border border-space-600 bg-space-950/95 px-3 py-2 text-xs shadow-lg">{children}</div>
+    <div className="rounded-lg border border-line-strong bg-surface/95 px-3 py-2 text-xs shadow-lg">{children}</div>
   )
 }
 

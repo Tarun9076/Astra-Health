@@ -9,7 +9,7 @@ export function Panel({ title, action, children, className = '' }: {
   className?: string
 }) {
   return (
-    <section className={`rounded-xl border border-space-700 bg-space-800 p-4 md:p-5 ${className}`}>
+    <section className={`rounded-xl border border-line bg-surface p-4 md:p-5 ${className}`}>
       {(title || action) && (
         <div className="mb-3 flex items-center justify-between gap-3">
           {title && <h2 className="text-sm font-semibold uppercase tracking-wider text-ink-muted">{title}</h2>}
@@ -42,8 +42,8 @@ type Variant = 'primary' | 'ghost' | 'danger'
 
 function buttonClass(variant: Variant, className: string): string {
   const styles = {
-    primary: 'bg-accent text-space-950 hover:bg-accent/90 disabled:bg-space-600 disabled:text-ink-muted',
-    ghost: 'border border-space-600 text-ink hover:bg-space-700 disabled:text-ink-muted',
+    primary: 'bg-accent text-white hover:bg-accent/90 disabled:bg-line-strong disabled:text-ink-muted',
+    ghost: 'border border-line-strong text-ink hover:bg-subtle disabled:text-ink-muted',
     danger: 'bg-status-red text-white hover:bg-status-red/90',
   }[variant]
   return `inline-flex min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed ${styles} ${className}`

@@ -24,7 +24,7 @@ function useGroundStatus() {
 
 function Queue({ title, status, error }: { title: string; status?: SyncStatus; error?: Error | null }) {
   return (
-    <div className="rounded-lg border border-space-700 p-3 text-sm">
+    <div className="rounded-lg border border-line p-3 text-sm">
       <p className="text-xs font-semibold tracking-wider text-ink-muted uppercase">{title}</p>
       {error ? <p className="mt-1 text-status-red">Unreachable — start the Ground node on :8001</p> : status ? (
         <dl className="mt-1 grid grid-cols-3 gap-2 font-mono">

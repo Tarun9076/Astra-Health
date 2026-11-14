@@ -2,17 +2,19 @@
 import type { Analytics } from '../../lib/api'
 import { dayOf } from '../../lib/mission'
 
+// Light clinical surface. series1/series2 validated with the dataviz palette checker (light mode):
+// CVD ΔE 14.1, normal-vision ΔE 26.3, both ≥ 3:1 on white. Status colours are the app tokens.
 export const VIZ = {
-  series1: '#3987e5',
-  series2: '#d55181',
-  band: 'rgba(148, 163, 196, 0.16)',
-  bandEdge: 'rgba(148, 163, 196, 0.45)',
-  grid: '#1c2742',
-  axis: '#94a3c4',
-  text: '#e6ecff',
-  surface: '#121a2e',
-  attention: '#f59e0b',
-  urgent: '#ef4444',
+  series1: '#1f6fd1',
+  series2: '#c2417a',
+  band: 'rgba(20, 110, 184, 0.08)',
+  bandEdge: 'rgba(20, 110, 184, 0.35)',
+  grid: '#e2e8f0',
+  axis: '#5b6b80',
+  text: '#172033',
+  surface: '#ffffff',
+  attention: '#9a4507',
+  urgent: '#b91c1c',
 }
 
 export interface ValueRow {

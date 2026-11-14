@@ -1,25 +1,16 @@
-import type { ReactNode } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { AlertsPage } from '../features/alerts/AlertsPage'
 import { LoginPage } from '../features/auth/LoginPage'
 import { CheckinPage } from '../features/checkin/CheckinPage'
-import { OverviewPage } from '../features/overview/OverviewPage'
+import { EmergencyPage } from '../features/emergency/EmergencyPage'
+import { HomePage } from '../features/overview/OverviewPage'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
-import { AnalyticsRoute, AssistantRoute, BodyRoute, CrewRoute, DemoControlRoute, ReportsRoute, StaffAstronautRoute, WellnessRoute } from './LazyPages'
-import { PlaceholderPage } from './PlaceholderPage'
-import { ASTRONAUT_SECTIONS } from './sections'
-
-
-const BUILT: Record<string, ReactNode> = {
-  overview: <OverviewPage />,
-  alerts: <AlertsPage />,
-  analytics: <AnalyticsRoute />,
-  assistant: <AssistantRoute />,
-  reports: <ReportsRoute />,
-  body: <BodyRoute />,
-  wellness: <WellnessRoute />,
-}
+import {
+  AlertsRoute, AnalyticsRoute, AssistantRoute, BodyRoute, CrewRoute, DemoControlRoute, GuidanceRoute, HistoryRoute,
+  ReportsRoute, StaffAstronautRoute, WellnessRoute,
+} from './LazyPages'
+import { Moved } from './Moved'
+import { TabbedSection } from './TabbedSection'
 
 export const router = createBrowserRouter([
   { path: '/', element: <Home /> },
@@ -32,12 +23,51 @@ export const router = createBrowserRouter([
       </Guard>
     ),
     children: [
-      { index: true, element: <Navigate to="overview" replace /> },
+      { index: true, element: <Navigate to="home" replace /> },
+      { path: 'home', element: <HomePage /> },
+      {
+        path: 'health',
+        element: (
+          <TabbedSection title="My Health" intro="Your body systems and how your measurements compare with your own normal."
+            tabs={[{ to: '', label: 'Body systems' }, { to: 'trends', label: 'Trends and charts' }]} />
+        ),
+        children: [
+          { index: true, element: <BodyRoute /> },
+          { path: 'trends', element: <AnalyticsRoute /> },
+        ],
+      },
       { path: 'checkin', element: <CheckinPage /> },
-      ...ASTRONAUT_SECTIONS.map((s) => ({
-        path: s.path,
-        element: BUILT[s.path] ?? <PlaceholderPage num={s.num} title={s.title} blurb={s.blurb} />,
-      })),
+      {
+        path: 'guidance',
+        element: (
+          <TabbedSection title="My Guidance" intro="What needs attention, why it matters and what to do — from approved procedures."
+            tabs={[{ to: '', label: 'Recommended actions' }, { to: 'alerts', label: 'Health alerts' }]} />
+        ),
+        children: [
+          { index: true, element: <GuidanceRoute /> },
+          { path: 'alerts', element: <AlertsRoute /> },
+        ],
+      },
+      { path: 'wellness', element: <WellnessRoute /> },
+      {
+        path: 'history',
+        element: (
+          <TabbedSection title="Health History" intro="Everything recorded about your health during the mission, newest first."
+            tabs={[{ to: '', label: 'Timeline' }, { to: 'reports', label: 'Medical reports' }]} />
+        ),
+        children: [
+          { index: true, element: <HistoryRoute /> },
+          { path: 'reports', element: <ReportsRoute /> },
+        ],
+      },
+      { path: 'assistant', element: <AssistantRoute /> },
+      { path: 'emergency', element: <EmergencyPage /> },
+      // pre-redesign paths
+      { path: 'overview', element: <Moved to="/astronaut/home" /> },
+      { path: 'body', element: <Moved to="/astronaut/health" /> },
+      { path: 'analytics', element: <Moved to="/astronaut/health/trends" /> },
+      { path: 'alerts', element: <Moved to="/astronaut/guidance/alerts" /> },
+      { path: 'reports', element: <Moved to="/astronaut/history/reports" /> },
     ],
   },
   {
@@ -50,6 +80,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <CrewRoute /> },
       { path: 'astronaut/:code', element: <StaffAstronautRoute /> },
+      { path: 'emergency', element: <EmergencyPage /> },
       { path: 'sim', element: <Guard roles={['Admin']}><DemoControlRoute /></Guard> },
     ],
   },

@@ -1,53 +1,48 @@
 import type { Wellness } from '../../lib/api'
 
-const RING = { size: 112, stroke: 10, colour: '#3987e5', track: '#1c2742' }
-
-/** Wellness index ring + per-domain bars. A magnitude (single hue), not a status colour. */
+/**
+ * Wellness summary: one number, always shown with what it is made of and what lowered it.
+ * A magnitude (single blue hue), not a status colour: it never says "normal" or "urgent".
+ */
 export function WellnessCard({ wellness }: { wellness: Wellness }) {
-  const r = (RING.size - RING.stroke) / 2
-  const circumference = 2 * Math.PI * r
   const score = wellness.overall
+  const reasons = wellness.domains.flatMap((d) => d.reasons).slice(0, 3)
   return (
-    <section className="rounded-xl border border-space-700 bg-space-800 p-5">
-      <div className="flex flex-wrap items-center gap-5">
-        <svg width={RING.size} height={RING.size} viewBox={`0 0 ${RING.size} ${RING.size}`} role="img"
-          aria-label={score == null ? 'Wellness index unavailable' : `Wellness index ${score} out of 100`}>
-          <circle cx={RING.size / 2} cy={RING.size / 2} r={r} fill="none" stroke={RING.track} strokeWidth={RING.stroke} />
-          {score != null && (
-            <circle cx={RING.size / 2} cy={RING.size / 2} r={r} fill="none" stroke={RING.colour} strokeWidth={RING.stroke}
-              strokeLinecap="round" strokeDasharray={`${(score / 100) * circumference} ${circumference}`}
-              transform={`rotate(-90 ${RING.size / 2} ${RING.size / 2})`} />
-          )}
-          <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" className="fill-ink font-mono text-3xl font-semibold">
-            {score ?? '—'}
-          </text>
-          <text x="50%" y="70%" textAnchor="middle" className="fill-ink-muted text-[10px]">/ 100</text>
-        </svg>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold tracking-wider text-ink-muted uppercase">Wellness index</p>
-          <p className="mt-1 text-xs text-ink-muted">
-            Based on {wellness.indicatorsSeen} of {wellness.indicatorsTotal} indicators.{' '}
-            {wellness.capReason && `${wellness.capReason[0].toUpperCase()}${wellness.capReason.slice(1)}.`}
-          </p>
-          <ul className="mt-3 space-y-1.5">
-            {wellness.domains.map((d) => (
-              <li key={d.domain} className="grid grid-cols-[7rem_1fr_2.5rem] items-center gap-2 text-xs" title={d.reasons.join(' · ') || undefined}>
-                <span className="text-ink-muted">{d.domain}</span>
-                <span className="h-1.5 rounded-full bg-space-700">
-                  {d.score != null && <span className="block h-1.5 rounded-full" style={{ width: `${d.score}%`, background: RING.colour }} />}
-                </span>
-                <span className="text-right font-mono text-ink">{d.score != null ? Math.round(d.score) : '—'}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      {wellness.domains.some((d) => d.reasons.length) && (
-        <p className="mt-3 border-t border-space-700 pt-2 text-xs text-ink-muted">
-          Lowered by: {wellness.domains.flatMap((d) => d.reasons).slice(0, 3).join(' · ')}
+    <section aria-labelledby="wellness-heading" className="rounded-xl border border-line bg-surface p-4 md:p-5">
+      <h2 id="wellness-heading" className="text-xs font-semibold tracking-wide text-ink-muted uppercase">Wellness summary</h2>
+      <p className="mt-2 text-3xl font-semibold tracking-tight">
+        {score ?? '—'}
+        <span className="ml-1 text-base font-normal text-ink-muted">out of 100</span>
+      </p>
+      <p className="mt-1 text-xs text-ink-muted">
+        Based on {wellness.indicatorsSeen} of {wellness.indicatorsTotal} measurements.{' '}
+        {wellness.capReason && `${wellness.capReason[0].toUpperCase()}${wellness.capReason.slice(1)}.`}
+      </p>
+      <ul className="mt-4 space-y-2">
+        {wellness.domains.map((d) => (
+          <li key={d.domain} className="text-xs">
+            <div className="flex justify-between">
+              <span className="text-ink">{d.domain}</span>
+              <span className="font-medium text-ink">{d.score != null ? Math.round(d.score) : 'no data'}</span>
+            </div>
+            <div className="mt-1 h-1.5 rounded-full bg-subtle" aria-hidden>
+              {d.score != null && <div className="h-1.5 rounded-full bg-accent" style={{ width: `${d.score}%` }} />}
+            </div>
+          </li>
+        ))}
+      </ul>
+      {reasons.length > 0 && (
+        <p className="mt-3 border-t border-line pt-2 text-xs text-ink">
+          <span className="font-medium">Lowered by:</span> {reasons.join(' · ')}
         </p>
       )}
-      <p className="mt-2 text-[11px] text-ink-muted">{wellness.note}</p>
+      <details className="mt-2 text-xs text-ink-muted">
+        <summary className="cursor-pointer font-medium text-accent">What is this number?</summary>
+        <p className="mt-1">
+          A simple summary of how far your recent readings are from your own normal, grouped by area (100 = all within
+          your normal). It is calculated by fixed formulas, not by AI, and it is not a medical score. {wellness.note}
+        </p>
+      </details>
     </section>
   )
 }

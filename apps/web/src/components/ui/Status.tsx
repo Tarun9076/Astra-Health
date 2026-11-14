@@ -3,7 +3,7 @@ import { AlertOctagon, AlertTriangle, CheckCircle2 } from 'lucide-react'
 type Status = 'GREEN' | 'YELLOW' | 'RED'
 
 const STATUS = {
-  GREEN: { label: 'All clear', icon: CheckCircle2, cls: 'border-status-green/40 bg-status-green/10 text-status-green' },
+  GREEN: { label: 'Normal', icon: CheckCircle2, cls: 'border-status-green/50 bg-surface text-status-green' },
   YELLOW: { label: 'Attention', icon: AlertTriangle, cls: 'border-status-yellow/40 bg-status-yellow/10 text-status-yellow' },
   RED: { label: 'Urgent', icon: AlertOctagon, cls: 'border-status-red/50 bg-status-red/15 text-status-red' },
 } as const
@@ -34,7 +34,7 @@ export function AlertStatusChip({ status }: { status: string }) {
     status === 'Open'
       ? 'border-accent/40 text-accent'
       : status === 'Resolved' || status === 'Dismissed'
-        ? 'border-space-600 text-ink-muted'
+        ? 'border-line-strong text-ink-muted'
         : 'border-ink-muted/40 text-ink'
   return <span className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${tone}`}>{label}</span>
 }

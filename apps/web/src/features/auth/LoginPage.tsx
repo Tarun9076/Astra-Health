@@ -42,7 +42,7 @@ export function LoginPage() {
           <p className="mt-1 text-xs tracking-[0.2em] text-ink-muted uppercase">Crew health intelligence · ARES-1</p>
         </div>
 
-        <form onSubmit={submit} className="space-y-4 rounded-xl border border-space-700 bg-space-800 p-6">
+        <form onSubmit={submit} className="space-y-4 rounded-xl border border-line bg-surface p-6">
           <label className="block text-sm">
             <span className="text-ink-muted">Username</span>
             <input
@@ -51,7 +51,7 @@ export function LoginPage() {
               autoComplete="username"
               autoFocus
               required
-              className="mt-1 block min-h-12 w-full rounded-lg border border-space-600 bg-space-900 px-3 text-base outline-none focus:border-accent"
+              className="mt-1 block min-h-12 w-full rounded-lg border border-line-strong bg-surface px-3 text-base outline-none focus:border-accent"
             />
           </label>
           <label className="block text-sm">
@@ -62,7 +62,7 @@ export function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
               required
-              className="mt-1 block min-h-12 w-full rounded-lg border border-space-600 bg-space-900 px-3 text-base outline-none focus:border-accent"
+              className="mt-1 block min-h-12 w-full rounded-lg border border-line-strong bg-surface px-3 text-base outline-none focus:border-accent"
             />
           </label>
           {login.isError && <ErrorNote error={login.error} />}
@@ -71,7 +71,7 @@ export function LoginPage() {
           </Button>
         </form>
 
-        <div className="rounded-xl border border-dashed border-space-600 p-4 text-sm">
+        <div className="rounded-xl border border-dashed border-line-strong p-4 text-sm">
           <p className="mb-2 text-xs tracking-wider text-ink-muted uppercase">Demo accounts (simulated data)</p>
           <div className="space-y-1">
             {DEMO.map((d) => (
@@ -79,7 +79,7 @@ export function LoginPage() {
                 key={d.username}
                 type="button"
                 onClick={() => login.mutate({ username: d.username, password: d.password })}
-                className="flex min-h-10 w-full items-center justify-between rounded-lg px-2 text-left hover:bg-space-800"
+                className="flex min-h-10 w-full items-center justify-between rounded-lg px-2 text-left hover:bg-subtle"
               >
                 <span>{d.label}</span>
                 <span className="font-mono text-xs text-accent">{d.username}</span>

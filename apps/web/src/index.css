@@ -1,22 +1,30 @@
 @import "tailwindcss";
 
-/* Mission-ops design tokens (LLD §15.4). Use as bg-space-900, text-status-red, etc. */
+/*
+ * Clinical design tokens (UI redesign). Light, readable, restrained.
+ * Every text/background pair below meets WCAG AA (4.5:1) on both canvas and surface:
+ * ink 15:1, ink-muted 5.1:1, accent 5.0:1, status colours ≥ 4.6:1 (amber ≥ 4.8:1 even on its own 15 % tint).
+ * Status is never colour alone: always paired with an icon and a word (Status.tsx).
+ */
 @theme {
-  --color-space-950: #070b16;
-  --color-space-900: #0b1020;
-  --color-space-800: #121a2e;
-  --color-space-700: #1c2742;
-  --color-space-600: #2a3756;
-  --color-ink: #e6ecff;
-  --color-ink-muted: #94a3c4;
-  --color-accent: #38bdf8;
+  --color-canvas: #f5f7fa;       /* page background */
+  --color-surface: #ffffff;      /* panels, header, fields */
+  --color-subtle: #eef2f6;       /* hover, tracks, selected rows */
+  --color-line: #e2e8f0;         /* borders, dividers */
+  --color-line-strong: #cbd5e1;  /* field borders, disabled */
 
-  --color-status-green: #22c55e;
-  --color-status-yellow: #f59e0b;
-  --color-status-red: #ef4444;
+  --color-ink: #172033;          /* primary text (dark navy) */
+  --color-ink-muted: #5b6b80;    /* secondary text */
+  --color-accent: #146eb8;       /* primary actions, links, focus */
+  --color-accent-soft: #e8f1fa;  /* selected nav item, info backgrounds */
+  --color-cyan: #22a6c7;         /* secondary accent: decoration and chart marks only, never text */
 
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --color-status-green: #15803d; /* Normal */
+  --color-status-yellow: #9a4507;/* Attention (amber; darker than #b45309 so it also passes AA on its own tints) */
+  --color-status-red: #b91c1c;   /* Urgent */
+
+  --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 
 html,
@@ -26,7 +34,14 @@ body,
 }
 
 body {
-  @apply bg-space-900 text-ink font-sans antialiased;
+  @apply bg-canvas text-ink font-sans antialiased;
+  font-feature-settings: "tnum" 1; /* aligned digits in measurements */
+}
+
+/* Visible keyboard focus everywhere (buttons set their own ring too). */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 /* Large, glove-friendly sliders for the daily check-in (min touch target 48 px). */
@@ -34,7 +49,7 @@ body {
   appearance: none;
   height: 12px;
   border-radius: 9999px;
-  background: var(--color-space-600);
+  background: var(--color-line);
   cursor: pointer;
 }
 .big-range::-webkit-slider-thumb {
@@ -43,19 +58,23 @@ body {
   height: 36px;
   border-radius: 9999px;
   background: var(--color-accent);
-  border: 4px solid var(--color-space-900);
-  box-shadow: 0 0 0 2px var(--color-accent);
+  border: 4px solid var(--color-surface);
+  box-shadow: 0 0 0 2px var(--color-accent), 0 1px 3px rgb(23 32 51 / 0.25);
 }
 .big-range::-moz-range-thumb {
   width: 30px;
   height: 30px;
   border-radius: 9999px;
   background: var(--color-accent);
-  border: 4px solid var(--color-space-900);
+  border: 4px solid var(--color-surface);
 }
 .big-range:focus-visible {
   outline: 2px solid var(--color-accent);
   outline-offset: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }
 
 /* Print / Save as PDF for medical reports: only the report, black on white. */

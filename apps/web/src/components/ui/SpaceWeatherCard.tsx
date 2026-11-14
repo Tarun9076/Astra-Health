@@ -23,7 +23,7 @@ export function SpaceWeatherCard() {
           </span>
         </p>
         {flux != null && (
-          <div className="relative h-2 rounded-full bg-space-700" role="img" aria-label={`${flux.toFixed(2)} pfu; storm level S1 starts at ${data.thresholdPfu} pfu`}>
+          <div className="relative h-2 rounded-full bg-subtle" role="img" aria-label={`${flux.toFixed(2)} pfu; storm level S1 starts at ${data.thresholdPfu} pfu`}>
             <div className="h-full rounded-full bg-accent" style={{ width: `${pos(flux)}%` }} />
             <div className="absolute -top-1 h-4 w-0.5 bg-status-red" style={{ left: `${pos(data.thresholdPfu)}%` }} title="S1 threshold, 10 pfu" />
           </div>

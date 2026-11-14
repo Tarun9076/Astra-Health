@@ -26,13 +26,13 @@ export function NodeStatusPill() {
   const link = sync.data?.link
   return (
     <span className="inline-flex items-center gap-2">
-      <span className="inline-flex items-center gap-2 rounded-full border border-space-600 bg-space-800 px-3 py-1 text-xs font-medium">
+      <span className="inline-flex items-center gap-2 rounded-full border border-line-strong bg-surface px-3 py-1 text-xs font-medium">
         <span className={`h-2 w-2 rounded-full ${dot}`} aria-hidden />
         {label}
       </span>
       {link && (
         <span title={`One-way light time ${link.realDelayMinutes.toFixed(1)} min (${link.delaySource}); shown as ${link.oneWaySeconds.toFixed(0)} s in demo time`}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${link.status === 'Up' ? 'border-space-600 bg-space-800' : 'border-status-red/60 bg-status-red/10 text-status-red'}`}>
+          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium ${link.status === 'Up' ? 'border-line-strong bg-surface' : 'border-status-red/60 bg-status-red/10 text-status-red'}`}>
           <Satellite className="h-3.5 w-3.5" aria-hidden />
           Earth link {link.status === 'Up' ? `UP · ${link.realDelayMinutes.toFixed(1)} light-min` : 'DOWN'}
           {sync.data && sync.data.pending + sync.data.inFlight > 0 && ` · ${sync.data.pending + sync.data.inFlight} queued`}
