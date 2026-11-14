@@ -127,6 +127,23 @@ cd services/backend && .venv/Scripts/python -m astra.export_openapi ../../apps/w
 cd apps/web && npm run gen:api
 ```
 
+## Using the app
+
+Open http://localhost:5173 and sign in as an astronaut (`ast1` / `astra-demo-ast1`) or the flight surgeon (`surgeon1` / `astra-demo-surgeon`). The astronaut side menu is organised by task:
+
+| Section | What it is for |
+|---|---|
+| Home | How you are right now, what changed, what to pay attention to and why, key measurements against your own normal, today's tasks |
+| My Health | Body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for) and trends and charts |
+| Daily Check-in | Guided measurements, about 2 minutes, with how-to, units, validation and symptoms |
+| My Guidance | Recommended actions by area and the health alerts, each explained |
+| Wellness | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration |
+| Health History | Timeline of everything recorded, plus the medical reports |
+| AI Assistant | Plain-language answers with sources; it never diagnoses or prescribes |
+| Emergency procedures | Always at the bottom of the menu; stored in the app, so it works offline |
+
+The flight surgeon gets a crew overview (communication status, follow-ups, crew table) and per-astronaut tabs. Design details: [LLD §15.4–15.5](docs/03-Low-Level-Design.md).
+
 ## Tests and checks
 
 ```bash

@@ -46,7 +46,7 @@ flowchart LR
 ```mermaid
 flowchart TB
     subgraph L1["1 · Presentation"]
-        UI1[Astronaut App<br/>Overview · Body Explorer · Analytics<br/>Assistant · Wellness · Alerts · Reports · Check-in]
+        UI1[Astronaut App<br/>Home · My Health · Daily Check-in · My Guidance<br/>Wellness · Health History · AI Assistant]
         UI2[Surgeon Dashboard<br/>Crew · Astronaut detail · Alert review · Instructions · Reports]
         UI3[Mission Overview + Demo Control Panel]
     end
@@ -96,7 +96,7 @@ flowchart TB
 
 | # | Component | Responsibility | Tech | Node(s) |
 |---|---|---|---|---|
-| C1 | **Astronaut App** | 7 sections + daily check-in; works offline; installable PWA | React/TS/Tailwind | Browser |
+| C1 | **Astronaut App** | 7 task-based sections (Home, My Health, Daily Check-in, My Guidance, Wellness, Health History, AI Assistant) + emergency procedures; works offline; installable PWA | React/TS/Tailwind | Browser |
 | C2 | **Surgeon Dashboard** | Crew list, drill-down, alert review, instructions, reports | Same React app, role-gated routes | Browser → Ground |
 | C3 | **Mission Overview** | Crew status colours, mission day, environment, link status | Same React app | Browser → Ground |
 | C4 | **Demo Control Panel** | Mission clock, scenario injection, link UP/DOWN, delay slider, reset | Same React app (Admin) | Browser → both |
@@ -288,23 +288,25 @@ Coverage of NASA's 17 individual risks (Monitored / Partial / Out of scope) is i
 
 ## 7. Frontend information architecture
 
+Redesigned after Step 11 around the astronaut's tasks (UI redesign, see LLD §15.5). Old paths redirect.
+
 ```
 /login
 /astronaut
-  ├── overview         01 Overview (status, vitals vs baseline, alerts, tasks, wellness index)
-  ├── body             02 Body Explorer (2D → 3D)
-  ├── analytics        03 Health Analytics (charts, compare, baseline band)
-  ├── assistant        04 AI Health Assistant (chat, citations, voice P2)
-  ├── wellness         05 Wellness Center (exercise, sleep, nutrition, breathing, missions)
-  ├── alerts           06 Alerts Center (active, history, acknowledge)
-  ├── reports          07 Medical Reports (generated, queued/sent status)
-  └── checkin          Daily check-in wizard (also a modal from Overview)
-/surgeon
-  ├── crew             Crew grid with status + staleness
-  ├── astronaut/:id    Drill-down (tabs: summary, trends, alerts, reports, instructions)
-  └── alerts           Review queue
-/mission               Crew aggregate, environment, radiation, link
-/admin/sim             Demo control panel
+  ├── home             Home: how am I now, what changed, something to pay attention to, key measurements, today's tasks
+  ├── health           My Health → Body systems (list + diagram + 7-part explanation) · /trends (charts vs your normal)
+  ├── checkin          Daily Check-in: 8 guided steps (heart rate, blood pressure, temperature + oxygen, sleep,
+  │                    mood + energy, stress, symptoms, review); explicit "not measured"; unusual-value re-measure
+  ├── guidance         My Guidance → Recommended actions (by area, search, filters, approved library) · /alerts
+  ├── wellness         Wellness: physical activity, sleep, mental wellness (breathing, support), nutrition + hydration
+  ├── history          Health History → Timeline (filters, search, by day) · /reports (medical reports)
+  ├── assistant        AI Assistant (chat, citations, what it can / cannot do)
+  └── emergency        Emergency procedures (bundled, offline; always in the side menu)
+/staff
+  ├── (index)          Crew overview: communication status, follow-up needed, crew table / cards, space weather
+  ├── astronaut/:code  Tabs: summary, body, alerts review, trends, health history, reports, instructions
+  ├── emergency        Emergency procedures
+  └── sim              Demo control (Admin)
 ```
 
 Persistent chrome: top bar with **Mission Day / Sol**, **link status pill** (🟢 LINK UP · delay 12 min / 🔴 BLACKOUT · 41 items queued), **SIMULATED DATA** badge, user/role.

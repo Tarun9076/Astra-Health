@@ -399,6 +399,28 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
+### Step 11b — Human-centred UI redesign ✅
+
+**Goal:** an astronaut who is tired, busy and far from Earth understands their health in seconds. Information first; plain language; nothing decorative; missing data never shown as normal. Details: LLD §15.4–15.5, HLD §7.
+
+- [x] Design system: light clinical tokens (contrast-checked), white header with mission context and link status, task-based side menu (Home, My Health, Daily Check-in, My Guidance, Wellness, Health History, AI Assistant) with badges, phone drawer, skip link, Emergency procedures always in the menu.
+- [x] Home: status in words (never an unexplained score), "Something to pay attention to" (what changed · measurement vs normal · what it means · why it matters · what to do · when to get medical help), key measurement cards (normal range, previous reading, source, time, history link), today's tasks with progress.
+- [x] Daily Check-in: 8 guided steps with how-to, units, validation, re-measure, explicit "not measured", wearable value, symptoms (red flags → Urgent alert + procedure), review table.
+- [x] My Health: body-system list + diagram with the 7-part explanation; Trends with quick views, "What changed" sentences, daily/weekly tables.
+- [x] My Guidance and Health alerts; Wellness in four areas; AI Assistant limits; Health History timeline; flight-surgeon crew overview with communication status, follow-ups and table.
+- [x] Backend (additive): vitals' previous value, source and quality; check-in symptoms; `GET /catalog/symptoms`, `/timeline`, `/guidance`; a re-sent check-in is a no-op.
+
+**Done when:** every visible control works, every page passes axe, and the demo path still works. **Done 2026-11-15:**
+- **Checks:** 265 backend tests (8 new) and 23 browser tests pass, including 16 axe scans with no serious or critical violations, the guided check-in, offline sync, both emergency paths, navigation and the phone drawer. ruff, mypy, `tsc`, `oxlint` and `vite build` are clean.
+- **Found and fixed by the checks:** amber on its own tint was 4.39:1 (token darkened to `#9A4507`); slider labels read as "Mood 7 / 10good 1 · very low …" (now just "Mood" with the scale as a description); a resent check-in id hit a primary-key error (now a no-op).
+
+**Not covered:**
+- Screen-reader testing by hand and testing on a real tablet were not done; only automated checks and browser emulation.
+- Food intake logging has no backend; the page says so instead of showing fake data.
+- Explanations are educational text from the knowledge base, not mission-approved medical content; recommendations remain marked "Illustrative".
+
+---
+
 ### Step 12 — Demo, pitch, documentation (Days 29–30) → **M7**
 
 - [ ] `start-demo.ps1`: starts Habitat (8000), Ground (8001) and web (5173), then seeds.
@@ -502,12 +524,12 @@ Cut in this order — the demo story survives every cut:
 | Time | Scene | What judges see |
 |---|---|---|
 | 0:00 | Problem | "Day 120 on Mars. Earth is 14 light-minutes away and the link is in blackout." Link pill: 🔴 BLACKOUT |
-| 0:30 | Morning check-in | Astronaut completes the check-in in ~40 s (sleep 4.5 h, fatigue 8, mood 3) |
+| 0:30 | Morning check-in | Guided check-in: resting HR 96 is flagged as far above normal ("Measure again" / "Keep this value"); sleep 4.5 h, fatigue 8, mood 3; done in ~60 s |
 | 1:15 | Detection | YELLOW alert appears live: *Fatigue & recovery pattern needs review*; evidence: sleep −3.1σ, resting HR 89 vs normal 64 |
 | 1:45 | Context-aware | Switch to AST-003: the same 85 bpm is GREEN because their normal is 80 |
 | 2:00 | Analytics | Sleep falls out of its baseline band while resting HR rises; the ML trend insight flagged it a day earlier |
 | 2:30 | Assistant | "Why is my resting heart rate increasing?" → grounded answer citing the NASA sources, badge "Onboard (offline)". Then "I have chest pain" → instant emergency protocol card |
-| 3:15 | Body Explorer | Click the heart → data, alert, reduced-gravity explanation |
+| 3:15 | My Health | Heart and circulation → what it does, how spaceflight affects it, readings vs normal, symptoms to watch for |
 | 3:40 | Earth link | Flip the link UP → after the simulated 14-minute delay the report lands on the surgeon dashboard, exactly once |
 | 4:10 | Surgeon | Surgeon reviews the evidence and sends an instruction; it arrives onboard after the return delay |
 | 4:40 | Close | Rules decide, ML corroborates, LLM explains · offline-first · human in the loop · NASA 17-risk coverage |

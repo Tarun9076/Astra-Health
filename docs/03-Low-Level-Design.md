@@ -806,10 +806,11 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | Method | Path | Role | Body / Query → Response |
 |---|---|---|---|
 | GET | `/astronauts` ✅ | surgeon, mission (Step 3 filters by role) | → `[{id, code, displayName, roleTitle, missionCode, missionStart}]` |
-| GET | `/astronauts/{id}/dashboard` ✅ | self, surgeon | → `{astronautCode, displayName, missionCode, missionDay, status: GREEN|YELLOW|RED, statusReason, activeAlerts:[AlertSummary], vitals:[{indicator, name, value, unit, measuredAt, baseline, sigma, z, deviation: normal|above|below|unknown, worseWhen}], tasks:[Task], lastReadingAt, wellnessIndex (Step 5), simulatedData}`. RED = any active Urgent alert; YELLOW = any active Attention alert |
+| GET | `/astronauts/{id}/dashboard` ✅ | self, surgeon | → `{astronautCode, displayName, missionCode, missionDay, status: GREEN|YELLOW|RED, statusReason, activeAlerts:[AlertSummary], vitals:[{indicator, name, value, unit, measuredAt, baseline, sigma, z, deviation: normal|above|below|unknown, worseWhen, previousValue, previousAt, source, quality}], tasks:[Task], lastReadingAt, wellnessIndex (Step 5), simulatedData}`. `previous*`, `source` and `quality` added by the UI redesign ("Previous: 85 bpm", "Entered by you", "Check this reading"). RED = any active Urgent alert; YELLOW = any active Attention alert |
 | POST | `/measurements/batch` ✅ | self, device, admin | `{astronautId (code or id), items:[{id?, indicator, value, unit, measuredAt (with timezone), source, deviceId?, channel?, panelId?, signalQuality?, motionArtifact?}]}`, header `X-Backfill: true` for imports → 201 `{accepted:[id], questionable:[{id,reason}], rejected:[{id,reason}], duplicates:[id], newAlerts:[AlertDto] (Step 3)}`. Max 2,000 items; duplicates (same id, or same indicator/channel/time/device) are not stored again |
 | GET | `/astronauts/{id}/measurements` ✅ | self, surgeon | `?indicator=&start=&end=&bucket=raw|hour|day&channel=` → `{astronautCode, indicator, unit, bucket, points:[{t, value, min?, max?, n, quality?, channel?}]}`. Raw = Valid + Questionable with their quality; buckets average Valid readings only; radiation defaults to the `Total` channel |
-| POST | `/checkins` ✅ | self (Astronaut role) | `{id?, sleepHours, sleepQuality, mood, stress, fatigue, vitals:[{indicator: resting_hr|bp_sys|bp_dia|body_temp|spo2|glucose|body_weight, value, unit}], privateNote?, completedInSeconds?}` → 201 `{checkinId, accepted, questionable, rejected, newAlerts, updatedAlerts}`. Stores a WellnessCheckin and its scores and vitals as readings (one batch, one assessment), so a check-in can raise alerts live. Symptoms come later |
+| POST | `/checkins` ✅ | self (Astronaut role) | `{id?, sleepHours, sleepQuality, mood, stress, fatigue, vitals:[{indicator: resting_hr|bp_sys|bp_dia|body_temp|spo2|glucose|body_weight, value, unit}], privateNote?, completedInSeconds?, symptoms:[{code, severity 1–10, note?}]}` → 201 `{checkinId, accepted, questionable, rejected, newAlerts, updatedAlerts}`. Stores a WellnessCheckin and its scores and vitals as readings (one batch, one assessment), so a check-in can raise alerts live. Symptoms are stored as `Symptom` rows; the red-flag ones (same list as the assistant, `protocols/redflags.yaml`) raise the Urgent `SYM-*` alert with its emergency protocol. A re-sent check-in id is a no-op (`accepted: 0`) |
+| GET | `/catalog/symptoms` ✅ | any signed-in user | → `[{code, label, redFlag, protocol}]` (15 symptoms; 5 red flags) |
 | POST | `/symptoms` | self | `{id, symptomCode, severity, onsetAt, freeText?}` → `{symptom, redFlag, protocolId?, newAlerts}` |
 | POST | `/exercise` | self | `{id, type, durationMin, loadKg?, perceivedExertion}` |
 | GET | `/astronauts/{id}/baselines` | self, surgeon | → per indicator `{median, sigma, samples, source, provisional}` |
@@ -820,7 +821,8 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/astronauts/{id}/body-systems` ✅ | self, surgeon | → `{astronautCode, regions:[{id, title, status: GREEN|YELLOW|RED|GREY, metrics:[{indicator, name, unit, value, measuredAt, baseline, sigma, z, spark:[{day, value}]}], alerts, tasks, knowledge:[{noteId, title, whatHappens, whatYouCanDo, source}]}]}`; regions brain, eyes, heart, lungs, digestive, immune, muscles, bones, whole_body |
 | GET | `/astronauts/{id}/wellness-center` ✅ · POST `/wellness/activity` `{kind: fluid|breathing, amount}` ✅ | self, surgeon (read); astronaut (log) | hydration today/target and 7 days, exercise sessions vs target, strength, sleep 7 days vs normal, breathing this week, missions `[{id, title, progress, goal, unit, streak, done}]` |
 | GET | `/astronauts/{id}/radiation?range=30d|mission` ✅ | self, surgeon | daily dose per channel (total, neutron, charged), mission total vs limit, neutron share, active SEP alert + protocol, the replayed DONKI storm, stored SEP events, light time |
-| GET | `/astronauts/{id}/timeline` | self, surgeon | → events (alerts, symptoms, instructions, assessments) |
+| GET | `/astronauts/{id}/timeline?days=1–400` ✅ | self, surgeon | → `{astronautCode, since, events:[{id, at, kind: Readings|Checkin|Symptom|Alert|AlertClosed|Recommendation|RecommendationDone|Insight|Instruction|Report, title, detail, severity?, refId?}]}`, newest first. `Readings` = one daily summary of the key indicators (last valid value of each day); insights: Trend only |
+| GET | `/astronauts/{id}/guidance` ✅ | self, surgeon | → `{items:[{id, code, title, body, category, priority, status, dueAt, createdAt, completedAt, alert:{id, title, reason, severity, status, escalationRequired}?, medicalReview, source}], library:[{code, title, body, category, source}]}`: open tasks plus those finished in the last 7 days; `medicalReview` = the linked alert is open and Urgent or escalated |
 
 ### 13.3 Alerts, recommendations, instructions, reports
 | Method | Path | Role |
@@ -894,7 +896,7 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 - **`DeviationChart`:** compares two indicators on **one axis**, each as σ from its own normal, with a shared ±2σ band. This avoids a dual-axis chart.
 - **`WellnessTrendChart`:** the daily index with the 75 / 40 cap lines.
 - **Accessibility:** legend and end labels when there are 2 series, plus a data-table toggle.
-- **Colours:** series blue `#3987e5` + magenta `#d55181`, checked with the dataviz validator against the dark surface `#121a2e` (CVD ΔE 15.9, normal 26.5, contrast ≥ 3:1). Blue + violet was rejected (CVD ΔE 1.9); orange was avoided because amber/red mean alert status here.
+- **Colours:** series blue `#1f6fd1` + magenta `#c2417a` on the light surface (UI redesign; validated: CVD ΔE 14.1, normal 26.3, contrast ≥ 3:1). Earlier dark theme: `#3987e5` + `#d55181`. Blue + violet was rejected (CVD ΔE 1.9); orange was avoided because amber/red mean alert status here.
 - **Loading:** the Analytics page is lazy-loaded (Recharts ≈ 400 kB) and shown on the Overview as a `WellnessCard` (ring + domain bars).
 
 ### 15.1 State management
@@ -944,7 +946,38 @@ Not built yet from the list below: `useRealtime` is implemented as `useLiveUpdat
 | immune | body_temp, infection symptoms, immune panel | TH-* |
 
 ### 15.4 Design tokens
-Dark "mission ops" theme: background `#0B1020`, surface `#121A2E`, text `#E6ECFF`, accent cyan `#38BDF8`; status GREEN `#22C55E`, YELLOW `#F59E0B`, RED `#EF4444` — always paired with icon + label. Font: Inter / JetBrains Mono for numbers. Min touch target 48 px.
+**Light clinical theme (UI redesign; replaces the earlier dark "mission ops" theme).** Defined once in `src/index.css` (`@theme`), used as Tailwind classes (`bg-canvas`, `text-ink-muted`, `border-line`, `text-status-yellow` …):
+
+| Token | Value | Use | Contrast |
+|---|---|---|---|
+| canvas | `#F5F7FA` | page background | — |
+| surface | `#FFFFFF` | panels, header, fields | — |
+| subtle / line / line-strong | `#EEF2F6` / `#E2E8F0` / `#CBD5E1` | hover and tracks / borders / field borders | — |
+| ink | `#172033` | primary text (dark navy) | 15:1 |
+| ink-muted | `#5B6B80` | secondary text (slightly darker than `#64748B` so it passes on the canvas) | 5.1:1 |
+| accent | `#146EB8` | actions, links, focus ring, selected nav (`accent-soft` `#E8F1FA`) | 5.0:1; white on accent 5.0:1 |
+| cyan | `#22A6C7` | decoration and chart marks only, never text | — |
+| status green / amber / red | `#15803D` / `#9A4507` / `#B91C1C` | Normal / Attention / Urgent, always with icon + word | ≥ 4.6:1; amber ≥ 4.8:1 even on its own tint |
+
+Amber is darker than the suggested `#B45309` because axe found `#B45309` text on its own 10 % tint at 4.39:1. Charts: series blue `#1F6FD1` + magenta `#C2417A` (dataviz validator, light mode: CVD ΔE 14.1, normal 26.3, ≥ 3:1). Font: Inter, falling back to Segoe UI / system UI (no web-font download, so it works offline). Touch targets ≥ 44–48 px; visible focus ring on every control; `prefers-reduced-motion` respected.
+
+### 15.5 UI redesign (after Step 11): human-centred screens
+Principle: an astronaut who is tired, busy and far from Earth should understand their health in seconds. Every measurement explains itself, every warning says why it matters, every recommendation says what to do. Missing data is never shown as normal.
+
+| Screen / component | What it does |
+|---|---|
+| `AppLayout` | white header (mission, mission day, Sol, date, SIMULATED badge, habitat/Earth-link status, user, sign out), skip link, side menu with icons + words and badges ("Due", "1 urgent", "2 to review"), drawer on phones, **Emergency procedures** always at the bottom of the menu |
+| `TabbedSection` | page title + one-line purpose + route-backed tabs (My Health, My Guidance, Health History) |
+| Home (`OverviewPage`) | greeting and context line; urgent banner with "Open emergency procedure"; **How you are right now** (headline in words + checklist: urgent alerts, alerts to review, readings outside normal, check-in done, readings > 2 days old; "How is this status decided?"); **Something to pay attention to**; **Key measurements**; Today's tasks with progress bar; wellness summary with "What is this number?" |
+| `MeasurementCard` | value + unit, status in words + icon (Within your normal / Higher or Lower than your normal / Check this reading / Out of date / No personal normal yet), your normal and usual range (±2σ), previous reading and change, time and source, "What this means", View history. `MissingMeasurementCard` for no reading |
+| `ObservationCard` | an alert explained: What changed · The measurement (evidence in sentences, `lib/alertText.ts`) · What it means · Why it matters · What to do · When to get medical help. `ReadingObservation`: a reading outside normal with no open alert, and why there is no alert |
+| Daily Check-in | 8 steps; each measurement: how to measure, unit, your normal and last value, validation (impossible → blocked; ≥ 3σ from normal → "Measure again" / "Keep this value"; SpO₂ < 90 % and temp ≥ 39.5 °C → safety note), explicit **Not measured today**; today's wearable reading can be used instead of typing (not sent twice); symptoms with severity, red flags show the emergency card; review table with source and time and Edit per row |
+| My Health | body-system list (large targets, status words) + flat/3D diagram; panel: 1 what it does, 2 how spaceflight affects it, 3 what is monitored, 4 latest readings + 14-day change, 5 symptoms to watch for, 6 how to protect it; cabin environment and radiation. Trends: quick views (sleep and fatigue, mood and stress, heart rate and sleep, exercise, strength, blood pressure), 7/30/90 days/mission, **What changed** sentences, daily and weekly tables |
+| My Guidance | counts (to do, need medical review, done in 7 days), To do/Done/All, area filter, search; cards grouped by area (heart, bones and muscles, sleep, mental wellness, nutrition and hydration, radiation, general): what needs attention, recommended action, when (overdue), medical review, source; Mark as done / Start check-in; approved-guidance library. Health alerts: NORMAL / ATTENTION / URGENT legend, plain-language explanation on every alert, technical evidence collapsed |
+| Wellness | physical activity (resistance sessions vs plan, strength vs pre-flight, exercise today), sleep (7 nights, quality, schedule tips), mental wellness (mood, stress, fatigue, box breathing, psychological support), nutrition and hydration (water logging; food logging stated as not built) |
+| Health History | timeline by day with mission day; period (7/30/90/mission), type filters, search; links to alerts and reports. Surgeons see it per astronaut |
+| AI Assistant | header, "What the assistant can do" and "It will never" (diagnose, prescribe, override an alert) |
+| Flight surgeon | Crew overview: communication status (link, delay, queued, last received), **Follow-up needed** (urgent, awaiting review, unacknowledged instructions, stale data), dense crew table or cards; astronaut page gains a Health history tab |
 
 ---
 
@@ -1108,10 +1141,13 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-SEC-02 ✅ | Security | 5 wrong passwords for one user in 5 min | 6th try → 429 + `Retry-After`; other users unaffected; success resets the counter |
 | T-SEC-03 ✅ | Security | any `/api` response; preflight from another origin | `nosniff`, `DENY`, `no-referrer`, `no-store`; foreign origin gets no CORS header |
 | T-SEC-04 ✅ | Security | repository files | `.env`, `*.db` ignored; `.env.example` has no secret values |
-| T-UI-01 ✅ | Check-in | complete wizard (Playwright) | < 60 s, findings shown, same findings in Alerts Center and Overview |
+| T-UI-01 ✅ | Check-in | complete the 8-step guided check-in (Playwright): unusual heart rate kept, blood pressure and SpO₂ "not measured" | Next blocked until re-measured or kept; review shows "Not measured today"; < 60 s; findings shown, same findings in Health alerts and on Home, which explains them |
 | T-UI-02 ✅ | Offline | block `/api/checkins`, submit, unblock (Playwright) | "saved on this device", outbox flushed on `online`, exactly one record |
-| T-UI-03 ✅ | Emergency | type "I have chest pain" in the assistant (Playwright) | emergency card at once; Urgent alert in the Alerts Center |
-| T-A11Y-01 ✅ | Accessibility | axe-core WCAG 2.1 A/AA on login, 8 astronaut pages, crew view | no serious or critical violations |
+| T-UI-03 ✅ | Emergency | type "I have chest pain" in the assistant (Playwright) | emergency card at once; Urgent alert in Health alerts (old `/astronaut/alerts` link redirects) |
+| T-UI-04 ✅ | Check-in symptoms | choose "Fainting or nearly fainting" (Playwright; API test for chest pain + headache) | emergency card before sending; Urgent `SYM-SYNCOPE` alert; Home shows "Urgent: act now"; headache alone raises nothing; symptoms in the timeline |
+| T-UI-05 ✅ | Navigation | every side-menu item, tabs, quick views, filters, old links; phone width 390 px (Playwright) | each page opens with its heading; drawer opens and closes; no horizontal scroll |
+| T-H-01 ✅ | History / guidance API | readings, alert, tasks; re-sent check-in id; another astronaut's data | timeline newest first with daily readings, alert and recommendation; guidance links the alert with `medicalReview`; library of 22; re-send is a no-op; 403 |
+| T-A11Y-01 ✅ | Accessibility | axe-core WCAG 2.1 A/AA on login, 11 astronaut pages (incl. tabs and emergency) and 4 flight-surgeon views | no serious or critical violations (the report lists each failing element with its colours and ratio) |
 | T-E-01 ✅ | Edge cases | sparse data; astronaut with no data; µSv / °F inputs; spo2 0.97 %; HR in mmHg; 2,001-char question | baseline or none (no crash); GREEN; converted; rejected; rejected; 422 |
 | T-PERF-01 ✅ | Performance | 150 days × 3 crew (`python -m astra.evaluate`) | dashboard < 1 s (measured 47 ms median) |
 | T-SC-01 | Scenario | healthy crew 120 days | 0 Urgent, ≤ 2 Attention (false-alarm budget). **Measured (Step 3):** AST-001 1, AST-002 1, AST-003 2 Attention; 0 Urgent |
