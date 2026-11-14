@@ -33,6 +33,10 @@ export type Report = Schemas['ReportOut']
 export type Instruction = Schemas['InstructionOut']
 export type CrewStatus = Schemas['CrewStatus']
 export type SyncStatus = Schemas['SyncStatus']
+export type WellnessCenter = Schemas['WellnessCenterOut']
+export type Radiation = Schemas['RadiationOut']
+export type CabinValue = Schemas['CabinValue']
+export type SpaceWeatherNow = Schemas['SpaceWeatherNow']
 export type LinkState = Schemas['LinkOut']
 
 export class ApiError extends Error {

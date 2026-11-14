@@ -31,6 +31,10 @@ function useLiveUpdates() {
         void queryClient.invalidateQueries({ queryKey: ['wellness'] })
         void queryClient.invalidateQueries({ queryKey: ['insights'] })
         void queryClient.invalidateQueries({ queryKey: ['crew-summary'] })
+        void queryClient.invalidateQueries({ queryKey: ['body-systems'] })
+        void queryClient.invalidateQueries({ queryKey: ['radiation'] })
+        void queryClient.invalidateQueries({ queryKey: ['wellness-center'] })
+        void queryClient.invalidateQueries({ queryKey: ['environment'] })
       }
       if (['InstructionReceived', 'InstructionAcknowledged'].includes(event.type)) {
         void queryClient.invalidateQueries({ queryKey: ['instructions'] })

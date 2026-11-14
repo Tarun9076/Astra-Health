@@ -77,6 +77,65 @@ export function useInstructions(code: string | null | undefined) {
   })
 }
 
+export interface BodyMetric {
+  indicator: string
+  name: string
+  unit: string
+  value: number
+  measuredAt: string
+  baseline: number | null
+  sigma: number | null
+  z: number | null
+  worseWhen: string
+  spark: { day: string; value: number }[]
+}
+export interface BodyRegion {
+  id: string
+  title: string
+  status: 'GREEN' | 'YELLOW' | 'RED' | 'GREY'
+  metrics: BodyMetric[]
+  alerts: { id: string; ruleId: string; title: string; severity: string; status: string; reason: string }[]
+  tasks: { id: string; code: string; title: string }[]
+  knowledge: { noteId: string; title: string; whatHappens: string; whatYouCanDo: string | null; source: string }[]
+}
+
+export function useBodySystems(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['body-systems', code],
+    queryFn: async () => {
+      const data = await unwrap(api.GET('/api/astronauts/{astronaut}/body-systems', { params: { path: { astronaut: code! } } }))
+      return data as unknown as { astronautCode: string; regions: BodyRegion[]; generatedAt: string }
+    },
+    enabled: Boolean(code),
+  })
+}
+
+export function useWellnessCenter(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['wellness-center', code],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/wellness-center', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useRadiation(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['radiation', code],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/radiation', { params: { path: { astronaut: code! }, query: { range: '30d' } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useEnvironment() {
+  return useQuery({ queryKey: ['environment'], queryFn: () => unwrap(api.GET('/api/environment/current')), refetchInterval: 60_000 })
+}
+
+export function useSpaceWeather() {
+  return useQuery({ queryKey: ['space-weather'], queryFn: () => unwrap(api.GET('/api/space-weather/now')), refetchInterval: 5 * 60_000 })
+}
+
 export function useSyncStatus(enabled = true) {
   return useQuery({
     queryKey: ['sync-status'],

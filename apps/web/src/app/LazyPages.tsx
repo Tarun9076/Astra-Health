@@ -38,3 +38,9 @@ export const CrewRoute = () => <Page><CrewPage /></Page>
 export const StaffAstronautRoute = () => <Page><StaffAstronautPage /></Page>
 export const ReportsRoute = () => <Page><ReportsPage /></Page>
 export const DemoControlRoute = () => <Page><DemoControlPage /></Page>
+
+const BodyExplorerPage = lazy(() => import('../features/body/BodyExplorerPage').then((m) => ({ default: m.BodyExplorerPage })))
+const WellnessCenterPage = lazy(() => import('../features/wellness/WellnessCenterPage').then((m) => ({ default: m.WellnessCenterPage })))
+
+export const BodyRoute = () => <Page><BodyExplorerPage /></Page>
+export const WellnessRoute = () => <Page><WellnessCenterPage /></Page>

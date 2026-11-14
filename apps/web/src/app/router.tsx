@@ -6,7 +6,7 @@ import { CheckinPage } from '../features/checkin/CheckinPage'
 import { OverviewPage } from '../features/overview/OverviewPage'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
-import { AnalyticsRoute, AssistantRoute, CrewRoute, DemoControlRoute, ReportsRoute, StaffAstronautRoute } from './LazyPages'
+import { AnalyticsRoute, AssistantRoute, BodyRoute, CrewRoute, DemoControlRoute, ReportsRoute, StaffAstronautRoute, WellnessRoute } from './LazyPages'
 import { PlaceholderPage } from './PlaceholderPage'
 import { ASTRONAUT_SECTIONS } from './sections'
 
@@ -17,6 +17,8 @@ const BUILT: Record<string, ReactNode> = {
   analytics: <AnalyticsRoute />,
   assistant: <AssistantRoute />,
   reports: <ReportsRoute />,
+  body: <BodyRoute />,
+  wellness: <WellnessRoute />,
 }
 
 export const router = createBrowserRouter([

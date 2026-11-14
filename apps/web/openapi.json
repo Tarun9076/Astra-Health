@@ -1221,6 +1221,325 @@
     ]
    }
   },
+  "/api/astronauts/{astronaut}/body-systems": {
+   "get": {
+    "tags": [
+     "body & wellness"
+    ],
+    "summary": "Get Body Systems",
+    "operationId": "get_body_systems_api_astronauts__astronaut__body_systems_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Get Body Systems Api Astronauts  Astronaut  Body Systems Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/wellness-center": {
+   "get": {
+    "tags": [
+     "body & wellness"
+    ],
+    "summary": "Get Wellness Center",
+    "operationId": "get_wellness_center_api_astronauts__astronaut__wellness_center_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WellnessCenterOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/wellness/activity": {
+   "post": {
+    "tags": [
+     "body & wellness"
+    ],
+    "summary": "Log Activity",
+    "operationId": "log_activity_api_wellness_activity_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ActivityIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/WellnessCenterOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/environment/readings": {
+   "post": {
+    "tags": [
+     "environment"
+    ],
+    "summary": "Post Environment",
+    "operationId": "post_environment_api_environment_readings_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "x-backfill",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "description": "true for history imports (no rule evaluation)",
+       "default": false,
+       "title": "X-Backfill"
+      },
+      "description": "true for history imports (no rule evaluation)"
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EnvBatchIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EnvBatchOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/environment/current": {
+   "get": {
+    "tags": [
+     "environment"
+    ],
+    "summary": "Environment Current",
+    "operationId": "environment_current_api_environment_current_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CabinValue"
+         },
+         "type": "array",
+         "title": "Response Environment Current Api Environment Current Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts/{astronaut}/radiation": {
+   "get": {
+    "tags": [
+     "environment"
+    ],
+    "summary": "Radiation",
+    "operationId": "radiation_api_astronauts__astronaut__radiation_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "range",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "30d",
+        "mission"
+       ],
+       "type": "string",
+       "default": "30d",
+       "title": "Range"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RadiationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/space-weather/now": {
+   "get": {
+    "tags": [
+     "environment"
+    ],
+    "summary": "Space Weather Now",
+    "operationId": "space_weather_now_api_space_weather_now_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SpaceWeatherNow"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
   "/api/sync/status": {
    "get": {
     "tags": [
@@ -1672,6 +1991,31 @@
  },
  "components": {
   "schemas": {
+   "ActivityIn": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "fluid",
+       "breathing"
+      ],
+      "title": "Kind"
+     },
+     "amount": {
+      "type": "number",
+      "maximum": 3000.0,
+      "exclusiveMinimum": 0.0,
+      "title": "Amount",
+      "description": "mL of fluid, or seconds of breathing exercise"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "amount"
+    ],
+    "title": "ActivityIn"
+   },
    "AlertDetail": {
     "properties": {
      "id": {
@@ -2203,6 +2547,101 @@
      "missionStart"
     ],
     "title": "AstronautOut"
+   },
+   "CabinPoint": {
+    "properties": {
+     "t": {
+      "type": "string",
+      "format": "date-time",
+      "title": "T"
+     },
+     "value": {
+      "type": "number",
+      "title": "Value"
+     }
+    },
+    "type": "object",
+    "required": [
+     "t",
+     "value"
+    ],
+    "title": "CabinPoint"
+   },
+   "CabinValue": {
+    "properties": {
+     "indicator": {
+      "type": "string",
+      "title": "Indicator"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "measuredAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Measuredat"
+     },
+     "low": {
+      "type": "number",
+      "title": "Low"
+     },
+     "high": {
+      "type": "number",
+      "title": "High"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "normal",
+       "out_of_range",
+       "no_data"
+      ],
+      "title": "Status"
+     },
+     "series": {
+      "items": {
+       "$ref": "#/components/schemas/CabinPoint"
+      },
+      "type": "array",
+      "title": "Series"
+     }
+    },
+    "type": "object",
+    "required": [
+     "indicator",
+     "name",
+     "unit",
+     "value",
+     "measuredAt",
+     "low",
+     "high",
+     "status",
+     "series"
+    ],
+    "title": "CabinValue"
    },
    "ChatIn": {
     "properties": {
@@ -2757,6 +3196,32 @@
     ],
     "title": "DashboardOut"
    },
+   "DayAmount": {
+    "properties": {
+     "day": {
+      "type": "string",
+      "format": "date",
+      "title": "Day"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     }
+    },
+    "type": "object",
+    "required": [
+     "day",
+     "value"
+    ],
+    "title": "DayAmount"
+   },
    "DayPoint": {
     "properties": {
      "day": {
@@ -2866,6 +3331,137 @@
      "n"
     ],
     "title": "DayPoint"
+   },
+   "DoseDay": {
+    "properties": {
+     "day": {
+      "type": "string",
+      "format": "date",
+      "title": "Day"
+     },
+     "total": {
+      "type": "number",
+      "title": "Total"
+     },
+     "neutron": {
+      "type": "number",
+      "title": "Neutron"
+     },
+     "charged": {
+      "type": "number",
+      "title": "Charged"
+     }
+    },
+    "type": "object",
+    "required": [
+     "day",
+     "total",
+     "neutron",
+     "charged"
+    ],
+    "title": "DoseDay"
+   },
+   "EnvBatchIn": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/EnvItem"
+      },
+      "type": "array",
+      "maxItems": 5000,
+      "minItems": 1,
+      "title": "Items"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items"
+    ],
+    "title": "EnvBatchIn"
+   },
+   "EnvBatchOut": {
+    "properties": {
+     "accepted": {
+      "type": "integer",
+      "title": "Accepted"
+     },
+     "duplicates": {
+      "type": "integer",
+      "title": "Duplicates"
+     },
+     "rejected": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Rejected"
+     },
+     "newAlerts": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Newalerts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "accepted",
+     "duplicates",
+     "rejected",
+     "newAlerts"
+    ],
+    "title": "EnvBatchOut"
+   },
+   "EnvItem": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id"
+     },
+     "indicator": {
+      "type": "string",
+      "enum": [
+       "cabin_temp",
+       "cabin_humidity",
+       "cabin_co2"
+      ],
+      "title": "Indicator"
+     },
+     "value": {
+      "type": "number",
+      "title": "Value"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "measuredAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Measuredat"
+     },
+     "module": {
+      "type": "string",
+      "title": "Module",
+      "default": "HAB"
+     }
+    },
+    "type": "object",
+    "required": [
+     "indicator",
+     "value",
+     "unit",
+     "measuredAt"
+    ],
+    "title": "EnvItem"
    },
    "FlaggedReading": {
     "properties": {
@@ -3684,6 +4280,60 @@
     ],
     "title": "MeasurementSource"
    },
+   "Mission_": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "description": {
+      "type": "string",
+      "title": "Description"
+     },
+     "progress": {
+      "type": "number",
+      "title": "Progress"
+     },
+     "goal": {
+      "type": "number",
+      "title": "Goal"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit"
+     },
+     "streak": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Streak"
+     },
+     "done": {
+      "type": "boolean",
+      "title": "Done"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "description",
+     "progress",
+     "goal",
+     "unit",
+     "done"
+    ],
+    "title": "Mission_"
+   },
    "NoteIn": {
     "properties": {
      "note": {
@@ -3763,6 +4413,106 @@
      "disclaimer"
     ],
     "title": "ProtocolOut"
+   },
+   "RadiationOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "days": {
+      "items": {
+       "$ref": "#/components/schemas/DoseDay"
+      },
+      "type": "array",
+      "title": "Days"
+     },
+     "missionTotalMsv": {
+      "type": "number",
+      "title": "Missiontotalmsv"
+     },
+     "limitMsv": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Limitmsv"
+     },
+     "pctOfLimit": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pctoflimit"
+     },
+     "neutronShare": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Neutronshare"
+     },
+     "activeSepAlert": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Activesepalert"
+     },
+     "replayedStorm": {
+      "type": "string",
+      "title": "Replayedstorm"
+     },
+     "spaceWeatherEvents": {
+      "items": {
+       "$ref": "#/components/schemas/SepEventOut"
+      },
+      "type": "array",
+      "title": "Spaceweatherevents"
+     },
+     "lightTimeMinutes": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lighttimeminutes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "days",
+     "missionTotalMsv",
+     "limitMsv",
+     "pctOfLimit",
+     "neutronShare",
+     "activeSepAlert",
+     "replayedStorm",
+     "spaceWeatherEvents",
+     "lightTimeMinutes"
+    ],
+    "title": "RadiationOut"
    },
    "ReadingIn": {
     "properties": {
@@ -4146,6 +4896,35 @@
     ],
     "title": "ScenarioOut"
    },
+   "SepEventOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "eventTime": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Eventtime"
+     },
+     "instruments": {
+      "type": "string",
+      "title": "Instruments"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "eventTime",
+     "instruments",
+     "source"
+    ],
+    "title": "SepEventOut"
+   },
    "SeriesOut": {
     "properties": {
      "astronautCode": {
@@ -4256,6 +5035,86 @@
      "value"
     ],
     "title": "SeriesPoint"
+   },
+   "SpaceWeatherNow": {
+    "properties": {
+     "protonFluxPfu": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protonfluxpfu"
+     },
+     "fluxTime": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fluxtime"
+     },
+     "sScale": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sscale"
+     },
+     "thresholdPfu": {
+      "type": "number",
+      "title": "Thresholdpfu",
+      "default": 10.0
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "noaa-live",
+       "noaa-fixture",
+       "none"
+      ],
+      "title": "Source"
+     },
+     "recentSepEvents": {
+      "items": {
+       "$ref": "#/components/schemas/SepEventOut"
+      },
+      "type": "array",
+      "title": "Recentsepevents"
+     },
+     "lightTimeMinutes": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lighttimeminutes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "protonFluxPfu",
+     "fluxTime",
+     "sScale",
+     "source",
+     "recentSepEvents",
+     "lightTimeMinutes"
+    ],
+    "title": "SpaceWeatherNow"
    },
    "SyncStatus": {
     "properties": {
@@ -4604,6 +5463,111 @@
      "unit"
     ],
     "title": "VitalIn"
+   },
+   "WellnessCenterOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "hydrationTodayMl": {
+      "type": "number",
+      "title": "Hydrationtodayml"
+     },
+     "hydrationTargetMl": {
+      "type": "number",
+      "title": "Hydrationtargetml"
+     },
+     "hydrationDays": {
+      "items": {
+       "$ref": "#/components/schemas/DayAmount"
+      },
+      "type": "array",
+      "title": "Hydrationdays"
+     },
+     "exerciseSessionsWeek": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exercisesessionsweek"
+     },
+     "exerciseTarget": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Exercisetarget"
+     },
+     "strengthIndex": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Strengthindex"
+     },
+     "sleepDays": {
+      "items": {
+       "$ref": "#/components/schemas/DayAmount"
+      },
+      "type": "array",
+      "title": "Sleepdays"
+     },
+     "sleepNormalHours": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sleepnormalhours"
+     },
+     "breathingSessionsWeek": {
+      "type": "integer",
+      "title": "Breathingsessionsweek"
+     },
+     "breathingMinutesWeek": {
+      "type": "number",
+      "title": "Breathingminutesweek"
+     },
+     "missions": {
+      "items": {
+       "$ref": "#/components/schemas/Mission_"
+      },
+      "type": "array",
+      "title": "Missions"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "hydrationTodayMl",
+     "hydrationTargetMl",
+     "hydrationDays",
+     "exerciseSessionsWeek",
+     "exerciseTarget",
+     "strengthIndex",
+     "sleepDays",
+     "sleepNormalHours",
+     "breathingSessionsWeek",
+     "breathingMinutesWeek",
+     "missions"
+    ],
+    "title": "WellnessCenterOut"
    },
    "WellnessDay": {
     "properties": {

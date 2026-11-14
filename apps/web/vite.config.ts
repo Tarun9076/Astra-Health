@@ -9,6 +9,8 @@ const HABITAT_API = process.env.VITE_HABITAT_API ?? 'http://localhost:8000'
 const GROUND_API = process.env.VITE_GROUND_API ?? 'http://localhost:8001'
 
 export default defineConfig({
+  // The 3D body model (three.js, ~0.9 MB) is its own lazy chunk, loaded only in the 3D view.
+  build: { chunkSizeWarningLimit: 1000 },
   plugins: [
     react(),
     tailwindcss(),

@@ -452,6 +452,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/astronauts/{astronaut}/body-systems": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Body Systems */
+        get: operations["get_body_systems_api_astronauts__astronaut__body_systems_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/wellness-center": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Wellness Center */
+        get: operations["get_wellness_center_api_astronauts__astronaut__wellness_center_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wellness/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Log Activity */
+        post: operations["log_activity_api_wellness_activity_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/environment/readings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Environment */
+        post: operations["post_environment_api_environment_readings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/environment/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Environment Current */
+        get: operations["environment_current_api_environment_current_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/radiation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Radiation */
+        get: operations["radiation_api_astronauts__astronaut__radiation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/space-weather/now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Space Weather Now */
+        get: operations["space_weather_now_api_space_weather_now_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/sync/status": {
         parameters: {
             query?: never;
@@ -602,6 +721,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ActivityIn */
+        ActivityIn: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "fluid" | "breathing";
+            /**
+             * Amount
+             * @description mL of fluid, or seconds of breathing exercise
+             */
+            amount: number;
+        };
         /** AlertDetail */
         AlertDetail: {
             /** Id */
@@ -814,6 +946,40 @@ export interface components {
              */
             missionStart: string;
         };
+        /** CabinPoint */
+        CabinPoint: {
+            /**
+             * T
+             * Format: date-time
+             */
+            t: string;
+            /** Value */
+            value: number;
+        };
+        /** CabinValue */
+        CabinValue: {
+            /** Indicator */
+            indicator: string;
+            /** Name */
+            name: string;
+            /** Unit */
+            unit: string;
+            /** Value */
+            value: number | null;
+            /** Measuredat */
+            measuredAt: string | null;
+            /** Low */
+            low: number;
+            /** High */
+            high: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "normal" | "out_of_range" | "no_data";
+            /** Series */
+            series: components["schemas"]["CabinPoint"][];
+        };
         /** ChatIn */
         ChatIn: {
             /** Question */
@@ -992,6 +1158,16 @@ export interface components {
              */
             simulatedData: boolean;
         };
+        /** DayAmount */
+        DayAmount: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Value */
+            value: number | null;
+        };
         /** DayPoint */
         DayPoint: {
             /**
@@ -1017,6 +1193,60 @@ export interface components {
             high?: number | null;
             /** Z */
             z?: number | null;
+        };
+        /** DoseDay */
+        DoseDay: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Total */
+            total: number;
+            /** Neutron */
+            neutron: number;
+            /** Charged */
+            charged: number;
+        };
+        /** EnvBatchIn */
+        EnvBatchIn: {
+            /** Items */
+            items: components["schemas"]["EnvItem"][];
+        };
+        /** EnvBatchOut */
+        EnvBatchOut: {
+            /** Accepted */
+            accepted: number;
+            /** Duplicates */
+            duplicates: number;
+            /** Rejected */
+            rejected: string[];
+            /** Newalerts */
+            newAlerts: string[];
+        };
+        /** EnvItem */
+        EnvItem: {
+            /** Id */
+            id?: string | null;
+            /**
+             * Indicator
+             * @enum {string}
+             */
+            indicator: "cabin_temp" | "cabin_humidity" | "cabin_co2";
+            /** Value */
+            value: number;
+            /** Unit */
+            unit: string;
+            /**
+             * Measuredat
+             * Format: date-time
+             */
+            measuredAt: string;
+            /**
+             * Module
+             * @default HAB
+             */
+            module: string;
         };
         /** FlaggedReading */
         FlaggedReading: {
@@ -1307,6 +1537,25 @@ export interface components {
          * @enum {string}
          */
         MeasurementSource: "Manual" | "Wearable" | "Device" | "Derived" | "Simulated";
+        /** Mission_ */
+        Mission_: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Progress */
+            progress: number;
+            /** Goal */
+            goal: number;
+            /** Unit */
+            unit: string;
+            /** Streak */
+            streak?: number | null;
+            /** Done */
+            done: boolean;
+        };
         /** NoteIn */
         NoteIn: {
             /** Note */
@@ -1335,6 +1584,31 @@ export interface components {
             body: string;
             /** Disclaimer */
             disclaimer: string;
+        };
+        /** RadiationOut */
+        RadiationOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Days */
+            days: components["schemas"]["DoseDay"][];
+            /** Missiontotalmsv */
+            missionTotalMsv: number;
+            /** Limitmsv */
+            limitMsv: number | null;
+            /** Pctoflimit */
+            pctOfLimit: number | null;
+            /** Neutronshare */
+            neutronShare: number | null;
+            /** Activesepalert */
+            activeSepAlert: {
+                [key: string]: unknown;
+            } | null;
+            /** Replayedstorm */
+            replayedStorm: string;
+            /** Spaceweatherevents */
+            spaceWeatherEvents: components["schemas"]["SepEventOut"][];
+            /** Lighttimeminutes */
+            lightTimeMinutes: number | null;
         };
         /** ReadingIn */
         ReadingIn: {
@@ -1519,6 +1793,20 @@ export interface components {
             /** Newalerts */
             newAlerts: string[];
         };
+        /** SepEventOut */
+        SepEventOut: {
+            /** Id */
+            id: string;
+            /**
+             * Eventtime
+             * Format: date-time
+             */
+            eventTime: string;
+            /** Instruments */
+            instruments: string;
+            /** Source */
+            source: string;
+        };
         /** SeriesOut */
         SeriesOut: {
             /** Astronautcode */
@@ -1554,6 +1842,29 @@ export interface components {
             quality?: string | null;
             /** Channel */
             channel?: string | null;
+        };
+        /** SpaceWeatherNow */
+        SpaceWeatherNow: {
+            /** Protonfluxpfu */
+            protonFluxPfu: number | null;
+            /** Fluxtime */
+            fluxTime: string | null;
+            /** Sscale */
+            sScale: string | null;
+            /**
+             * Thresholdpfu
+             * @default 10
+             */
+            thresholdPfu: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "noaa-live" | "noaa-fixture" | "none";
+            /** Recentsepevents */
+            recentSepEvents: components["schemas"]["SepEventOut"][];
+            /** Lighttimeminutes */
+            lightTimeMinutes: number | null;
         };
         /** SyncStatus */
         SyncStatus: {
@@ -1673,6 +1984,33 @@ export interface components {
              * @example bpm
              */
             unit: string;
+        };
+        /** WellnessCenterOut */
+        WellnessCenterOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Hydrationtodayml */
+            hydrationTodayMl: number;
+            /** Hydrationtargetml */
+            hydrationTargetMl: number;
+            /** Hydrationdays */
+            hydrationDays: components["schemas"]["DayAmount"][];
+            /** Exercisesessionsweek */
+            exerciseSessionsWeek: number | null;
+            /** Exercisetarget */
+            exerciseTarget: number | null;
+            /** Strengthindex */
+            strengthIndex: number | null;
+            /** Sleepdays */
+            sleepDays: components["schemas"]["DayAmount"][];
+            /** Sleepnormalhours */
+            sleepNormalHours: number | null;
+            /** Breathingsessionsweek */
+            breathingSessionsWeek: number;
+            /** Breathingminutesweek */
+            breathingMinutesWeek: number;
+            /** Missions */
+            missions: components["schemas"]["Mission_"][];
         };
         /** WellnessDay */
         WellnessDay: {
@@ -2469,6 +2807,212 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CrewStatus"][];
+                };
+            };
+        };
+    };
+    get_body_systems_api_astronauts__astronaut__body_systems_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_wellness_center_api_astronauts__astronaut__wellness_center_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WellnessCenterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    log_activity_api_wellness_activity_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ActivityIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WellnessCenterOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_environment_api_environment_readings_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                /** @description true for history imports (no rule evaluation) */
+                "x-backfill"?: boolean;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EnvBatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EnvBatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    environment_current_api_environment_current_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CabinValue"][];
+                };
+            };
+        };
+    };
+    radiation_api_astronauts__astronaut__radiation_get: {
+        parameters: {
+            query?: {
+                range?: "30d" | "mission";
+            };
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RadiationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    space_weather_now_api_space_weather_now_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceWeatherNow"];
                 };
             };
         };

@@ -11,7 +11,9 @@ import { useCrewSummary, useDashboard, useInstructions } from '../../lib/queries
 import { AlertsPage } from '../alerts/AlertsPage'
 import { OverviewPage } from '../overview/OverviewPage'
 import { ReportsPage } from '../reports/ReportsPage'
+import { SpaceWeatherCard } from '../../components/ui/SpaceWeatherCard'
 
+const BodyExplorerPage = lazy(() => import('../body/BodyExplorerPage').then((m) => ({ default: m.BodyExplorerPage })))
 const AnalyticsPage = lazy(() => import('../analytics/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage })))
 
 /** Crew grid (Step 8): live status of every astronaut. Mission control sees status only (LLD §17). */
@@ -29,6 +31,7 @@ export function CrewPage() {
             : 'Crew status only. Health details are visible to the flight surgeon.'}
         </p>
       </div>
+      <SpaceWeatherCard />
       {isPending && <Loading />}
       {error && <ErrorNote error={error} />}
       <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -75,6 +78,7 @@ function CrewCard({ crew, medical }: { crew: CrewStatus; medical: boolean }) {
 
 const VIEWS = [
   { id: 'summary', label: 'Summary' },
+  { id: 'body', label: 'Body' },
   { id: 'alerts', label: 'Alerts review' },
   { id: 'trends', label: 'Trends' },
   { id: 'reports', label: 'Reports' },
@@ -108,6 +112,7 @@ export function StaffAstronautPage() {
         ))}
       </div>
       {view === 'summary' && <OverviewPage code={code} readOnly />}
+      {view === 'body' && <Suspense fallback={<Loading />}><BodyExplorerPage code={code} staff /></Suspense>}
       {view === 'alerts' && <AlertsPage code={code} staff />}
       {view === 'trends' && (
         <Suspense fallback={<Loading />}><AnalyticsPage code={code} embedded /></Suspense>
