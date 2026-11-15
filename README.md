@@ -334,6 +334,14 @@ cd apps/web; npm run gen:api
 
 ---
 
+## Deploying online
+
+The web app goes on **Vercel**; the two backends run on one **Google Cloud** VM with Docker and automatic
+HTTPS (Vercel can't run always-on servers). Step-by-step guide: **[deploy/README.md](deploy/README.md)**
+(about 30–45 minutes; no domain needed).
+
+---
+
 ## 6. Tests and quality checks
 
 | Check | Command |
@@ -389,6 +397,7 @@ Astra-Health/
 ├── knowledge/           Knowledge base used by the assistant (NASA / CSA sourced)
 ├── docs/                Design documents (Markdown, PDFs in docs/pdf/, screenshots in docs/screenshots/)
 ├── tools/docs-pdf/      Regenerates the PDFs
+├── deploy/              Docker images, Caddy (HTTPS) and the Vercel + Google Cloud guide
 └── start-demo.ps1       Starts the whole demo with one command
 ```
 

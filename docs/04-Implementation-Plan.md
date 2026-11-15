@@ -470,6 +470,7 @@ Today is mission day 121; the history covers days −29…120.
 - [x] README with screenshots, how to run, disclaimers, sources, licence credits. Regenerate doc PDFs (`tools/docs-pdf`).
   - Screenshots in `docs/screenshots/` (Home, check-in, 3D body, progress, flight surgeon, demo control) are taken by `apps/web/scripts/screenshots.ts` from a fresh demo (it waits until the link has delivered the mission data). To refresh: `.\start-demo.ps1 -Fresh`, then `cd apps/web; node scripts/screenshots.ts`.
   - Fixed on the way: a reached weekly goal read "6 of 5 days"; it now reads "6 days · goal met".
+- [x] **Online deployment** (`deploy/`, guide in `deploy/README.md`): web app on **Vercel** (`apps/web/vercel.json`: `/api` and `/ground-api` forwarded to the server, SPA fallback, cache headers; `VITE_LIVE_ORIGIN` points live updates straight at the server because Vercel can't forward WebSockets); Habitat and Ground on one **Google Cloud** VM with Docker Compose (`backend.Dockerfile`: one image, role from environment; first start creates the database and loads the simulated mission once; `web.Dockerfile` + `Caddyfile`: the app and both backends behind automatic HTTPS, free `sslip.io` name). Secrets only in `deploy/.env` on the server. Checked: the production build with `VITE_LIVE_ORIGIN`, `vercel.json` and compose files parse; the containers were **not** built locally (no Docker on the development laptop) — the first build happens on the VM.
 - [ ] **Tag `v1.0-demo`.**
 
 ---
