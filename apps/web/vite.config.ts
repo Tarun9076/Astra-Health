@@ -46,6 +46,8 @@ export default defineConfig({
     // the last screens are restored from the persisted query cache instead (src/main.tsx).
     VitePWA({
       registerType: 'autoUpdate',
+      // also on the dev server (npm run dev / start-demo.ps1), so the app can be installed from localhost
+      devOptions: { enabled: true, suppressWarnings: true, navigateFallback: 'index.html' },
       includeAssets: ['favicon.svg', 'pwa-icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'ASTRA HEALTH — Crew health intelligence',

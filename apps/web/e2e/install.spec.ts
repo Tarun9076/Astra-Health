@@ -1,8 +1,9 @@
 import { expect, test, type Page } from '@playwright/test'
 import { signIn } from './helpers'
 
-// T-UI-12 (Step 18): the "Install app" button. A test browser never offers installation by itself,
-// so the tests send the same event Chrome sends (beforeinstallprompt) and record what the app does.
+// T-UI-12 (Step 18): the "Install app" button. It is always visible until the app is installed.
+// A test browser never offers installation by itself, so the tests send the same event Chrome sends
+// (beforeinstallprompt) and record what the app does.
 
 async function offerInstall(page: Page, outcome: 'accepted' | 'dismissed') {
   await page.evaluate((choice) => {
@@ -12,28 +13,35 @@ async function offerInstall(page: Page, outcome: 'accepted' | 'dismissed') {
     window.dispatchEvent(event)
   }, outcome)
 }
+const prompted = (page: Page) => page.evaluate(() => (window as unknown as { __prompted?: number }).__prompted ?? 0)
 
-test('install offer: the button shows the browser dialog, then hides once installed', async ({ page }) => {
+test('before the browser offers: the button explains where install is; with the offer it opens the dialog', async ({ page }) => {
   await page.goto('/login')
-  await expect(page.getByRole('button', { name: /Install/ })).toHaveCount(0) // nothing offered yet
-  await offerInstall(page, 'accepted')
   const install = page.getByRole('button', { name: 'Install ASTRA HEALTH on this device' })
+  await expect(install).toBeVisible()
   await install.click()
-  expect(await page.evaluate(() => (window as unknown as { __prompted: number }).__prompted)).toBe(1)
-  await expect(install).toHaveCount(0)
-  // signed in, the header has no install button either (installed this session)
+  await expect(install).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('note')).toContainText('Install page as app')
+
+  await offerInstall(page, 'accepted')
+  await install.click()
+  expect(await prompted(page)).toBe(1)
+  await expect(install).toHaveCount(0) // installed
   await signIn(page, 'ast1')
   await expect(page.getByRole('button', { name: 'Install app' })).toHaveCount(0)
 })
 
-test('declined: the button goes until the browser offers again; header button works', async ({ page }) => {
+test('declined: the button stays, and opens the dialog again when the browser offers again', async ({ page }) => {
   await signIn(page, 'ast1')
-  await offerInstall(page, 'dismissed')
   const install = page.getByRole('button', { name: 'Install app' })
+  await expect(install).toBeVisible() // in the header
+  await offerInstall(page, 'dismissed')
   await install.click()
-  await expect(install).toHaveCount(0)
-  await offerInstall(page, 'dismissed') // Chrome offers again later
+  expect(await prompted(page)).toBe(1)
   await expect(install).toBeVisible()
+  await offerInstall(page, 'dismissed')
+  await install.click()
+  expect(await prompted(page)).toBe(2)
 })
 
 test('already running as the installed app: no button', async ({ page }) => {
@@ -42,7 +50,7 @@ test('already running as the installed app: no button', async ({ page }) => {
     window.matchMedia = (q: string) => (q === '(display-mode: standalone)' ? { ...real(q), matches: true, media: q } as MediaQueryList : real(q))
   })
   await page.goto('/login')
-  await offerInstall(page, 'accepted')
+  await expect(page.getByRole('heading', { level: 1 }).or(page.getByText('ASTRA HEALTH').first())).toBeVisible()
   await expect(page.getByRole('button', { name: /Install/ })).toHaveCount(0)
 })
 
@@ -52,9 +60,16 @@ test.describe('iPhone Safari', () => {
   })
   test('shows how to add it to the home screen', async ({ page }) => {
     await page.goto('/login')
-    const install = page.getByRole('button', { name: 'Install ASTRA HEALTH on this device' })
-    await install.click()
-    await expect(install).toHaveAttribute('aria-expanded', 'true')
+    await page.getByRole('button', { name: 'Install ASTRA HEALTH on this device' }).click()
     await expect(page.getByRole('note')).toContainText('Add to Home Screen')
+  })
+})
+
+test.describe('Firefox on a computer', () => {
+  test.use({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:140.0) Gecko/20100101 Firefox/140.0' })
+  test('says to use Chrome or Edge', async ({ page }) => {
+    await page.goto('/login')
+    await page.getByRole('button', { name: 'Install ASTRA HEALTH on this device' }).click()
+    await expect(page.getByRole('note')).toContainText('can’t install apps')
   })
 })

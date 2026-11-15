@@ -1,7 +1,7 @@
 // "Install app" (Step 18). Chrome, Edge and Android announce that the app can be installed with a
 // `beforeinstallprompt` event, often before React has rendered, so it is caught at startup (main.tsx)
-// and kept here; the button shows the browser's own install dialog. Safari on iPhone and iPad has no
-// such event: there the button explains Share → Add to Home Screen instead.
+// and kept here; the button shows the browser's own install dialog. Without that offer (not yet, or
+// Safari on iPhone and iPad, which never sends it) the button explains where install is instead.
 import { create } from 'zustand'
 
 /** Chrome's install event (not in the standard DOM types). */
@@ -23,11 +23,13 @@ export function isStandalone(): boolean {
   return iosStandalone || (typeof matchMedia !== 'undefined' && matchMedia('(display-mode: standalone)').matches)
 }
 
-/** Safari on iPhone or iPad (iPadOS reports itself as a Mac with touch). */
-export function isIosSafari(): boolean {
+/** How this browser installs web apps: its own dialog (Chrome, Edge, Android), Safari's Share menu
+ * (iPhone, iPad: every iOS browser uses Safari's engine), or not at all (Firefox on a computer). */
+export function browserKind(): 'dialog' | 'ios' | 'unsupported' {
   const ua = navigator.userAgent
-  const ios = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)
-  return ios && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS/.test(ua)
+  if (/iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return 'ios'
+  if (/Firefox\//.test(ua) && !/Android/.test(ua)) return 'unsupported'
+  return 'dialog'
 }
 
 export function initInstall(): void {
