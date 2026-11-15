@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Check, LifeBuoy, Satellite, Send, ShieldAlert, Sparkles, WifiOff, X } from 'lucide-react'
+import { BookOpen, Check, LifeBuoy, Pill, Satellite, Send, ShieldAlert, Sparkles, WifiOff, X } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { EmergencyProtocolCard } from '../../components/ui/EmergencyProtocolCard'
 import { ErrorNote, LinkButton, Loading, Panel } from '../../components/ui/Panel'
@@ -31,6 +31,7 @@ interface Message {
   emergencyProtocolId?: string | null
   alertId?: string | null
   safetyFlags?: string[]
+  medicationGuide?: ChatOut['medicationGuide']
 }
 
 function fromChat(out: ChatOut): Message {
@@ -48,6 +49,7 @@ function fromChat(out: ChatOut): Message {
     emergencyProtocolId: out.emergencyProtocolId,
     alertId: out.alertId ?? null,
     safetyFlags: out.safetyFlags,
+    medicationGuide: out.medicationGuide ?? null,
   }
 }
 
@@ -93,6 +95,11 @@ function Bubble({ m }: { m: Message }) {
     <div className="max-w-[92%] space-y-3 rounded-2xl rounded-bl-sm border border-line bg-surface px-5 py-4">
       <p className="text-base font-semibold leading-relaxed">{short}</p>
       {m.emergencyProtocolId && <EmergencyProtocolCard id={m.emergencyProtocolId} reported={Boolean(m.alertId)} />}
+      {m.medicationGuide && (
+        <LinkButton to={m.medicationGuide.conditionId ? `/astronaut/medicine?condition=${m.medicationGuide.conditionId}` : '/astronaut/medicine'}>
+          <Pill className="h-4 w-4" aria-hidden /> Open the Medication Guide{m.medicationGuide.title ? `: ${m.medicationGuide.title}` : ''}
+        </LinkButton>
+      )}
       {steps.length > 0 && (
         <div>
           <p className="text-sm font-semibold text-accent">What helps</p>

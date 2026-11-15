@@ -6,7 +6,7 @@ import type { components, paths } from './api-types'
 import { useAuth } from './auth'
 import { routeUrl } from './nodes'
 
-type Schemas = components['schemas']
+export type Schemas = components['schemas']
 export type Me = Schemas['MeOut']
 export type Dashboard = Schemas['DashboardOut']
 export type Vital = Schemas['Vital']

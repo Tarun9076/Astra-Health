@@ -2341,6 +2341,581 @@
     ]
    }
   },
+  "/api/medication/formulary": {
+   "get": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Get Formulary",
+    "operationId": "get_formulary_api_medication_formulary_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FormularyOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts/{astronaut}/medical-profile": {
+   "get": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Get Medical Profile",
+    "operationId": "get_medical_profile_api_astronauts__astronaut__medical_profile_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MedicalProfileOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "put": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Put Medical Profile",
+    "operationId": "put_medical_profile_api_astronauts__astronaut__medical_profile_put",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MedicalProfileIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MedicalProfileOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/medication/advice": {
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Post Advice",
+    "operationId": "post_advice_api_astronauts__astronaut__medication_advice_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AdviceIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AdviceOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/medication/doses": {
+   "get": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Get Astronaut Doses",
+    "operationId": "get_astronaut_doses_api_astronauts__astronaut__medication_doses_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/DoseOut"
+         },
+         "title": "Response Get Astronaut Doses Api Astronauts  Astronaut  Medication Doses Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/medication/doses": {
+   "get": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Get Crew Doses",
+    "operationId": "get_crew_doses_api_medication_doses_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/DoseOut"
+         },
+         "type": "array",
+         "title": "Response Get Crew Doses Api Medication Doses Get"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   },
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Post Dose",
+    "operationId": "post_dose_api_medication_doses_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DoseIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/medication/doses/{dose_id}/confirm": {
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Confirm Dose",
+    "operationId": "confirm_dose_api_medication_doses__dose_id__confirm_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "dose_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Dose Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ConfirmIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/medication/doses/{dose_id}/taken": {
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Dose Taken",
+    "operationId": "dose_taken_api_medication_doses__dose_id__taken_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "dose_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Dose Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/medication/doses/{dose_id}/cancel": {
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Dose Cancel",
+    "operationId": "dose_cancel_api_medication_doses__dose_id__cancel_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "dose_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Dose Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/medication/doses/{dose_id}/outcome": {
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Dose Outcome",
+    "operationId": "dose_outcome_api_medication_doses__dose_id__outcome_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "dose_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Dose Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/OutcomeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/medication/doses/{dose_id}/review": {
+   "post": {
+    "tags": [
+     "medication guide"
+    ],
+    "summary": "Dose Review",
+    "operationId": "dose_review_api_medication_doses__dose_id__review_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "dose_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Dose Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ReviewIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DoseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/measurements/batch": {
    "post": {
     "tags": [
@@ -2615,6 +3190,109 @@
      "because"
     ],
     "title": "AdjustmentOut"
+   },
+   "AdviceIn": {
+    "properties": {
+     "conditionId": {
+      "type": "string",
+      "title": "Conditionid"
+     },
+     "answers": {
+      "additionalProperties": {
+       "type": "boolean"
+      },
+      "type": "object",
+      "title": "Answers",
+      "description": "Every safety question of the condition: true = yes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "conditionId",
+     "answers"
+    ],
+    "title": "AdviceIn"
+   },
+   "AdviceOut": {
+    "properties": {
+     "conditionId": {
+      "type": "string",
+      "title": "Conditionid"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "stop": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/StopOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "nonDrug": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Nondrug"
+     },
+     "options": {
+      "items": {
+       "$ref": "#/components/schemas/OptionOut"
+      },
+      "type": "array",
+      "title": "Options"
+     },
+     "recommended": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Recommended"
+     },
+     "followUpHours": {
+      "type": "number",
+      "title": "Followuphours"
+     },
+     "formularyVersion": {
+      "type": "string",
+      "title": "Formularyversion"
+     },
+     "formularyStatus": {
+      "type": "string",
+      "enum": [
+       "demo",
+       "approved"
+      ],
+      "title": "Formularystatus"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     }
+    },
+    "type": "object",
+    "required": [
+     "conditionId",
+     "title",
+     "stop",
+     "nonDrug",
+     "options",
+     "recommended",
+     "followUpHours",
+     "formularyVersion",
+     "formularyStatus",
+     "disclaimer"
+    ],
+    "title": "AdviceOut"
    },
    "AlertDetail": {
     "properties": {
@@ -3439,6 +4117,16 @@
       ],
       "title": "Alertid"
      },
+     "medicationGuide": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/MedicationLinkOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
      "createdAt": {
       "type": "string",
       "format": "date-time",
@@ -3464,6 +4152,33 @@
      "createdAt"
     ],
     "title": "ChatOut"
+   },
+   "CheckOut": {
+    "properties": {
+     "level": {
+      "type": "string",
+      "enum": [
+       "block",
+       "caution"
+      ],
+      "title": "Level"
+     },
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     }
+    },
+    "type": "object",
+    "required": [
+     "level",
+     "code",
+     "text"
+    ],
+    "title": "CheckOut"
    },
    "CheckinIn": {
     "properties": {
@@ -3635,6 +4350,83 @@
      "source"
     ],
     "title": "CitationOut"
+   },
+   "ConditionOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "plain": {
+      "type": "string",
+      "title": "Plain"
+     },
+     "redFlags": {
+      "items": {
+       "$ref": "#/components/schemas/RedFlagOut"
+      },
+      "type": "array",
+      "title": "Redflags"
+     },
+     "nonDrug": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Nondrug"
+     },
+     "options": {
+      "items": {
+       "$ref": "#/components/schemas/OptionRefOut"
+      },
+      "type": "array",
+      "title": "Options"
+     },
+     "followUpHours": {
+      "type": "number",
+      "title": "Followuphours"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "plain",
+     "redFlags",
+     "nonDrug",
+     "options",
+     "followUpHours"
+    ],
+    "title": "ConditionOut"
+   },
+   "ConfirmIn": {
+    "properties": {
+     "approve": {
+      "type": "boolean",
+      "title": "Approve"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "approve"
+    ],
+    "title": "ConfirmIn"
    },
    "Contributor": {
     "properties": {
@@ -4054,6 +4846,332 @@
     ],
     "title": "DoseDay"
    },
+   "DoseIn": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "maxLength": 64,
+      "minLength": 8,
+      "pattern": "^[A-Za-z0-9-]+$",
+      "title": "Id",
+      "description": "Client id (idempotent)"
+     },
+     "conditionId": {
+      "type": "string",
+      "title": "Conditionid"
+     },
+     "medicineId": {
+      "type": "string",
+      "title": "Medicineid"
+     },
+     "units": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 10.0,
+        "minimum": 1.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Units",
+      "description": "Default: the guide's dose"
+     },
+     "answers": {
+      "additionalProperties": {
+       "type": "boolean"
+      },
+      "type": "object",
+      "title": "Answers"
+     },
+     "selfConfirmReason": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300,
+        "minLength": 3
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Selfconfirmreason",
+      "description": "Confirm alone (no CMO available, or you are the CMO); flagged for the flight surgeon"
+     },
+     "requestedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requestedat"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "conditionId",
+     "medicineId",
+     "answers"
+    ],
+    "title": "DoseIn"
+   },
+   "DoseOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "astronautName": {
+      "type": "string",
+      "title": "Astronautname"
+     },
+     "conditionId": {
+      "type": "string",
+      "title": "Conditionid"
+     },
+     "conditionTitle": {
+      "type": "string",
+      "title": "Conditiontitle"
+     },
+     "medicineId": {
+      "type": "string",
+      "title": "Medicineid"
+     },
+     "medicineName": {
+      "type": "string",
+      "title": "Medicinename"
+     },
+     "units": {
+      "type": "integer",
+      "title": "Units"
+     },
+     "doseText": {
+      "type": "string",
+      "title": "Dosetext"
+     },
+     "whenText": {
+      "type": "string",
+      "title": "Whentext"
+     },
+     "how": {
+      "type": "string",
+      "title": "How"
+     },
+     "kitLocation": {
+      "type": "string",
+      "title": "Kitlocation"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "Requested",
+       "Confirmed",
+       "Declined",
+       "Cancelled",
+       "Taken"
+      ],
+      "title": "Status"
+     },
+     "selfConfirmed": {
+      "type": "boolean",
+      "title": "Selfconfirmed"
+     },
+     "selfConfirmReason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Selfconfirmreason"
+     },
+     "checks": {
+      "items": {
+       "$ref": "#/components/schemas/CheckOut"
+      },
+      "type": "array",
+      "title": "Checks"
+     },
+     "requestedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Requestedat"
+     },
+     "confirmedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confirmedat"
+     },
+     "confirmedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confirmedby"
+     },
+     "declineReason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Declinereason"
+     },
+     "takenAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Takenat"
+     },
+     "followUpAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Followupat"
+     },
+     "followUpDue": {
+      "type": "boolean",
+      "title": "Followupdue"
+     },
+     "outcome": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "better",
+         "same",
+         "worse"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Outcome"
+     },
+     "outcomeAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Outcomeat"
+     },
+     "reviewedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewedat"
+     },
+     "reviewedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewedby"
+     },
+     "reviewNote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewnote"
+     },
+     "formularyVersion": {
+      "type": "string",
+      "title": "Formularyversion"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "astronautName",
+     "conditionId",
+     "conditionTitle",
+     "medicineId",
+     "medicineName",
+     "units",
+     "doseText",
+     "whenText",
+     "how",
+     "kitLocation",
+     "status",
+     "selfConfirmed",
+     "selfConfirmReason",
+     "checks",
+     "requestedAt",
+     "confirmedAt",
+     "confirmedBy",
+     "declineReason",
+     "takenAt",
+     "followUpAt",
+     "followUpDue",
+     "outcome",
+     "outcomeAt",
+     "reviewedAt",
+     "reviewedBy",
+     "reviewNote",
+     "formularyVersion"
+    ],
+    "title": "DoseOut"
+   },
    "EnvBatchIn": {
     "properties": {
      "items": {
@@ -4425,6 +5543,70 @@
      "reason"
     ],
     "title": "FlaggedReading"
+   },
+   "FormularyOut": {
+    "properties": {
+     "version": {
+      "type": "string",
+      "title": "Version"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "demo",
+       "approved"
+      ],
+      "title": "Status"
+     },
+     "approvedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Approvedby"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     },
+     "vocabulary": {
+      "$ref": "#/components/schemas/VocabularyOut"
+     },
+     "medicines": {
+      "items": {
+       "$ref": "#/components/schemas/MedicineOut"
+      },
+      "type": "array",
+      "title": "Medicines"
+     },
+     "conditions": {
+      "items": {
+       "$ref": "#/components/schemas/ConditionOut"
+      },
+      "type": "array",
+      "title": "Conditions"
+     },
+     "viewerIsCmo": {
+      "type": "boolean",
+      "title": "Vieweriscmo"
+     }
+    },
+    "type": "object",
+    "required": [
+     "version",
+     "status",
+     "approvedBy",
+     "disclaimer",
+     "vocabulary",
+     "medicines",
+     "conditions",
+     "viewerIsCmo"
+    ],
+    "title": "FormularyOut"
    },
    "GuidanceAlert": {
     "properties": {
@@ -5492,6 +6674,250 @@
     ],
     "title": "MeasurementSource"
    },
+   "MedicalProfileIn": {
+    "properties": {
+     "allergies": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 20,
+      "title": "Allergies"
+     },
+     "conditions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 20,
+      "title": "Conditions"
+     },
+     "regularMedicines": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 20,
+      "title": "Regularmedicines"
+     },
+     "note": {
+      "type": "string",
+      "maxLength": 500,
+      "title": "Note",
+      "default": ""
+     }
+    },
+    "type": "object",
+    "title": "MedicalProfileIn"
+   },
+   "MedicalProfileOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "allergies": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Allergies"
+     },
+     "conditions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Conditions"
+     },
+     "regularMedicines": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Regularmedicines"
+     },
+     "note": {
+      "type": "string",
+      "title": "Note"
+     },
+     "updatedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Updatedat"
+     },
+     "updatedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Updatedby"
+     },
+     "canEdit": {
+      "type": "boolean",
+      "title": "Canedit"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "allergies",
+     "conditions",
+     "regularMedicines",
+     "note",
+     "updatedAt",
+     "updatedBy",
+     "canEdit"
+    ],
+    "title": "MedicalProfileOut"
+   },
+   "MedicationLinkOut": {
+    "properties": {
+     "conditionId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Conditionid"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     }
+    },
+    "type": "object",
+    "required": [
+     "conditionId",
+     "title"
+    ],
+    "title": "MedicationLinkOut",
+    "description": "The question is about medicines: open the Medication Guide (at this condition, if one matched)."
+   },
+   "MedicineOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "form": {
+      "type": "string",
+      "title": "Form"
+     },
+     "strength": {
+      "type": "string",
+      "title": "Strength"
+     },
+     "how": {
+      "type": "string",
+      "title": "How"
+     },
+     "kitLocation": {
+      "type": "string",
+      "title": "Kitlocation"
+     },
+     "stockUnits": {
+      "type": "integer",
+      "title": "Stockunits"
+     },
+     "stockLeft": {
+      "type": "integer",
+      "title": "Stockleft"
+     },
+     "expires": {
+      "type": "string",
+      "title": "Expires"
+     },
+     "expired": {
+      "type": "boolean",
+      "title": "Expired"
+     },
+     "drowsy": {
+      "type": "boolean",
+      "title": "Drowsy"
+     },
+     "maxUnitsPerDay": {
+      "type": "integer",
+      "title": "Maxunitsperday"
+     },
+     "minIntervalHours": {
+      "type": "number",
+      "title": "Minintervalhours"
+     },
+     "maxDays": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maxdays"
+     },
+     "cautions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Cautions"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "sourceUrl": {
+      "type": "string",
+      "title": "Sourceurl"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "form",
+     "strength",
+     "how",
+     "kitLocation",
+     "stockUnits",
+     "stockLeft",
+     "expires",
+     "expired",
+     "drowsy",
+     "maxUnitsPerDay",
+     "minIntervalHours",
+     "maxDays",
+     "cautions",
+     "source",
+     "sourceUrl"
+    ],
+    "title": "MedicineOut"
+   },
    "MissionOut": {
     "properties": {
      "code": {
@@ -5606,6 +7032,139 @@
     },
     "type": "object",
     "title": "NoteIn"
+   },
+   "OptionOut": {
+    "properties": {
+     "medicineId": {
+      "type": "string",
+      "title": "Medicineid"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "strength": {
+      "type": "string",
+      "title": "Strength"
+     },
+     "units": {
+      "type": "integer",
+      "title": "Units"
+     },
+     "doseText": {
+      "type": "string",
+      "title": "Dosetext"
+     },
+     "when": {
+      "type": "string",
+      "title": "When"
+     },
+     "how": {
+      "type": "string",
+      "title": "How"
+     },
+     "kitLocation": {
+      "type": "string",
+      "title": "Kitlocation"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ok",
+       "caution",
+       "blocked"
+      ],
+      "title": "Status"
+     },
+     "checks": {
+      "items": {
+       "$ref": "#/components/schemas/CheckOut"
+      },
+      "type": "array",
+      "title": "Checks"
+     },
+     "nextAllowedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nextallowedat"
+     },
+     "cautions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Cautions"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "sourceUrl": {
+      "type": "string",
+      "title": "Sourceurl"
+     }
+    },
+    "type": "object",
+    "required": [
+     "medicineId",
+     "name",
+     "strength",
+     "units",
+     "doseText",
+     "when",
+     "how",
+     "kitLocation",
+     "status",
+     "checks",
+     "nextAllowedAt",
+     "cautions",
+     "source",
+     "sourceUrl"
+    ],
+    "title": "OptionOut"
+   },
+   "OptionRefOut": {
+    "properties": {
+     "medicine": {
+      "type": "string",
+      "title": "Medicine"
+     },
+     "when": {
+      "type": "string",
+      "title": "When"
+     }
+    },
+    "type": "object",
+    "required": [
+     "medicine",
+     "when"
+    ],
+    "title": "OptionRefOut"
+   },
+   "OutcomeIn": {
+    "properties": {
+     "outcome": {
+      "type": "string",
+      "enum": [
+       "better",
+       "same",
+       "worse"
+      ],
+      "title": "Outcome"
+     }
+    },
+    "type": "object",
+    "required": [
+     "outcome"
+    ],
+    "title": "OutcomeIn"
    },
    "PhotoIn": {
     "properties": {
@@ -6283,6 +7842,45 @@
     ],
     "title": "ReadingIn"
    },
+   "RedFlagOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "question": {
+      "type": "string",
+      "title": "Question"
+     },
+     "action": {
+      "type": "string",
+      "enum": [
+       "emergency",
+       "cmo"
+      ],
+      "title": "Action"
+     },
+     "protocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocol"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "question",
+     "action",
+     "protocol"
+    ],
+    "title": "RedFlagOut"
+   },
    "Reference": {
     "properties": {
      "median": {
@@ -6494,6 +8092,18 @@
      "summary"
     ],
     "title": "ReportOut"
+   },
+   "ReviewIn": {
+    "properties": {
+     "note": {
+      "type": "string",
+      "maxLength": 500,
+      "title": "Note",
+      "default": ""
+     }
+    },
+    "type": "object",
+    "title": "ReviewIn"
    },
    "Role": {
     "type": "string",
@@ -6897,6 +8507,40 @@
      "lightTimeMinutes"
     ],
     "title": "SpaceWeatherNow"
+   },
+   "StopOut": {
+    "properties": {
+     "action": {
+      "type": "string",
+      "enum": [
+       "emergency",
+       "cmo"
+      ],
+      "title": "Action"
+     },
+     "protocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocol"
+     },
+     "question": {
+      "type": "string",
+      "title": "Question"
+     }
+    },
+    "type": "object",
+    "required": [
+     "action",
+     "protocol",
+     "question"
+    ],
+    "title": "StopOut"
    },
    "Streak": {
     "properties": {
@@ -7560,6 +9204,38 @@
      "unit"
     ],
     "title": "VitalIn"
+   },
+   "VocabularyOut": {
+    "properties": {
+     "allergies": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Allergies"
+     },
+     "conditions": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Conditions"
+     },
+     "regularMedicines": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Regularmedicines"
+     }
+    },
+    "type": "object",
+    "required": [
+     "allergies",
+     "conditions",
+     "regularMedicines"
+    ],
+    "title": "VocabularyOut"
    },
    "WeeklyGoal": {
     "properties": {

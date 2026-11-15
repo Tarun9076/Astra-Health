@@ -12,6 +12,7 @@ import { useNow } from '../../lib/useNow'
 import { AlertsPage } from '../alerts/AlertsPage'
 import { OverviewPage } from '../overview/OverviewPage'
 import { ExerciseSessionsPanel } from '../exercise/SessionList'
+import { MedicinesToReview, StaffMedicinePanel } from '../medication/StaffMedication'
 import { ReportsPage } from '../reports/ReportsPage'
 import { SpaceWeatherCard } from '../../components/ui/SpaceWeatherCard'
 
@@ -40,6 +41,7 @@ export function CrewPage() {
       {isPending && <Loading />}
       {error && <ErrorNote error={error} />}
       {medical && data && <FollowUps crew={data} now={now} />}
+      {medical && <MedicinesToReview />}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">Astronauts</h2>
         <div className="flex rounded-lg border border-line-strong p-0.5" role="group" aria-label="Layout">
@@ -218,6 +220,7 @@ const VIEWS = [
   { id: 'history', label: 'Health history' },
   { id: 'reports', label: 'Reports' },
   { id: 'exercise', label: 'Exercise' },
+  { id: 'medicines', label: 'Medicines' },
   { id: 'instructions', label: 'Instructions' },
 ] as const
 type View = (typeof VIEWS)[number]['id']
@@ -256,6 +259,7 @@ export function StaffAstronautPage() {
       {view === 'history' && <Suspense fallback={<Loading />}><HistoryPage code={code} staff /></Suspense>}
       {view === 'reports' && <ReportsPage code={code} embedded />}
       {view === 'exercise' && <ExerciseSessionsPanel code={code} />}
+      {view === 'medicines' && <StaffMedicinePanel code={code} />}
       {view === 'instructions' && <InstructionsPanel code={code} />}
     </div>
   )

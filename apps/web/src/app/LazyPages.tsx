@@ -56,3 +56,7 @@ export const HistoryRoute = () => <Page><HistoryPage /></Page>
 const ExerciseCoachPage = lazy(() => import('../features/exercise/ExerciseCoachPage').then((m) => ({ default: m.ExerciseCoachPage })))
 
 export const ExerciseRoute = () => <Page><ExerciseCoachPage /></Page>
+
+const MedicationGuidePage = lazy(() => import('../features/medication/MedicationGuidePage').then((m) => ({ default: m.MedicationGuidePage })))
+
+export const MedicationRoute = () => <Page><MedicationGuidePage /></Page>

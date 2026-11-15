@@ -51,6 +51,18 @@ function useLiveUpdates() {
       if (event.type === 'ExerciseSessionRecorded') {
         for (const key of ['exercise-plan', 'exercise-sessions', ...LIVE_KEYS]) void queryClient.invalidateQueries({ queryKey: [key] })
       }
+      if (['MedicationUpdated', 'MedicationWorse', 'MedicalProfileUpdated'].includes(event.type)) {
+        for (const key of ['medication-doses', 'formulary', 'medical-profile']) void queryClient.invalidateQueries({ queryKey: [key] })
+        const p = event.payload as { astronautCode?: string; status?: string }
+        const me = useAuth.getState().user?.astronautCode
+        const cmo = (queryClient.getQueryData(['formulary']) as { viewerIsCmo?: boolean } | undefined)?.viewerIsCmo
+        if (event.type === 'MedicationUpdated' && p.status === 'Requested' && cmo && p.astronautCode !== me) {
+          push({ tone: 'attention', title: `${p.astronautCode} asks for a medicine`, body: 'Confirm or decline it in Medicines.', href: '/astronaut/medicine' })
+        }
+        if (event.type === 'MedicationWorse' && role === 'FlightSurgeon') {
+          push({ tone: 'urgent', title: `${p.astronautCode}: worse after a medicine`, href: `/staff/astronaut/${p.astronautCode}?view=medicines` })
+        }
+      }
       if (event.type === 'PhotoAdded') {
         void queryClient.invalidateQueries({ queryKey: ['photos'] })
         void queryClient.invalidateQueries({ queryKey: ['timeline'] })

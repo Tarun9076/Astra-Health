@@ -5,7 +5,7 @@ import { signIn } from './helpers'
 // Accessibility pass: no serious or critical WCAG 2.1 A/AA violations on every page.
 const ASTRONAUT_PAGES = [
   'home', 'checkin', 'health', 'health/trends', 'guidance', 'guidance/alerts', 'wellness', 'wellness/exercise', 'history', 'history/reports',
-  'assistant', 'emergency',
+  'assistant', 'emergency', 'medicine', 'medicine?condition=back-pain',
 ]
 
 async function expectNoSeriousViolations(page: Page): Promise<void> {
@@ -40,7 +40,7 @@ for (const path of ASTRONAUT_PAGES) {
   })
 }
 
-for (const path of ['', 'astronaut/AST-001', 'astronaut/AST-001?view=alerts', 'astronaut/AST-001?view=history']) {
+for (const path of ['', 'astronaut/AST-001', 'astronaut/AST-001?view=alerts', 'astronaut/AST-001?view=history', 'astronaut/AST-001?view=medicines']) {
   test(`flight surgeon /staff/${path}`, async ({ page }) => {
     await signIn(page, 'surgeon1')
     await page.goto(`/staff/${path}`)
@@ -51,7 +51,7 @@ for (const path of ['', 'astronaut/AST-001', 'astronaut/AST-001?view=alerts', 'a
 }
 
 // Step 14: the Mission dark theme must meet the same contrast rules
-for (const path of ['home', 'health', 'guidance', 'wellness', 'assistant', 'history']) {
+for (const path of ['home', 'health', 'guidance', 'wellness', 'assistant', 'history', 'medicine']) {
   test(`astronaut ${path} (dark theme)`, async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem('astra-theme', 'dark'))
     await signIn(page, 'ast1')

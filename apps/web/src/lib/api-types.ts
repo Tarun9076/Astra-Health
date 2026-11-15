@@ -873,6 +873,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/medication/formulary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Formulary */
+        get: operations["get_formulary_api_medication_formulary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/medical-profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Medical Profile */
+        get: operations["get_medical_profile_api_astronauts__astronaut__medical_profile_get"];
+        /** Put Medical Profile */
+        put: operations["put_medical_profile_api_astronauts__astronaut__medical_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/medication/advice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Advice */
+        post: operations["post_advice_api_astronauts__astronaut__medication_advice_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/medication/doses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Astronaut Doses */
+        get: operations["get_astronaut_doses_api_astronauts__astronaut__medication_doses_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medication/doses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Crew Doses */
+        get: operations["get_crew_doses_api_medication_doses_get"];
+        put?: never;
+        /** Post Dose */
+        post: operations["post_dose_api_medication_doses_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medication/doses/{dose_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Dose */
+        post: operations["confirm_dose_api_medication_doses__dose_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medication/doses/{dose_id}/taken": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dose Taken */
+        post: operations["dose_taken_api_medication_doses__dose_id__taken_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medication/doses/{dose_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dose Cancel */
+        post: operations["dose_cancel_api_medication_doses__dose_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medication/doses/{dose_id}/outcome": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dose Outcome */
+        post: operations["dose_outcome_api_medication_doses__dose_id__outcome_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/medication/doses/{dose_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dose Review */
+        post: operations["dose_review_api_medication_doses__dose_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/measurements/batch": {
         parameters: {
             query?: never;
@@ -957,6 +1129,43 @@ export interface components {
             reason: string;
             /** Because */
             because: string[];
+        };
+        /** AdviceIn */
+        AdviceIn: {
+            /** Conditionid */
+            conditionId: string;
+            /**
+             * Answers
+             * @description Every safety question of the condition: true = yes
+             */
+            answers: {
+                [key: string]: boolean;
+            };
+        };
+        /** AdviceOut */
+        AdviceOut: {
+            /** Conditionid */
+            conditionId: string;
+            /** Title */
+            title: string;
+            stop: components["schemas"]["StopOut"] | null;
+            /** Nondrug */
+            nonDrug: string[];
+            /** Options */
+            options: components["schemas"]["OptionOut"][];
+            /** Recommended */
+            recommended: string | null;
+            /** Followuphours */
+            followUpHours: number;
+            /** Formularyversion */
+            formularyVersion: string;
+            /**
+             * Formularystatus
+             * @enum {string}
+             */
+            formularyStatus: "demo" | "approved";
+            /** Disclaimer */
+            disclaimer: string;
         };
         /** AlertDetail */
         AlertDetail: {
@@ -1278,6 +1487,7 @@ export interface components {
             emergencyProtocolId: string | null;
             /** Alertid */
             alertId?: string | null;
+            medicationGuide?: components["schemas"]["MedicationLinkOut"] | null;
             /**
              * Createdat
              * Format: date-time
@@ -1288,6 +1498,18 @@ export interface components {
              * @default Health information, not a diagnosis. All data is simulated. In an emergency, follow the protocol.
              */
             disclaimer: string;
+        };
+        /** CheckOut */
+        CheckOut: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "block" | "caution";
+            /** Code */
+            code: string;
+            /** Text */
+            text: string;
         };
         /** CheckinIn */
         CheckinIn: {
@@ -1344,6 +1566,30 @@ export interface components {
             title: string;
             /** Source */
             source: string;
+        };
+        /** ConditionOut */
+        ConditionOut: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Plain */
+            plain: string;
+            /** Redflags */
+            redFlags: components["schemas"]["RedFlagOut"][];
+            /** Nondrug */
+            nonDrug: string[];
+            /** Options */
+            options: components["schemas"]["OptionRefOut"][];
+            /** Followuphours */
+            followUpHours: number;
+        };
+        /** ConfirmIn */
+        ConfirmIn: {
+            /** Approve */
+            approve: boolean;
+            /** Reason */
+            reason?: string | null;
         };
         /** Contributor */
         Contributor: {
@@ -1466,6 +1712,101 @@ export interface components {
             neutron: number;
             /** Charged */
             charged: number;
+        };
+        /** DoseIn */
+        DoseIn: {
+            /**
+             * Id
+             * @description Client id (idempotent)
+             */
+            id: string;
+            /** Conditionid */
+            conditionId: string;
+            /** Medicineid */
+            medicineId: string;
+            /**
+             * Units
+             * @description Default: the guide's dose
+             */
+            units?: number | null;
+            /** Answers */
+            answers: {
+                [key: string]: boolean;
+            };
+            /**
+             * Selfconfirmreason
+             * @description Confirm alone (no CMO available, or you are the CMO); flagged for the flight surgeon
+             */
+            selfConfirmReason?: string | null;
+            /** Requestedat */
+            requestedAt?: string | null;
+        };
+        /** DoseOut */
+        DoseOut: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /** Astronautname */
+            astronautName: string;
+            /** Conditionid */
+            conditionId: string;
+            /** Conditiontitle */
+            conditionTitle: string;
+            /** Medicineid */
+            medicineId: string;
+            /** Medicinename */
+            medicineName: string;
+            /** Units */
+            units: number;
+            /** Dosetext */
+            doseText: string;
+            /** Whentext */
+            whenText: string;
+            /** How */
+            how: string;
+            /** Kitlocation */
+            kitLocation: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "Requested" | "Confirmed" | "Declined" | "Cancelled" | "Taken";
+            /** Selfconfirmed */
+            selfConfirmed: boolean;
+            /** Selfconfirmreason */
+            selfConfirmReason: string | null;
+            /** Checks */
+            checks: components["schemas"]["CheckOut"][];
+            /**
+             * Requestedat
+             * Format: date-time
+             */
+            requestedAt: string;
+            /** Confirmedat */
+            confirmedAt: string | null;
+            /** Confirmedby */
+            confirmedBy: string | null;
+            /** Declinereason */
+            declineReason: string | null;
+            /** Takenat */
+            takenAt: string | null;
+            /** Followupat */
+            followUpAt: string | null;
+            /** Followupdue */
+            followUpDue: boolean;
+            /** Outcome */
+            outcome: ("better" | "same" | "worse") | null;
+            /** Outcomeat */
+            outcomeAt: string | null;
+            /** Reviewedat */
+            reviewedAt: string | null;
+            /** Reviewedby */
+            reviewedBy: string | null;
+            /** Reviewnote */
+            reviewNote: string | null;
+            /** Formularyversion */
+            formularyVersion: string;
         };
         /** EnvBatchIn */
         EnvBatchIn: {
@@ -1598,6 +1939,27 @@ export interface components {
             value: number | null;
             /** Reason */
             reason: string | null;
+        };
+        /** FormularyOut */
+        FormularyOut: {
+            /** Version */
+            version: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "demo" | "approved";
+            /** Approvedby */
+            approvedBy: string | null;
+            /** Disclaimer */
+            disclaimer: string;
+            vocabulary: components["schemas"]["VocabularyOut"];
+            /** Medicines */
+            medicines: components["schemas"]["MedicineOut"][];
+            /** Conditions */
+            conditions: components["schemas"]["ConditionOut"][];
+            /** Vieweriscmo */
+            viewerIsCmo: boolean;
         };
         /** GuidanceAlert */
         GuidanceAlert: {
@@ -1982,6 +2344,86 @@ export interface components {
          * @enum {string}
          */
         MeasurementSource: "Manual" | "Wearable" | "Device" | "Derived" | "Simulated";
+        /** MedicalProfileIn */
+        MedicalProfileIn: {
+            /** Allergies */
+            allergies?: string[];
+            /** Conditions */
+            conditions?: string[];
+            /** Regularmedicines */
+            regularMedicines?: string[];
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** MedicalProfileOut */
+        MedicalProfileOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Allergies */
+            allergies: string[];
+            /** Conditions */
+            conditions: string[];
+            /** Regularmedicines */
+            regularMedicines: string[];
+            /** Note */
+            note: string;
+            /** Updatedat */
+            updatedAt: string | null;
+            /** Updatedby */
+            updatedBy: string | null;
+            /** Canedit */
+            canEdit: boolean;
+        };
+        /**
+         * MedicationLinkOut
+         * @description The question is about medicines: open the Medication Guide (at this condition, if one matched).
+         */
+        MedicationLinkOut: {
+            /** Conditionid */
+            conditionId: string | null;
+            /** Title */
+            title: string | null;
+        };
+        /** MedicineOut */
+        MedicineOut: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Form */
+            form: string;
+            /** Strength */
+            strength: string;
+            /** How */
+            how: string;
+            /** Kitlocation */
+            kitLocation: string;
+            /** Stockunits */
+            stockUnits: number;
+            /** Stockleft */
+            stockLeft: number;
+            /** Expires */
+            expires: string;
+            /** Expired */
+            expired: boolean;
+            /** Drowsy */
+            drowsy: boolean;
+            /** Maxunitsperday */
+            maxUnitsPerDay: number;
+            /** Minintervalhours */
+            minIntervalHours: number;
+            /** Maxdays */
+            maxDays: number | null;
+            /** Cautions */
+            cautions: string[];
+            /** Source */
+            source: string;
+            /** Sourceurl */
+            sourceUrl: string;
+        };
         /** MissionOut */
         MissionOut: {
             /** Code */
@@ -2020,6 +2462,55 @@ export interface components {
         NoteIn: {
             /** Note */
             note?: string | null;
+        };
+        /** OptionOut */
+        OptionOut: {
+            /** Medicineid */
+            medicineId: string;
+            /** Name */
+            name: string;
+            /** Strength */
+            strength: string;
+            /** Units */
+            units: number;
+            /** Dosetext */
+            doseText: string;
+            /** When */
+            when: string;
+            /** How */
+            how: string;
+            /** Kitlocation */
+            kitLocation: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "caution" | "blocked";
+            /** Checks */
+            checks: components["schemas"]["CheckOut"][];
+            /** Nextallowedat */
+            nextAllowedAt: string | null;
+            /** Cautions */
+            cautions: string[];
+            /** Source */
+            source: string;
+            /** Sourceurl */
+            sourceUrl: string;
+        };
+        /** OptionRefOut */
+        OptionRefOut: {
+            /** Medicine */
+            medicine: string;
+            /** When */
+            when: string;
+        };
+        /** OutcomeIn */
+        OutcomeIn: {
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "better" | "same" | "worse";
         };
         /** PhotoIn */
         PhotoIn: {
@@ -2264,6 +2755,20 @@ export interface components {
              */
             motionArtifact: boolean;
         };
+        /** RedFlagOut */
+        RedFlagOut: {
+            /** Id */
+            id: string;
+            /** Question */
+            question: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "emergency" | "cmo";
+            /** Protocol */
+            protocol: string | null;
+        };
         /** Reference */
         Reference: {
             /** Median */
@@ -2370,6 +2875,14 @@ export interface components {
              * @default Decision support only — not a diagnosis. All data is simulated.
              */
             disclaimer: string;
+        };
+        /** ReviewIn */
+        ReviewIn: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
         };
         /**
          * Role
@@ -2518,6 +3031,18 @@ export interface components {
             recentSepEvents: components["schemas"]["SepEventOut"][];
             /** Lighttimeminutes */
             lightTimeMinutes: number | null;
+        };
+        /** StopOut */
+        StopOut: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "emergency" | "cmo";
+            /** Protocol */
+            protocol: string | null;
+            /** Question */
+            question: string;
         };
         /** Streak */
         Streak: {
@@ -2736,6 +3261,21 @@ export interface components {
              * @example bpm
              */
             unit: string;
+        };
+        /** VocabularyOut */
+        VocabularyOut: {
+            /** Allergies */
+            allergies: {
+                [key: string]: string;
+            };
+            /** Conditions */
+            conditions: {
+                [key: string]: string;
+            };
+            /** Regularmedicines */
+            regularMedicines: {
+                [key: string]: string;
+            };
         };
         /** WeeklyGoal */
         WeeklyGoal: {
@@ -4303,6 +4843,378 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ExerciseSessionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_formulary_api_medication_formulary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FormularyOut"];
+                };
+            };
+        };
+    };
+    get_medical_profile_api_astronauts__astronaut__medical_profile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_medical_profile_api_astronauts__astronaut__medical_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MedicalProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MedicalProfileOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_advice_api_astronauts__astronaut__medication_advice_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdviceIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdviceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_astronaut_doses_api_astronauts__astronaut__medication_doses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_crew_doses_api_medication_doses_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"][];
+                };
+            };
+        };
+    };
+    post_dose_api_medication_doses_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DoseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_dose_api_medication_doses__dose_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dose_taken_api_medication_doses__dose_id__taken_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dose_cancel_api_medication_doses__dose_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dose_outcome_api_medication_doses__dose_id__outcome_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OutcomeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dose_review_api_medication_doses__dose_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                dose_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoseOut"];
                 };
             };
             /** @description Validation Error */
