@@ -265,7 +265,7 @@ export function AppLayout() {
       <OfflineBanner />
       {!isAstronaut && <EarthCopyBanner />}
       <div className="relative flex min-h-0 flex-1">
-        <aside className="no-print hidden w-64 shrink-0 overflow-y-auto border-r border-line bg-surface md:block">{nav}</aside>
+        <aside className="no-print relative hidden w-64 shrink-0 overflow-y-auto border-r border-line bg-surface md:block">{nav}</aside>
         {menuOpen && (
           <>
             <div className="fixed inset-0 z-30 bg-ink/30 md:hidden" onClick={close} aria-hidden />
@@ -282,7 +282,9 @@ export function AppLayout() {
             </aside>
           </>
         )}
-        <main id="main" tabIndex={-1} className="print-area min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7">
+        {/* `relative`: screen-reader-only text (absolutely positioned) stays inside this scroll area; without it,
+            it is placed against the page and stretches the page below the window */}
+        <main id="main" tabIndex={-1} className="print-area relative min-h-0 flex-1 overflow-y-auto px-4 py-5 md:px-8 md:py-7">
           <Outlet />
         </main>
       </div>

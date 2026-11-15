@@ -18,6 +18,9 @@ test('every item in the side navigation opens its page', async ({ page }) => {
     await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: new RegExp(`^${n.label}`) }).click()
     await expect(page).toHaveURL(n.url)
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(n.heading)
+    // only the content area scrolls: the page itself is never taller than the window (hidden
+    // screen-reader text once stretched it, leaving a blank band below the app when scrolled)
+    await expect.poll(() => page.evaluate(() => document.scrollingElement!.scrollHeight - window.innerHeight)).toBeLessThanOrEqual(0)
   }
 })
 
