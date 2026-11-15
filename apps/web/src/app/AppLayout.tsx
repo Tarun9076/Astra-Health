@@ -5,6 +5,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { EarthCopyBanner } from '../components/ui/EarthCopyBanner'
 import { NodeStatusPill } from '../components/ui/NodeStatusPill'
 import { OfflineBanner } from '../components/ui/OfflineBanner'
+import { InstallButton } from '../components/ui/InstallButton'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { WatchButton } from '../components/ui/WatchButton'
 import { Toaster } from '../components/ui/Toaster'
@@ -260,6 +261,7 @@ export function AppLayout() {
           </span>
           <NodeStatusPill />
           {isAstronaut && <WatchButton />}
+          <InstallButton compact />
           <ThemeToggle />
           {user && (
             <span className="hidden text-right text-xs leading-tight lg:block">

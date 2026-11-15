@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query'
 import { LogIn } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { InstallButton } from '../../components/ui/InstallButton'
 import { Button, ErrorNote } from '../../components/ui/Panel'
 import { api, unwrap } from '../../lib/api'
 import { homeFor, useAuth } from '../../lib/auth'
@@ -70,6 +71,8 @@ export function LoginPage() {
             <LogIn className="h-4 w-4" aria-hidden /> {login.isPending ? 'Signing in…' : 'Sign in'}
           </Button>
         </form>
+
+        <InstallButton />
 
         <div className="rounded-xl border border-dashed border-line-strong p-4 text-sm">
           <p className="mb-2 text-xs tracking-wider text-ink-muted uppercase">Demo accounts (simulated data)</p>

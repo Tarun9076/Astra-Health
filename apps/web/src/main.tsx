@@ -8,9 +8,11 @@ import { registerSW } from 'virtual:pwa-register'
 import { router } from './app/router'
 import { useAuth } from './lib/auth'
 import './index.css'
+import { initInstall } from './lib/install'
 import { initTheme } from './lib/theme'
 
 initTheme()
+initInstall() // before rendering: the browser's install offer can arrive early
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const CACHE_KEY = 'astra-cache'
