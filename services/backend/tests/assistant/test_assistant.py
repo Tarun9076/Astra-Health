@@ -300,16 +300,53 @@ def test_red_flag_never_reaches_the_ai(assistant: Assistant) -> None:
 
 
 def test_dose_question_gets_no_dose_and_is_sent_to_the_cmo(assistant: Assistant) -> None:
-    # T-AI-02
-    from astra.assistant.guard import MEDICATION_LINE
+    # T-AI-02: no dose from the AI; the answer starts with the way to the Medication Guide (Step 20)
+    from astra.assistant.guard import medication_line
 
     out = assistant.answer(
         AssistantRequest(question="What dose of ibuprofen should I take?", findings=FINDINGS)
     )
-    assert out.answer.startswith(MEDICATION_LINE) and check_answer(out.answer).ok
+    assert out.answer.startswith(medication_line(None, None)) and check_answer(out.answer).ok
+    assert "Medication Guide" in out.answer and "crew medical officer confirms" in out.answer
     assistant.claude = fake_claude(reply("Rest and drink water.", []))
-    llm = assistant.answer(AssistantRequest(question="Can I take a sleeping pill?", findings=FINDINGS))
-    assert llm.provider == "claude" and llm.answer.startswith(MEDICATION_LINE)
+    llm = assistant.answer(
+        AssistantRequest(question="Can I take a sleeping pill?", findings=FINDINGS,
+                         medication_condition="Trouble sleeping (now and then)")
+    )  # fmt: skip
+    assert llm.provider == "claude"
+    assert llm.answer.startswith(
+        "I don't choose medicines myself. Open the Medication Guide (Trouble sleeping"
+    )
+
+
+def test_only_the_confirmed_dose_passes_the_guard(assistant: Assistant) -> None:
+    # T-AI-08 (Step 20): with a CMO-confirmed dose the assistant may repeat exactly it; nothing else
+    from astra.assistant.models import ApprovedMedication
+
+    approved = ApprovedMedication(
+        condition="Headache", medicine="Acetaminophen (paracetamol)", dose="2 tablets (1000 mg)",
+        when="Now. If still needed, every 6 hours.", status="Confirmed",
+    )  # fmt: skip
+    assert check_answer("Take 2 tablets (1000 mg) of acetaminophen with water.", approved).ok
+    assert check_answer("Take your medicine with water.", approved).ok
+    assert check_answer("Take 3 tablets now.", approved).flags == ["dosage"]
+    assert check_answer("Take ibuprofen instead.", approved).flags == ["medication_instruction"]
+    assert not check_answer("Take 2 tablets (1000 mg).").ok  # without approval: still rejected
+
+    findings = FINDINGS.model_copy(update={"approved_medication": approved})
+    assistant.claude = fake_claude(
+        reply("Take 2 tablets (1000 mg) of acetaminophen with a glass of water.", [])
+    )
+    out = assistant.answer(
+        AssistantRequest(question="How much acetaminophen should I take for my headache?", findings=findings)
+    )
+    assert out.provider == "claude" and "guard: dosage" not in out.safety_flags
+    assert out.answer.startswith(
+        "Your confirmed medicine for headache (Medication Guide, checked by the CMO)"
+    )
+    assistant.claude = fake_claude(reply("Take 4 tablets.", []), reply("Take 4 tablets.", []))
+    out = assistant.answer(AssistantRequest(question="Can I take more medicine?", findings=findings))
+    assert out.provider == "template" and "guard: dosage" in out.safety_flags
 
 
 # --- Gemini (Step 17): the same contract, through google-genai ------------------------------------

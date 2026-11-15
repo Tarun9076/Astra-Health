@@ -16,8 +16,9 @@ from sqlmodel import Session, col, select
 from astra.api.alerts import publish_alert_changes
 from astra.api.base import ApiModel
 from astra.api.dashboard import get_dashboard
-from astra.assistant.guard import ESCALATION_LINE
+from astra.assistant.guard import ESCALATION_LINE, MEDICATION_QUESTION
 from astra.assistant.models import (
+    ApprovedMedication,
     AssistantRequest,
     AssistantResponse,
     FindingAlert,
@@ -29,8 +30,9 @@ from astra.assistant.models import (
 from astra.assistant.service import Assistant
 from astra.core.enums import Role
 from astra.core.ids import uuid7
+from astra.core.medication import Condition, match_condition
 from astra.core.protocols import ProtocolBundle
-from astra.db.models import Astronaut, AuditLog, ChatMessage, Insight, Mission, Symptom
+from astra.db.models import Astronaut, AuditLog, ChatMessage, Insight, MedicationDose, Mission, Symptom
 from astra.db.session import SessionDep
 from astra.security.deps import CurrentUser, can_view_astronaut
 from astra.security.jwt import TokenClaims
@@ -66,6 +68,13 @@ def split_answer(text: str) -> tuple[str, str, str | None]:
     return short.strip(), detail.strip(), help_line
 
 
+class MedicationLinkOut(ApiModel):
+    """The question is about medicines: open the Medication Guide (at this condition, if one matched)."""
+
+    condition_id: str | None
+    title: str | None
+
+
 class ChatOut(ApiModel):
     message_id: str
     question_id: str
@@ -80,6 +89,7 @@ class ChatOut(ApiModel):
     provider: Literal["claude", "gemini", "template", "redflag"]
     emergency_protocol_id: str | None
     alert_id: str | None = None  # Urgent alert raised from this message
+    medication_guide: MedicationLinkOut | None = None
     created_at: datetime
     disclaimer: str = DISCLAIMER
 
@@ -232,11 +242,17 @@ def chat(body: ChatIn, request: Request, session: SessionDep, user: CurrentUser)
     astronaut = _target(session, user, body.astronaut_id)
     now = datetime.now(UTC)
     findings = build_findings(session, request, astronaut)
+    condition, link = _medication_topic(request, body.question)
+    if link is not None:
+        findings = findings.model_copy(
+            update={"approved_medication": _approved_medication(request, session, astronaut, condition, now)}
+        )
     query = AssistantRequest(
         question=body.question,
         history=_history(session, astronaut),
         findings=findings,
         preferred_provider=body.provider,
+        medication_condition=condition.title if condition else None,
     )
     reply = _assistant(request).answer(query)
 
@@ -300,8 +316,44 @@ def chat(body: ChatIn, request: Request, session: SessionDep, user: CurrentUser)
         provider=reply.provider,
         emergency_protocol_id=reply.emergency_protocol_id,
         alert_id=alert_id,
+        medication_guide=link if reply.mode != "emergency" else None,
         created_at=answer.created_at,
     )
+
+
+def _medication_topic(request: Request, question: str) -> tuple[Condition | None, MedicationLinkOut | None]:
+    """A question about medicines → the Medication Guide link (and its condition, when one matches)."""
+    formulary = request.app.state.protocols.formulary
+    if formulary is None or not MEDICATION_QUESTION.search(question):
+        return None, None
+    condition = match_condition(formulary, question)
+    return condition, MedicationLinkOut(
+        condition_id=condition.id if condition else None, title=condition.title if condition else None
+    )
+
+
+def _approved_medication(
+    request: Request, session: Session, astronaut: Astronaut, condition: Condition | None, now: datetime
+) -> ApprovedMedication | None:
+    """The newest dose confirmed (or taken) in the last 24 h, for this condition if one matched."""
+    formulary = request.app.state.protocols.formulary
+    query = select(MedicationDose).where(
+        MedicationDose.astronaut_id == astronaut.id,
+        col(MedicationDose.status).in_(["Confirmed", "Taken"]),
+        col(MedicationDose.requested_at) >= now - timedelta(hours=24),
+    )
+    if condition is not None:
+        query = query.where(MedicationDose.condition_id == condition.id)
+    dose = session.exec(query.order_by(col(MedicationDose.requested_at).desc())).first()
+    if dose is None or formulary is None:
+        return None
+    medicine, cond = formulary.medicine(dose.medicine_id), formulary.condition(dose.condition_id)
+    if medicine is None or cond is None:
+        return None
+    return ApprovedMedication(
+        condition=cond.title, medicine=medicine.name, dose=dose.dose_text, when=dose.when_text,
+        status="Taken" if dose.status == "Taken" else "Confirmed",
+    )  # fmt: skip
 
 
 @router.get("/history", response_model=list[HistoryItem])

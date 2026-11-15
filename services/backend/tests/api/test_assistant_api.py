@@ -60,7 +60,7 @@ def test_same_question_answers_via_template_then_claude(seeded_client: TestClien
     ast1 = auth(seeded_client, "ast1")
     status = seeded_client.get("/api/assistant/status", headers=ast1).json()
     assert status["defaultProvider"] == "template" and not status["claudeConfigured"]
-    assert status["knowledgeNotes"] >= 25 and status["redFlags"] == 6
+    assert status["knowledgeNotes"] >= 25 and status["redFlags"] == 7
 
     offline = seeded_client.post("/api/assistant/chat", json={"question": QUESTION}, headers=ast1).json()
     assert (offline["mode"], offline["provider"]) == ("template", "template")

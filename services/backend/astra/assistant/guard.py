@@ -1,6 +1,8 @@
 """Post-filter for AI answers (LLD §11.2 step 6).
 
-- Rejects answers with doses, medication instructions or diagnoses ("you have …syndrome").
+- Rejects answers with doses, medication instructions or diagnoses ("you have …syndrome"). The one
+  exception (Step 20): the medicine and dose the Medication Guide worked out and the CMO confirmed
+  (`ApprovedMedication`); any other dose or medicine is still rejected.
 - Drops citations that don't point at a retrieved knowledge chunk.
 - Adds the escalation line when an alert needs the flight surgeon or the person says things are worse.
 """
@@ -8,7 +10,7 @@
 import re
 from dataclasses import dataclass
 
-from astra.assistant.models import Findings
+from astra.assistant.models import ApprovedMedication, Findings
 
 DOSAGE = re.compile(
     r"\b\d+(\.\d+)?\s?(mg|mcg|µg|ug|units?|iu|tablets?|pills?|capsules?|puffs?|drops)\b", re.I
@@ -32,13 +34,16 @@ WORSENING = re.compile(
 
 MEDICATION_QUESTION = re.compile(
     r"\b(dose|dosage|medication|medicine|meds|pills?|tablets?|ibuprofen|paracetamol|acetaminophen|aspirin|"
-    r"antibiotics?|painkillers?|melatonin|sleeping pills?|drug)\b|how much .{0,30}\btake\b",
+    r"antibiotics?|painkillers?|melatonin|sleeping pills?|drug)\b|how much .{0,30}\btake\b"
+    r"|\bwhat (can|could|should) i (take|use)\b|\b(something|anything) (to take )?for (my|the|a|this)\b",
     re.I,
 )
 MEDICATION_LINE = (
-    "I can't advise on medication or doses. The crew medical officer decides on any medication using the "
-    "onboard checklists, in contact with the flight surgeon; please ask them."
+    "I don't choose medicines myself. Open the Medication Guide{topic}: it asks a few safety questions, "
+    "checks your allergies, other medicines and the medical kit, and gives the dose from the flight "
+    "surgeons' approved list. The crew medical officer confirms it before you take it."
 )
+GENERIC_MEDICINE = {"medication", "medicine", "meds", "dose", "pill", "pills", "tablet", "tablets"}
 
 ESCALATION_LINE = (
     "Please contact the crew medical officer or the flight surgeon about this; the app has flagged it "
@@ -58,11 +63,21 @@ def _negated(text: str, start: int) -> bool:
     return bool(re.search(r"(\bnot|n't|\bnever|\bno|\bwithout)\b", before))
 
 
-def check_answer(text: str) -> GuardResult:
+def _approved_word(word: str, approved: ApprovedMedication | None) -> bool:
+    word = word.lower()
+    return approved is not None and (word in GENERIC_MEDICINE or word in approved.medicine.lower())
+
+
+def check_answer(text: str, approved: ApprovedMedication | None = None) -> GuardResult:
+    """`approved`: the confirmed Medication Guide dose; only its own dose text and medicine pass."""
     flags = []
-    if DOSAGE.search(text):
+    allowed_dose = approved.dose.lower() if approved else ""
+    if any(m.group(0).lower() not in allowed_dose for m in DOSAGE.finditer(text)):
         flags.append("dosage")
-    if any(not _negated(text, m.start()) for m in MEDICATION.finditer(text)):
+    if any(
+        not _negated(text, m.start()) and not _approved_word(m.group(3), approved)
+        for m in MEDICATION.finditer(text)
+    ):
         flags.append("medication_instruction")
     if DIAGNOSIS.search(text):
         flags.append("diagnosis")
@@ -81,8 +96,21 @@ def with_escalation(answer: str, escalate: bool) -> str:
     return f"{answer.rstrip()}\n\n{ESCALATION_LINE}"
 
 
-def with_medication_note(answer: str, question: str) -> str:
-    """Questions about medicines always get the same deterministic line, whatever the provider said."""
-    if not MEDICATION_QUESTION.search(question) or MEDICATION_LINE in answer:
+def medication_line(approved: ApprovedMedication | None, topic: str | None) -> str:
+    if approved is not None:
+        return (
+            f"Your confirmed medicine for {approved.condition.lower()} (Medication Guide, checked by the "
+            f"CMO): {approved.medicine}, {approved.dose}. {approved.when}"
+        )
+    return MEDICATION_LINE.format(topic=f" ({topic})" if topic else "")
+
+
+def with_medication_note(
+    answer: str, question: str, approved: ApprovedMedication | None = None, topic: str | None = None
+) -> str:
+    """Questions about medicines always start with the same deterministic line, whatever the provider
+    said: the confirmed dose, or where to get one (the Medication Guide)."""
+    line = medication_line(approved, topic)
+    if not MEDICATION_QUESTION.search(question) or line in answer:
         return answer
-    return f"{MEDICATION_LINE}\n\n{answer}"
+    return f"{line}\n\n{answer}"

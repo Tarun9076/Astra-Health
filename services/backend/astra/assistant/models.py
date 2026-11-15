@@ -28,6 +28,17 @@ class FindingInsight(CoreModel):
     explanation: str
 
 
+class ApprovedMedication(CoreModel):
+    """A dose the Medication Guide worked out (flight-surgeon list + safety checks) and the CMO (or the
+    astronaut alone) confirmed. The only medicine and dose the assistant may mention (Step 20)."""
+
+    condition: str
+    medicine: str
+    dose: str  # "2 tablets (1000 mg)"
+    when: str
+    status: Literal["Confirmed", "Taken"]
+
+
 class Findings(CoreModel):
     """What the assistant may say about *this* astronaut. Personal statements come only from here."""
 
@@ -39,6 +50,7 @@ class Findings(CoreModel):
     insights: list[FindingInsight] = []
     tasks: list[str] = []  # titles of pending recommendation tasks
     wellness_index: int | None = None
+    approved_medication: ApprovedMedication | None = None
 
 
 class Turn(CoreModel):
@@ -54,6 +66,7 @@ class AssistantRequest(CoreModel):
     history: list[Turn] = []
     findings: Findings
     preferred_provider: Provider = "auto"
+    medication_condition: str | None = None  # Medication Guide condition the question is about (title)
 
 
 class Citation(CoreModel):

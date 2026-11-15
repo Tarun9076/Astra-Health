@@ -180,14 +180,18 @@ class Assistant:
                         self.offline_until = time.monotonic() + OFFLINE_PAUSE_S
                     flags.append(f"fallback: {e}")
                     break
-                verdict = check_answer(" ".join([reply.answer, *reply.suggested_actions]))
+                approved = request.findings.approved_medication
+                verdict = check_answer(" ".join([reply.answer, *reply.suggested_actions]), approved)
                 if verdict.ok:
                     cited = [known[i] for i in dict.fromkeys(reply.citation_ids) if i in known]
                     dropped = len(set(reply.citation_ids) - set(known))
                     return AssistantResponse(
                         answer=with_medication_note(
-                            with_escalation(reply.answer, escalate), request.question
-                        ),
+                            with_escalation(reply.answer, escalate),
+                            request.question,
+                            approved,
+                            request.medication_condition,
+                        ),  # fmt: skip
                         citations=[Citation(chunk_id=c.id, title=c.title, source=c.source) for c in cited],
                         suggested_actions=reply.suggested_actions[:3],
                         safety_flags=flags + ([f"dropped {dropped} unknown citation(s)"] if dropped else []),
@@ -200,7 +204,12 @@ class Assistant:
         response = template_answer(request, chunks)
         return response.model_copy(
             update={
-                "answer": with_medication_note(with_escalation(response.answer, escalate), request.question),
+                "answer": with_medication_note(
+                    with_escalation(response.answer, escalate),
+                    request.question,
+                    request.findings.approved_medication,
+                    request.medication_condition,
+                ),  # fmt: skip
                 "safety_flags": flags,
             }
         )
