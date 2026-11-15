@@ -5,6 +5,7 @@ export const PASSWORDS: Record<string, string> = {
   ast2: 'astra-demo-ast2',
   ast3: 'astra-demo-ast3',
   surgeon1: 'astra-demo-surgeon',
+  admin: 'astra-demo-admin',
 }
 
 /** Sign in through the real login form. */

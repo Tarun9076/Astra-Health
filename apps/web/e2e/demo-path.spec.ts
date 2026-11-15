@@ -24,7 +24,11 @@ test('astronaut completes the guided check-in and sees the result', async ({ pag
   await page.getByRole('spinbutton', { name: 'Temperature' }).fill('36.9')
   await notMeasured(page, 'Oxygen saturation')
   await next(page)
-  // 4–6 sleep, mood and energy, stress
+  // blood sugar measured, body mass (weekly) skipped
+  await page.getByRole('spinbutton', { name: 'Blood sugar' }).fill('94')
+  await notMeasured(page, 'Body mass')
+  await next(page)
+  // 5–7 sleep, mood and energy, stress
   await setSlider(page, 'Hours slept last night', 4)
   await setSlider(page, 'Sleep quality', 3)
   await next(page)
@@ -33,12 +37,13 @@ test('astronaut completes the guided check-in and sees the result', async ({ pag
   await next(page)
   await setSlider(page, 'Stress', 8)
   await next(page)
-  // 7 symptoms
+  // 8 symptoms
   await page.getByRole('button', { name: 'No symptoms today' }).click()
   await next(page)
-  // 8 review: skipped items are shown as missing, not normal
+  // 9 review: skipped items are shown as missing, not normal
   await expect(page.getByRole('row', { name: /Blood pressure/ })).toContainText('Not measured today')
   await expect(page.getByRole('row', { name: /Resting heart rate/ })).toContainText('96 bpm')
+  await expect(page.getByRole('row', { name: /Blood sugar/ })).toContainText('94 mg/dL')
   await page.getByRole('button', { name: 'Submit check-in' }).click()
 
   const saved = page.getByText(/Check-in saved in \d+ s/)
@@ -46,7 +51,7 @@ test('astronaut completes the guided check-in and sees the result', async ({ pag
   const seconds = Number((await saved.textContent())?.match(/(\d+) s/)?.[1])
   expect(seconds).toBeLessThan(60)
   expect(Date.now() - started).toBeLessThan(60_000)
-  await expect(page.getByText(/Not measured today: Blood pressure, Oxygen saturation/)).toBeVisible()
+  await expect(page.getByText(/Not measured today: Blood pressure, Oxygen saturation, Body mass/)).toBeVisible()
 
   // the fatigue story raises findings (rules decide; the page only shows them)
   await expect(page.getByText(/New findings|Updated findings/)).toBeVisible()

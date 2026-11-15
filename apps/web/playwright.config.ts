@@ -6,6 +6,8 @@ import { defineConfig, devices } from '@playwright/test'
 // The backend's virtual environment (override with ASTRA_PYTHON, e.g. in CI).
 const PYTHON =
   process.env.ASTRA_PYTHON ?? (process.platform === 'win32' ? '.venv\\Scripts\\python.exe' : '.venv/bin/python')
+// The test web server's port (override with ASTRA_E2E_WEB_PORT if 5174 is taken, e.g. by a second `npm run dev`).
+const WEB_PORT = Number(process.env.ASTRA_E2E_WEB_PORT ?? 5174)
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,7 +17,7 @@ export default defineConfig({
   workers: 1, // one shared backend: tests run in order
   reporter: [['list']],
   use: {
-    baseURL: 'http://localhost:5174',
+    baseURL: `http://localhost:${WEB_PORT}`,
     trace: 'retain-on-failure',
     ...devices['Desktop Chrome'],
   },
@@ -29,8 +31,8 @@ export default defineConfig({
       stdout: 'pipe',
     },
     {
-      command: 'npx vite --port 5174 --strictPort',
-      url: 'http://localhost:5174',
+      command: `npx vite --port ${WEB_PORT} --strictPort`,
+      url: `http://localhost:${WEB_PORT}`,
       timeout: 60_000,
       reuseExistingServer: false,
       stderr: 'ignore', // proxy noise when live-update sockets close at the end of a test

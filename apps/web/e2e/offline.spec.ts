@@ -17,6 +17,9 @@ test('check-in made offline is sent later, exactly once', async ({ page }) => {
   await notMeasured(page, 'Body temperature')
   await notMeasured(page, 'Oxygen saturation')
   await next(page)
+  await notMeasured(page, 'Blood sugar')
+  await notMeasured(page, 'Body mass')
+  await next(page)
   await next(page) // sleep
   await setSlider(page, 'Mood', 6)
   await next(page)
