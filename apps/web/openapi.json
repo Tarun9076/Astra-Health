@@ -3066,13 +3066,22 @@
       "type": "string",
       "enum": [
        "claude",
+       "gemini",
        "template"
       ],
       "title": "Defaultprovider"
      },
+     "llmConfigured": {
+      "type": "boolean",
+      "title": "Llmconfigured"
+     },
      "claudeConfigured": {
       "type": "boolean",
       "title": "Claudeconfigured"
+     },
+     "geminiConfigured": {
+      "type": "boolean",
+      "title": "Geminiconfigured"
      },
      "model": {
       "anyOf": [
@@ -3101,7 +3110,9 @@
     "type": "object",
     "required": [
      "defaultProvider",
+     "llmConfigured",
      "claudeConfigured",
+     "geminiConfigured",
      "model",
      "knowledgeNotes",
      "knowledgeChunks",
@@ -3318,6 +3329,7 @@
       "enum": [
        "auto",
        "claude",
+       "gemini",
        "template"
       ],
       "title": "Provider",
@@ -3399,6 +3411,7 @@
       "type": "string",
       "enum": [
        "claude",
+       "gemini",
        "template",
        "redflag"
       ],

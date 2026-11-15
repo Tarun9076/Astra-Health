@@ -40,6 +40,7 @@ def _node(tmp: Path, role: NodeRole, node_id: str) -> tuple[TestClient, Settings
         space_weather_interval_minutes=0,
         models_path=tmp / f"models-{node_id}",
         anthropic_api_key=None,
+        gemini_api_key=None,
         sync_key="test-sync-key",
         peer_url=None,
     )

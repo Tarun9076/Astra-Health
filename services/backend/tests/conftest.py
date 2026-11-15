@@ -25,6 +25,7 @@ def test_settings(tmp_path: Path) -> Settings:
         space_weather_interval_minutes=0,
         models_path=tmp_path / "models",
         anthropic_api_key=None,  # tests never call the real Claude API
+        gemini_api_key=None,  # …or the real Gemini API
         llm_provider="auto",
     )
 

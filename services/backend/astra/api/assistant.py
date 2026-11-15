@@ -48,7 +48,7 @@ DISCLAIMER = (
 class ChatIn(ApiModel):
     question: str = Field(min_length=1, max_length=2000)
     astronaut_id: str | None = None  # flight surgeons choose whose data to discuss; astronauts get their own
-    provider: Literal["auto", "claude", "template"] = "auto"
+    provider: Literal["auto", "claude", "gemini", "template"] = "auto"
 
 
 class CitationOut(ApiModel):
@@ -77,7 +77,7 @@ class ChatOut(ApiModel):
     suggested_actions: list[str]
     safety_flags: list[str]
     mode: Literal["llm", "template", "emergency"]
-    provider: Literal["claude", "template", "redflag"]
+    provider: Literal["claude", "gemini", "template", "redflag"]
     emergency_protocol_id: str | None
     alert_id: str | None = None  # Urgent alert raised from this message
     created_at: datetime
@@ -101,8 +101,10 @@ class HistoryItem(ApiModel):
 
 
 class AssistantStatus(ApiModel):
-    default_provider: Literal["claude", "template"]
+    default_provider: Literal["claude", "gemini", "template"]
+    llm_configured: bool  # a language model (Claude or Gemini) answers when the link allows
     claude_configured: bool
+    gemini_configured: bool
     model: str | None
     knowledge_notes: int
     knowledge_chunks: int
@@ -346,11 +348,17 @@ def _history_item(r: ChatMessage, short: str, detail: str, get_help: str | None)
 @router.get("/status", response_model=AssistantStatus)
 def assistant_status(request: Request, user: CurrentUser) -> AssistantStatus:
     assistant = _assistant(request)
-    claude = assistant.provider_for("auto") == "claude"
+    provider = assistant.provider_for("auto")
     return AssistantStatus(
-        default_provider="claude" if claude else "template",
+        default_provider="claude"
+        if provider == "claude"
+        else "gemini"
+        if provider == "gemini"
+        else "template",
+        llm_configured=provider != "template",
         claude_configured=assistant.claude_configured,
-        model=assistant.model if assistant.claude_configured else None,
+        gemini_configured=assistant.gemini_configured,
+        model=assistant.model_for(provider),
         knowledge_notes=assistant.retriever.note_count,
         knowledge_chunks=len(assistant.retriever.chunks),
         red_flags=len(assistant.redflags.flags),

@@ -82,6 +82,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.assistant = Assistant.load(
         cfg.kb_path, bundle, cfg.protocols_path,
         api_key=cfg.anthropic_api_key or None, model=cfg.llm_model, provider=cfg.llm_provider,
+        gemini_api_key=cfg.gemini_api_key or None, gemini_model=cfg.gemini_model,
     )  # fmt: skip
     routine = None
     if cfg.node_role == NodeRole.HABITAT and cfg.routine_interval_minutes > 0:
@@ -143,7 +144,7 @@ async def _routine_loop(
     engine: Engine, bundle: ProtocolBundle, assistant: Assistant, node_id: str, minutes: int
 ) -> None:
     """Keep daily routine tasks (LLD §8) and automatic medical reports (Step 8) up to date."""
-    narrator = assistant.narrate_report if assistant.claude_configured else None
+    narrator = assistant.narrate_report if assistant.llm_configured else None
 
     def run_once() -> tuple[int, int]:
         with Session(engine) as session:

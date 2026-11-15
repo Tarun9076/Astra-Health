@@ -2,9 +2,10 @@
 
 1. Red-flag router (deterministic, no AI) → emergency protocol at once.
 2. BM25 retrieval over the knowledge base.
-3. Provider: Claude if configured and allowed, else the template.
+3. Provider: Claude or Gemini (Step 17) if configured and allowed, else the offline template.
+   `ASTRA_LLM_PROVIDER` = auto (Claude if its key is set, else Gemini), claude, gemini or template.
 4. Guard: no doses / medication instructions / diagnoses; known citations only; escalation line.
-   A Claude answer that fails the guard is retried once with a reminder, then the template answers.
+   A model answer that fails the guard is retried once with a reminder, then the template answers.
 """
 
 import logging
@@ -13,11 +14,14 @@ from pathlib import Path
 from typing import Any
 
 import anthropic
+from google import genai
 
 from astra.assistant.guard import check_answer, needs_escalation, with_escalation, with_medication_note
 from astra.assistant.knowledge import Chunk, Retriever, load_knowledge, tokens
 from astra.assistant.models import AssistantRequest, AssistantResponse, Citation
-from astra.assistant.providers.claude import ProviderError, claude_answer, claude_report_narrative
+from astra.assistant.providers import gemini as gemini_provider
+from astra.assistant.providers.claude import claude_answer, claude_report_narrative
+from astra.assistant.providers.common import LlmAnswer, ProviderError
 from astra.assistant.providers.template import template_answer
 from astra.assistant.redflag import RedFlagHit, RedFlagRouter
 from astra.core.protocols import ProtocolBundle
@@ -25,7 +29,7 @@ from astra.core.protocols import ProtocolBundle
 logger = logging.getLogger(__name__)
 
 TOP_K = 5
-CLAUDE_ATTEMPTS = 2
+LLM_ATTEMPTS = 2
 ADVICE = "what astronauts can do"
 VAGUE_QUESTION_TERMS = 3  # fewer meaningful words than this → add the active alerts to the search
 
@@ -38,6 +42,8 @@ class Assistant:
     claude: anthropic.Anthropic | None = None
     model: str = "claude-opus-5-5"
     default_provider: str = "auto"
+    gemini: genai.Client | None = None
+    gemini_model: str = "gemini-3.8-flash"
 
     @classmethod
     def load(
@@ -49,20 +55,51 @@ class Assistant:
         api_key: str | None,
         model: str,
         provider: str,
+        gemini_api_key: str | None = None,
+        gemini_model: str = "gemini-3.8-flash",
     ) -> "Assistant":
         redflags = RedFlagRouter.from_file(protocols_path / "redflags.yaml", set(bundle.emergency_protocols))
         client = anthropic.Anthropic(api_key=api_key, max_retries=1, timeout=45.0) if api_key else None
-        return cls(Retriever(load_knowledge(kb_path)), redflags, bundle, client, model, provider)
+        gemini = gemini_provider.make_client(gemini_api_key) if gemini_api_key else None
+        return cls(
+            Retriever(load_knowledge(kb_path)), redflags, bundle, client, model, provider,
+            gemini=gemini, gemini_model=gemini_model,
+        )  # fmt: skip
 
     @property
     def claude_configured(self) -> bool:
         return self.claude is not None
 
+    @property
+    def gemini_configured(self) -> bool:
+        return self.gemini is not None
+
+    @property
+    def llm_configured(self) -> bool:
+        """A language model (Claude or Gemini) can be used."""
+        return self.provider_for("auto") != "template"
+
     def provider_for(self, preferred: str) -> str:
         choice = preferred if preferred != "auto" else self.default_provider
         if choice in ("auto", "claude") and self.claude_configured:
             return "claude"
+        if choice in ("auto", "gemini") and self.gemini_configured:
+            return "gemini"
         return "template"
+
+    def model_for(self, provider: str) -> str | None:
+        return {"claude": self.model, "gemini": self.gemini_model}.get(provider)
+
+    def _ask(
+        self, provider: str, request: AssistantRequest, chunks: list[Chunk], reminder: str | None
+    ) -> LlmAnswer:
+        if provider == "claude" and self.claude is not None:
+            return claude_answer(self.claude, self.model, request, chunks, reminder=reminder)
+        if provider == "gemini" and self.gemini is not None:
+            return gemini_provider.gemini_answer(
+                self.gemini, self.gemini_model, request, chunks, reminder=reminder
+            )
+        raise ProviderError(f"{provider} is not configured")
 
     def emergency(self, hit: RedFlagHit) -> AssistantResponse:
         protocol = self.bundle.emergency_protocols[hit.flag.protocol]
@@ -122,14 +159,15 @@ class Assistant:
         escalate = needs_escalation(request.findings, request.question)
         flags: list[str] = []
 
-        if self.provider_for(request.preferred_provider) == "claude" and self.claude is not None:
+        provider = self.provider_for(request.preferred_provider)
+        if provider != "template":
             known = {c.id: c for c in chunks}
             reminder: str | None = None
-            for _ in range(CLAUDE_ATTEMPTS):
+            for _ in range(LLM_ATTEMPTS):
                 try:
-                    reply = claude_answer(self.claude, self.model, request, chunks, reminder=reminder)
+                    reply = self._ask(provider, request, chunks, reminder)
                 except ProviderError as e:
-                    logger.warning("Claude unavailable, using the template: %s", e)
+                    logger.warning("%s unavailable, using the template: %s", provider, e)
                     flags.append(f"fallback: {e}")
                     break
                 verdict = check_answer(" ".join([reply.answer, *reply.suggested_actions]))
@@ -144,7 +182,7 @@ class Assistant:
                         suggested_actions=reply.suggested_actions[:3],
                         safety_flags=flags + ([f"dropped {dropped} unknown citation(s)"] if dropped else []),
                         mode="llm",
-                        provider="claude",
+                        provider="claude" if provider == "claude" else "gemini",
                     )
                 flags += [f"guard: {f}" for f in verdict.flags]
                 reminder = ", ".join(verdict.flags)
@@ -158,11 +196,16 @@ class Assistant:
         )
 
     def narrate_report(self, summary: dict[str, Any]) -> tuple[str, str]:
-        """Report narrative from Claude, guarded like chat answers. Raises so the caller uses the template."""
-        if self.claude is None:
-            raise ProviderError("Claude is not configured")
-        text = claude_report_narrative(self.claude, self.model, summary)
+        """Report narrative from the configured model, guarded like chat answers. Raises so the caller
+        uses the template."""
+        provider = self.provider_for("auto")
+        if provider == "claude" and self.claude is not None:
+            text = claude_report_narrative(self.claude, self.model, summary)
+        elif provider == "gemini" and self.gemini is not None:
+            text = gemini_provider.gemini_report_narrative(self.gemini, self.gemini_model, summary)
+        else:
+            raise ProviderError("No language model is configured")
         verdict = check_answer(text)
         if not verdict.ok:
             raise ProviderError(f"narrative failed the guard: {', '.join(verdict.flags)}")
-        return text, "claude"
+        return text, provider

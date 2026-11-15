@@ -113,3 +113,26 @@ def test_assistant_roles(seeded_client: TestClient) -> None:
         headers=auth(seeded_client, "ast1"),
     )
     assert other.status_code == 403
+
+
+def test_gemini_answers_when_its_key_is_set(seeded_client: TestClient) -> None:
+    """Step 17: with only a Gemini key, the assistant answers with Gemini and says so."""
+    from tests.assistant.test_assistant import fake_gemini, gemini_reply
+
+    _seed_readings(seeded_client)
+    ast1 = auth(seeded_client, "ast1")
+    assistant = seeded_client.app.state.assistant  # type: ignore[attr-defined]
+    assistant.gemini = fake_gemini(gemini_reply("Your resting heart rate is a bit higher than usual.", []))
+    try:
+        status = seeded_client.get("/api/assistant/status", headers=ast1).json()
+        assert (status["defaultProvider"], status["llmConfigured"], status["geminiConfigured"]) == (
+            "gemini",
+            True,
+            True,
+        )
+        assert status["model"] == "gemini-3.8-flash" and not status["claudeConfigured"]
+        out = seeded_client.post("/api/assistant/chat", json={"question": QUESTION}, headers=ast1).json()
+    finally:
+        assistant.gemini = None
+    assert (out["mode"], out["provider"]) == ("llm", "gemini")
+    assert out["shortAnswer"] == "Your resting heart rate is a bit higher than usual."

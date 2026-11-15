@@ -46,7 +46,7 @@ class Turn(CoreModel):
     text: str
 
 
-Provider = Literal["auto", "claude", "template"]
+Provider = Literal["auto", "claude", "gemini", "template"]
 
 
 class AssistantRequest(CoreModel):
@@ -68,7 +68,7 @@ class AssistantResponse(CoreModel):
     suggested_actions: list[str] = []
     safety_flags: list[str] = []
     mode: Literal["llm", "template", "emergency"]
-    provider: Literal["claude", "template", "redflag"]
+    provider: Literal["claude", "gemini", "template", "redflag"]
     emergency_protocol_id: str | None = None
     red_flag_id: str | None = None  # which red flag matched (emergency mode)
     report: bool = False  # emergency mode: True = the person is reporting it now → raise an alert

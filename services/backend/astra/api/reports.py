@@ -208,7 +208,7 @@ def create_report(
     report = generate_report(
         session, request.app.state.protocols, astronaut, "OnDemand", body.start, body.end,
         node_id=request.app.state.settings.node_id,
-        narrator=assistant.narrate_report if assistant.claude_configured else None,
+        narrator=assistant.narrate_report if assistant.llm_configured else None,
         generated_by=user.user_id,
     )  # fmt: skip
     _audit(

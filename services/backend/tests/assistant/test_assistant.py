@@ -293,3 +293,120 @@ def test_dose_question_gets_no_dose_and_is_sent_to_the_cmo(assistant: Assistant)
     assistant.claude = fake_claude(reply("Rest and drink water.", []))
     llm = assistant.answer(AssistantRequest(question="Can I take a sleeping pill?", findings=FINDINGS))
     assert llm.provider == "claude" and llm.answer.startswith(MEDICATION_LINE)
+
+
+# --- Gemini (Step 17): the same contract, through google-genai ------------------------------------
+
+from google.genai import errors as genai_errors  # noqa: E402
+from google.genai import types as genai_types  # noqa: E402
+
+from astra.assistant.providers.common import SYSTEM_PROMPT  # noqa: E402
+
+
+class FakeGeminiModels:
+    def __init__(self, replies: list[Any]) -> None:
+        self.replies, self.calls = replies, []
+
+    def generate_content(self, **kwargs: Any) -> Any:
+        self.calls.append(kwargs)
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+
+
+def fake_gemini(*replies: Any) -> Any:
+    return SimpleNamespace(models=FakeGeminiModels(list(replies)))
+
+
+def gemini_reply(answer: str, citations: list[str], finish: Any = genai_types.FinishReason.STOP) -> Any:
+    body = json.dumps(
+        {
+            "short_answer": answer,
+            "detail": "",
+            "citation_ids": citations,
+            "suggested_actions": ["Recheck at wake-up"],
+        }
+    )
+    return SimpleNamespace(
+        text=body, prompt_feedback=None, candidates=[SimpleNamespace(finish_reason=finish)]
+    )
+
+
+def test_gemini_answers_with_the_same_contract(assistant: Assistant) -> None:
+    chunk = assistant.retrieve(AssistantRequest(question=QUESTION, findings=FINDINGS))[0].id
+    assistant.gemini = fake_gemini(
+        gemini_reply("Your resting heart rate is higher than usual.", [chunk, "kb-x#1"])
+    )
+    out = assistant.answer(AssistantRequest(question=QUESTION, findings=FINDINGS))
+    assert (out.mode, out.provider) == ("llm", "gemini")
+    assert [c.chunk_id for c in out.citations] == [
+        chunk
+    ] and "dropped 1 unknown citation(s)" in out.safety_flags
+    call = assistant.gemini.models.calls[0]
+    config = call["config"]
+    assert call["model"] == "gemini-3.8-flash" and config.system_instruction == SYSTEM_PROMPT
+    assert config.response_mime_type == "application/json"
+    assert "additionalProperties" not in config.response_json_schema
+    assert set(config.response_json_schema["required"]) == {
+        "short_answer",
+        "detail",
+        "citation_ids",
+        "suggested_actions",
+    }
+    assert config.thinking_config.thinking_level == genai_types.ThinkingLevel.LOW
+    last = call["contents"][-1]
+    assert last.role == "user" and "findings" in last.parts[0].text
+
+
+def test_provider_choice_claude_first_unless_gemini_is_chosen(assistant: Assistant) -> None:
+    assistant.claude, assistant.gemini = fake_claude(), fake_gemini()  # would raise if called
+    assert assistant.provider_for("auto") == "claude"
+    assistant.default_provider = "gemini"
+    assert assistant.provider_for("auto") == "gemini" and assistant.provider_for("template") == "template"
+    assistant.claude = None
+    assistant.default_provider = "auto"
+    assert assistant.provider_for("auto") == "gemini" and assistant.llm_configured
+    assert assistant.model_for("gemini") == "gemini-3.8-flash"
+
+
+def test_gemini_dose_answer_is_retried_then_replaced_by_template(assistant: Assistant) -> None:
+    assistant.gemini = fake_gemini(
+        gemini_reply("Take 400 mg of ibuprofen.", []), gemini_reply("Take 200 mg.", [])
+    )
+    out = assistant.answer(AssistantRequest(question=QUESTION, findings=FINDINGS))
+    assert out.provider == "template" and "guard: dosage" in out.safety_flags
+    second = assistant.gemini.models.calls[1]["contents"][-1].parts[0].text
+    assert "rejected because it contained dosage" in second
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        gemini_reply("", [], finish=genai_types.FinishReason.SAFETY),
+        gemini_reply("", [], finish=genai_types.FinishReason.MAX_TOKENS),
+        genai_errors.APIError(
+            503, {"error": {"code": 503, "message": "overloaded", "status": "UNAVAILABLE"}}
+        ),
+        httpx.ConnectError("no route to host"),
+        SimpleNamespace(
+            text="not json", prompt_feedback=None, candidates=[SimpleNamespace(finish_reason=None)]
+        ),
+    ],
+)
+def test_gemini_failure_falls_back_to_template(assistant: Assistant, failure: Any) -> None:
+    assistant.gemini = fake_gemini(failure)
+    out = assistant.answer(AssistantRequest(question=QUESTION, findings=FINDINGS))
+    assert out.provider == "template" and any(f.startswith("fallback:") for f in out.safety_flags)
+
+
+def test_gemini_writes_the_report_narrative(assistant: Assistant) -> None:
+    narrative = json.dumps(
+        {"narrative": "Sleep fell below the usual range this week. All data is simulated."}
+    )
+    reply = SimpleNamespace(
+        text=narrative, prompt_feedback=None, candidates=[SimpleNamespace(finish_reason=None)]
+    )
+    assistant.gemini = fake_gemini(reply)
+    text, provider = assistant.narrate_report({"astronaut": "AST-001"})
+    assert provider == "gemini" and text.startswith("Sleep fell below")

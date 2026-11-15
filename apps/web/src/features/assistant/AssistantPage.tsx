@@ -54,6 +54,8 @@ function fromChat(out: ChatOut): Message {
 function ProviderBadge({ provider }: { provider?: string | null }) {
   if (provider === 'redflag')
     return <span className="inline-flex items-center gap-1 rounded-full bg-status-red/15 px-2 py-0.5 text-xs text-status-red"><ShieldAlert className="h-3 w-3" aria-hidden /> Emergency · no AI</span>
+  if (provider === 'gemini')
+    return <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent"><Satellite className="h-3 w-3" aria-hidden /> Earth relay · Gemini</span>
   if (provider === 'claude')
     return <span className="inline-flex items-center gap-1 rounded-full bg-accent/15 px-2 py-0.5 text-xs text-accent"><Satellite className="h-3 w-3" aria-hidden /> Earth relay · Claude</span>
   return <span className="inline-flex items-center gap-1 rounded-full bg-subtle px-2 py-0.5 text-xs text-ink-muted"><WifiOff className="h-3 w-3" aria-hidden /> Onboard · offline</span>
@@ -109,7 +111,7 @@ function Bubble({ m }: { m: Message }) {
           </div>
           <Citations citations={m.citations ?? []} />
           <div className="mt-2 flex flex-wrap items-center gap-2"><ProviderBadge provider={m.provider} />
-            {fallback && <span className="text-xs">Claude unavailable ({fallback.slice(10)}), answered offline</span>}
+            {fallback && <span className="text-xs">The online model was unavailable ({fallback.slice(10)}), so this was answered offline</span>}
           </div>
         </MoreDetail>
       )}
@@ -163,15 +165,15 @@ export function AssistantPage() {
         <PageHeader title="AI Assistant" purpose="Ask anything about your health. You get a short, simple answer first." />
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          {status.data && (status.data.claudeConfigured
-            ? <ProviderBadge provider={offline ? 'template' : 'claude'} />
+          {status.data && (status.data.llmConfigured
+            ? <ProviderBadge provider={offline ? 'template' : status.data.defaultProvider} />
             : <ProviderBadge provider="template" />)}
-          {status.data?.claudeConfigured && (
+          {status.data?.llmConfigured && (
             <label className="inline-flex items-center gap-2 text-xs text-ink-muted">
               <input type="checkbox" checked={offline} onChange={(e) => setOffline(e.target.checked)} /> Answer offline only
             </label>
           )}
-          {status.data && !status.data.claudeConfigured && (
+          {status.data && !status.data.llmConfigured && (
             <span className="text-xs text-ink-muted">No Earth relay configured; answers come from the onboard template.</span>
           )}
         </div>

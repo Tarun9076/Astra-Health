@@ -1140,9 +1140,13 @@ export interface components {
              * Defaultprovider
              * @enum {string}
              */
-            defaultProvider: "claude" | "template";
+            defaultProvider: "claude" | "gemini" | "template";
+            /** Llmconfigured */
+            llmConfigured: boolean;
             /** Claudeconfigured */
             claudeConfigured: boolean;
+            /** Geminiconfigured */
+            geminiConfigured: boolean;
             /** Model */
             model: string | null;
             /** Knowledgenotes */
@@ -1232,7 +1236,7 @@ export interface components {
              * @default auto
              * @enum {string}
              */
-            provider: "auto" | "claude" | "template";
+            provider: "auto" | "claude" | "gemini" | "template";
         };
         /** ChatOut */
         ChatOut: {
@@ -1269,7 +1273,7 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "claude" | "template" | "redflag";
+            provider: "claude" | "gemini" | "template" | "redflag";
             /** Emergencyprotocolid */
             emergencyProtocolId: string | null;
             /** Alertid */
