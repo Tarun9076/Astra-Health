@@ -9,7 +9,7 @@ import { Toaster } from '../components/ui/Toaster'
 import { useAuth } from '../lib/auth'
 import { missionDay, missionSol } from '../lib/mission'
 import { startOutboxSync } from '../lib/outbox'
-import { useCrewSummary, useDashboard } from '../lib/queries'
+import { useCrewSummary, useDashboard, useMission } from '../lib/queries'
 import { RealtimeClient, type LiveEvent } from '../lib/realtime'
 import { useToasts } from '../lib/toasts'
 import { useNow } from '../lib/useNow'
@@ -17,7 +17,7 @@ import { ASTRONAUT_NAV, CHECKIN_TASK } from './sections'
 
 const LIVE_KEYS = [
   'dashboard', 'alerts', 'alert', 'analytics', 'wellness', 'insights', 'crew-summary', 'body-systems', 'radiation',
-  'wellness-center', 'environment', 'timeline', 'guidance',
+  'wellness-center', 'environment', 'timeline', 'guidance', 'progress',
 ]
 
 function useLiveUpdates() {
@@ -39,6 +39,18 @@ function useLiveUpdates() {
       }
       if (event.type === 'LinkChanged') {
         void queryClient.invalidateQueries({ queryKey: ['sync-status'] })
+      }
+      if (event.type === 'MissionChanged') {
+        // the environment sets the radiation limit, exercise and fluid targets and the link delay
+        for (const key of ['mission', 'sync-status', ...LIVE_KEYS]) void queryClient.invalidateQueries({ queryKey: [key] })
+      }
+      if (event.type === 'PhotoAdded') {
+        void queryClient.invalidateQueries({ queryKey: ['photos'] })
+        void queryClient.invalidateQueries({ queryKey: ['timeline'] })
+        const p = event.payload as { astronautCode?: string }
+        if (role === 'FlightSurgeon' && p.astronautCode) {
+          push({ tone: 'info', title: `${p.astronautCode} sent a health photo`, href: `/staff/astronaut/${p.astronautCode}?view=history` })
+        }
       }
       if (event.type === 'ReportGenerated') {
         void queryClient.invalidateQueries({ queryKey: ['reports'] })
@@ -178,6 +190,7 @@ export function AppLayout() {
     setMenuOpen(false)
   }
   const start = user?.missionStart
+  const profile = useMission(Boolean(user)).data?.profile
   const isAstronaut = user?.role === 'Astronaut'
   const now = useNow()
   const today = new Date(now).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
@@ -218,7 +231,15 @@ export function AppLayout() {
           {start && (
             <p className="hidden text-sm text-ink-muted sm:block">
               <span className="font-medium text-ink">{user?.missionCode}</span> · Mission day {missionDay(start)}
-              <span className="hidden lg:inline"> · Sol {missionSol(start)} · {today}</span>
+              <span className="hidden lg:inline">
+                {profile?.dayName === 'Sol' && <> · Sol {missionSol(start)}</>} · {today}
+              </span>
+              {profile && (
+                <span className="ml-2 hidden rounded-md border border-line px-2 py-0.5 text-xs text-ink md:inline-block"
+                  title={`${profile.environment} · ${profile.location}`}>
+                  {profile.name} · {profile.gravityG === 0 ? 'weightless' : `${profile.gravityG} g`}
+                </span>
+              )}
             </p>
           )}
         </div>

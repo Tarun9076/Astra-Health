@@ -1,23 +1,24 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ArrowRight, Check, Clock, Info, Pencil, RotateCcw, ShieldAlert, Timer, TriangleAlert, Watch } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Camera, Check, Clock, Flame, Info, Pencil, RotateCcw, ShieldAlert, Timer, TriangleAlert, Watch } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { PhotoCapture, type DraftPhoto } from '../../components/health/PhotoCapture'
 import { EmergencyProtocolCard } from '../../components/ui/EmergencyProtocolCard'
 import { Button, ErrorNote, LinkButton, Panel } from '../../components/ui/Panel'
 import { SeverityBadge } from '../../components/ui/Status'
-import type { CheckinIn, CheckinOut, SymptomIn, SymptomOption, Vital, VitalIn } from '../../lib/api'
+import type { CheckinIn, CheckinOut, Photo, SymptomIn, SymptomOption, Vital, VitalIn } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { infoFor } from '../../lib/indicators'
 import { formatValue } from '../../lib/mission'
 import { sendOrQueue } from '../../lib/outbox'
-import { useDashboard, useSymptomCatalog } from '../../lib/queries'
+import { useDashboard, useProgress, useSymptomCatalog } from '../../lib/queries'
 import { useNow } from '../../lib/useNow'
 
 const TARGET_SECONDS = 120
 
 // --- what is measured -----------------------------------------------------------------------------
 
-type FieldKey = 'resting_hr' | 'bp_sys' | 'bp_dia' | 'body_temp' | 'spo2'
+type FieldKey = 'resting_hr' | 'bp_sys' | 'bp_dia' | 'body_temp' | 'spo2' | 'glucose' | 'body_weight'
 type Field = { key: FieldKey; label: string; unit: string; min: number; max: number; step: number; dec: number }
 
 const FIELDS: Record<FieldKey, Field> = {
@@ -26,22 +27,32 @@ const FIELDS: Record<FieldKey, Field> = {
   bp_dia: { key: 'bp_dia', label: 'Lower number (diastolic)', unit: 'mmHg', min: 30, max: 160, step: 1, dec: 0 },
   body_temp: { key: 'body_temp', label: 'Temperature', unit: '°C', min: 30, max: 43, step: 0.1, dec: 1 },
   spo2: { key: 'spo2', label: 'Oxygen saturation', unit: '%', min: 50, max: 100, step: 1, dec: 0 },
+  glucose: { key: 'glucose', label: 'Blood sugar', unit: 'mg/dL', min: 20, max: 600, step: 1, dec: 0 },
+  body_weight: { key: 'body_weight', label: 'Body mass', unit: 'kg', min: 30, max: 200, step: 0.1, dec: 1 },
 }
 
 /** A group of fields measured together; skipping is per group and always explicit. */
-type GroupKey = 'hr' | 'bp' | 'temp' | 'spo2'
+type GroupKey = 'hr' | 'bp' | 'temp' | 'spo2' | 'glucose' | 'weight'
 const GROUPS: Record<GroupKey, { label: string; fields: FieldKey[]; info: string }> = {
   hr: { label: 'Resting heart rate', fields: ['resting_hr'], info: 'resting_hr' },
   bp: { label: 'Blood pressure', fields: ['bp_sys', 'bp_dia'], info: 'bp_sys' },
   temp: { label: 'Body temperature', fields: ['body_temp'], info: 'body_temp' },
   spo2: { label: 'Oxygen saturation', fields: ['spo2'], info: 'spo2' },
+  glucose: { label: 'Blood sugar', fields: ['glucose'], info: 'glucose' },
+  weight: { label: 'Body mass', fields: ['body_weight'], info: 'body_weight' },
 }
+const GROUP_OF = Object.fromEntries(
+  (Object.keys(GROUPS) as GroupKey[]).flatMap((g) => GROUPS[g].fields.map((f) => [f, g])),
+) as Record<FieldKey, GroupKey>
+/** The step where each group is entered (used by Review → Edit). */
+const STEP_OF: Record<GroupKey, StepId> = { hr: 'hr', bp: 'bp', temp: 'temp', spo2: 'temp', glucose: 'metabolic', weight: 'metabolic' }
 
-type StepId = 'hr' | 'bp' | 'temp' | 'sleep' | 'feel' | 'stress' | 'symptoms' | 'review'
+type StepId = 'hr' | 'bp' | 'temp' | 'metabolic' | 'sleep' | 'feel' | 'stress' | 'symptoms' | 'review'
 const STEPS: { id: StepId; title: string }[] = [
   { id: 'hr', title: 'Heart rate' },
   { id: 'bp', title: 'Blood pressure' },
   { id: 'temp', title: 'Temperature and oxygen' },
+  { id: 'metabolic', title: 'Blood sugar and body mass' },
   { id: 'sleep', title: 'Sleep' },
   { id: 'feel', title: 'Mood and energy' },
   { id: 'stress', title: 'Stress' },
@@ -61,6 +72,9 @@ function check(field: Field, raw: string, vital: Vital | undefined): Problem | n
     return { kind: 'error', text: `${formatValue(v, field.dec)} ${field.unit} is outside the possible range (${field.min}–${field.max} ${field.unit}). Check the device and the unit, then measure again.` }
   }
   if (field.key === 'spo2' && v < 90) return { kind: 'safety', text: 'Below 90 % can be an emergency. If you feel short of breath, follow the low-oxygen procedure now.' }
+  if (field.key === 'glucose' && v < 54) return { kind: 'safety', text: 'Very low blood sugar. Take 15 g of fast sugar now (juice or glucose tablets), tell the crew medical officer and follow the low blood sugar procedure.' }
+  if (field.key === 'glucose' && v < 70) return { kind: 'safety', text: 'Low blood sugar. Take 15 g of fast sugar and measure again in 15 minutes. If you feel shaky, sweaty or confused, follow the low blood sugar procedure.' }
+  if (field.key === 'glucose' && v >= 250) return { kind: 'safety', text: 'Very high blood sugar. Wash and dry your finger and measure again. If it stays above 250 mg/dL, tell the crew medical officer.' }
   if (field.key === 'body_temp' && v >= 39.5) return { kind: 'safety', text: 'This is a high fever. Tell the crew medical officer after sending.' }
   if (vital?.baseline != null && vital.sigma) {
     const z = (v - vital.baseline) / vital.sigma
@@ -99,7 +113,7 @@ export function CheckinPage() {
   )
 
   const [step, setStep] = useState(0)
-  const [values, setValues] = useState<Record<FieldKey, string>>({ resting_hr: '', bp_sys: '', bp_dia: '', body_temp: '', spo2: '' })
+  const [values, setValues] = useState<Record<FieldKey, string>>({ resting_hr: '', bp_sys: '', bp_dia: '', body_temp: '', spo2: '', glucose: '', body_weight: '' })
   const [skipped, setSkipped] = useState<Set<GroupKey>>(new Set())
   const [confirmed, setConfirmed] = useState<Set<FieldKey>>(new Set())
   const [useWearableHr, setUseWearableHr] = useState(false)
@@ -107,14 +121,24 @@ export function CheckinPage() {
   const [symptoms, setSymptoms] = useState<Record<string, { severity: number; note: string }>>({})
   const [noSymptoms, setNoSymptoms] = useState(false)
   const [note, setNote] = useState('')
+  const [photos, setPhotos] = useState<DraftPhoto[]>([])
 
   const [clientId] = useState(() => crypto.randomUUID())
   const submit = useMutation({
     // Offline-first: if the habitat server is unreachable the check-in is kept on this device and
     // sent later with the same id, so it is never stored twice.
-    mutationFn: (body: CheckinIn) => sendOrQueue<CheckinOut>('/api/checkins', { ...body, id: clientId }),
+    mutationFn: async (body: CheckinIn) => {
+      const result = await sendOrQueue<CheckinOut>('/api/checkins', { ...body, id: clientId })
+      // photos follow the check-in (each with its own id, so a re-send is stored once)
+      for (const p of photos) {
+        await sendOrQueue<Photo>('/api/photos', {
+          id: p.id, kind: p.kind, note: p.note || null, checkinId: clientId, takenAt: p.takenAt, dataUrl: p.dataUrl,
+        })
+      }
+      return result
+    },
     onSuccess: () => {
-      for (const key of ['dashboard', 'alerts', 'guidance', 'timeline']) void queryClient.invalidateQueries({ queryKey: [key] })
+      for (const key of ['dashboard', 'alerts', 'guidance', 'timeline', 'progress', 'photos']) void queryClient.invalidateQueries({ queryKey: [key] })
     },
   })
   const seconds = useElapsedSeconds(!submit.isSuccess)
@@ -138,6 +162,7 @@ export function CheckinPage() {
     stepId === 'hr' ? groupDone('hr')
       : stepId === 'bp' ? groupDone('bp')
         : stepId === 'temp' ? groupDone('temp') && groupDone('spo2')
+        : stepId === 'metabolic' ? groupDone('glucose') && groupDone('weight')
           : stepId === 'symptoms' ? noSymptoms || Object.keys(symptoms).length > 0
             : true
 
@@ -154,7 +179,7 @@ export function CheckinPage() {
   if (submit.isSuccess && submit.data.queued) return <SavedOffline />
   if (submit.isSuccess && !submit.data.queued) {
     const missing = (Object.keys(GROUPS) as GroupKey[]).filter((g) => skipped.has(g)).map((g) => GROUPS[g].label)
-    return <Result result={submit.data.data} seconds={seconds} missing={missing} />
+    return <Result result={submit.data.data} seconds={seconds} missing={missing} photos={photos.length} code={user?.astronautCode} />
   }
 
   const setValue = (f: FieldKey, v: string) => {
@@ -170,7 +195,7 @@ export function CheckinPage() {
     for (const f of GROUPS[g].fields) setValue(f, '')
   }
   const fieldProps = (f: FieldKey) => ({
-    field: FIELDS[f], value: values[f], vital: vitals[f], problem: problems[f], confirmed: confirmed.has(f), disabled: skipped.has(f === 'spo2' ? 'spo2' : f === 'body_temp' ? 'temp' : f.startsWith('bp') ? 'bp' : 'hr'),
+    field: FIELDS[f], value: values[f], vital: vitals[f], problem: problems[f], confirmed: confirmed.has(f), disabled: skipped.has(GROUP_OF[f]),
     onChange: (v: string) => setValue(f, v), onRemeasure: () => remeasure(f),
     onConfirm: () => setConfirmed((c) => new Set(c).add(f)),
   })
@@ -207,6 +232,16 @@ export function CheckinPage() {
         </MeasurementStep>
       </div>
     ),
+    metabolic: (
+      <div className="space-y-8">
+        <MeasurementStep group="glucose" skipped={skipped.has('glucose')} onSkip={() => toggleSkip('glucose')}>
+          <NumberField {...fieldProps('glucose')} />
+        </MeasurementStep>
+        <MeasurementStep group="weight" skipped={skipped.has('weight')} onSkip={() => toggleSkip('weight')}>
+          <NumberField {...fieldProps('body_weight')} />
+        </MeasurementStep>
+      </div>
+    ),
     sleep: (
       <div className="space-y-8">
         <StepIntro info="sleep_hours" />
@@ -239,12 +274,15 @@ export function CheckinPage() {
       </div>
     ),
     symptoms: (
-      <SymptomStep options={catalog.data ?? []} symptoms={symptoms} setSymptoms={(s) => { setSymptoms(s); setNoSymptoms(false) }}
-        none={noSymptoms} setNone={(n) => { setNoSymptoms(n); if (n) setSymptoms({}) }} />
+      <div className="space-y-6">
+        <SymptomStep options={catalog.data ?? []} symptoms={symptoms} setSymptoms={(s) => { setSymptoms(s); setNoSymptoms(false) }}
+          none={noSymptoms} setNone={(n) => { setNoSymptoms(n); if (n) setSymptoms({}) }} />
+        <PhotoCapture photos={photos} onChange={setPhotos} />
+      </div>
     ),
     review: (
       <Review values={values} skipped={skipped} useWearableHr={useWearableHr} wearableHr={wearableHr} scores={scores}
-        symptoms={symptoms} options={catalog.data ?? []} problems={problems} vitals={vitals} onEdit={setStep}
+        symptoms={symptoms} options={catalog.data ?? []} problems={problems} vitals={vitals} onEdit={setStep} photos={photos.length}
         note={note} setNote={setNote} error={submit.isError ? submit.error : null} />
     ),
   }
@@ -287,7 +325,7 @@ export function CheckinPage() {
           </Button>
         )}
       </div>
-      {!canContinue && (stepId === 'hr' || stepId === 'bp' || stepId === 'temp') && (
+      {!canContinue && (stepId === 'hr' || stepId === 'bp' || stepId === 'temp' || stepId === 'metabolic') && (
         <p className="text-right text-xs text-ink-muted">Enter the reading (if it looks unusual, measure again or keep it), or choose “Not measured today”.</p>
       )}
       {!canContinue && stepId === 'symptoms' && <p className="text-right text-xs text-ink-muted">Choose your symptoms, or “No symptoms today”.</p>}
@@ -505,10 +543,11 @@ function SymptomToggle({ option, on, onToggle }: { option: SymptomOption; on: bo
   )
 }
 
-function Review({ values, skipped, useWearableHr, wearableHr, scores, symptoms, options, problems, vitals, onEdit, note, setNote, error }: {
+function Review({ values, skipped, useWearableHr, wearableHr, scores, symptoms, options, problems, vitals, onEdit, note, setNote, error, photos }: {
   values: Record<FieldKey, string>; skipped: Set<GroupKey>; useWearableHr: boolean; wearableHr: Vital | undefined; scores: Scores
   symptoms: Record<string, { severity: number; note: string }>; options: SymptomOption[]; problems: Record<FieldKey, Problem | null>
   vitals: Record<string, Vital | undefined>; onEdit: (step: number) => void; note: string; setNote: (s: string) => void; error: unknown
+  photos: number
 }) {
   const now = useNow()
   const at = new Date(now).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -527,12 +566,12 @@ function Review({ values, skipped, useWearableHr, wearableHr, scores, symptoms, 
     }
   }
   const rows: { label: string; step: StepId; value: ReactNode; source: string; normal?: string; flag?: string }[] = [
-    ...(['hr', 'bp', 'temp', 'spo2'] as GroupKey[]).map((g) => {
+    ...(Object.keys(GROUPS) as GroupKey[]).map((g) => {
       const m = measured(g)
       const v = vitals[GROUPS[g].fields[0]]
       const v2 = g === 'bp' ? vitals.bp_dia : undefined
       const normal = v?.baseline != null ? `${formatValue(v.baseline, FIELDS[GROUPS[g].fields[0]].dec)}${v2?.baseline != null ? `/${formatValue(v2.baseline, 0)}` : ''}` : undefined
-      return { label: GROUPS[g].label, step: (g === 'spo2' ? 'temp' : g) as StepId, normal, ...m }
+      return { label: GROUPS[g].label, step: STEP_OF[g], normal, ...m }
     }),
     { label: 'Sleep', step: 'sleep', value: `${scores.sleepHours} h · quality ${scores.sleepQuality}/10`, source: `Entered by you, ${at}` },
     { label: 'Mood', step: 'feel', value: `${scores.mood}/10`, source: `Entered by you, ${at}` },
@@ -584,6 +623,15 @@ function Review({ values, skipped, useWearableHr, wearableHr, scores, symptoms, 
                 </button>
               </td>
             </tr>
+            <tr className="border-t border-line align-top">
+              <th scope="row" className="py-2 pr-3 font-medium">Photos</th>
+              <td className="py-2 pr-3" colSpan={2}>{photos === 0 ? 'None' : `${photos} photo${photos === 1 ? '' : 's'} for the flight surgeon`}</td>
+              <td className="py-1 text-right">
+                <button type="button" onClick={() => onEdit(stepOf('symptoms'))} className="inline-flex min-h-10 items-center gap-1 rounded-lg px-2 text-xs font-medium text-accent hover:bg-subtle">
+                  <Pencil className="h-3.5 w-3.5" aria-hidden /> Edit<span className="sr-only"> photos</span>
+                </button>
+              </td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -598,8 +646,10 @@ function Review({ values, skipped, useWearableHr, wearableHr, scores, symptoms, 
   )
 }
 
-function Result({ result, seconds, missing }: { result: CheckinOut; seconds: number; missing: string[] }) {
+function Result({ result, seconds, missing, photos, code }: { result: CheckinOut; seconds: number; missing: string[]; photos: number; code?: string | null }) {
   const alerts = [...result.newAlerts, ...result.updatedAlerts]
+  const progress = useProgress(code).data
+  const streak = progress?.streaks.find((s) => s.id === 'checkin')
   const protocols = result.newAlerts.filter((a) => a.severity === 'Urgent' && a.protocol).map((a) => a.protocol as string)
   return (
     <div className="mx-auto max-w-2xl space-y-4">
@@ -617,6 +667,19 @@ function Result({ result, seconds, missing }: { result: CheckinOut; seconds: num
           <p className="mt-2 flex items-start gap-2 text-sm text-ink-muted">
             <Clock className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
             Not measured today: {missing.join(', ')}. These are shown as missing, not as normal.
+          </p>
+        )}
+        {photos > 0 && (
+          <p className="mt-2 flex items-start gap-2 text-sm">
+            <Camera className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+            {photos} photo{photos === 1 ? '' : 's'} added to your health record for the flight surgeon.
+          </p>
+        )}
+        {streak && streak.current > 0 && (
+          <p className="mt-2 flex items-start gap-2 text-sm">
+            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-accent" aria-hidden />
+            Check-in streak: {streak.current} day{streak.current === 1 ? '' : 's'} in a row · +10 points.{' '}
+            <Link to="/astronaut/wellness#progress" className="font-medium text-accent underline">See your progress</Link>
           </p>
         )}
       </Panel>

@@ -1,7 +1,9 @@
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query'
 import { AlertOctagon, CheckCircle2, Eye, ChevronRight, CircleDashed, ClipboardCheck, ShieldAlert, TriangleAlert } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { EnvironmentCard } from '../../components/health/EnvironmentCard'
 import { MeasurementCard, MissingMeasurementCard } from '../../components/health/MeasurementCard'
+import { ProgressSummary } from '../../components/health/ProgressCard'
 import { readingStatus } from '../../lib/readingStatus'
 import { ObservationCard, ReadingObservation } from '../../components/health/ObservationCard'
 import { InstructionsBanner } from '../../components/ui/InstructionsBanner'
@@ -12,14 +14,14 @@ import { api, unwrap, type Dashboard, type Task, type Vital } from '../../lib/ap
 import { useAuth } from '../../lib/auth'
 import { infoFor } from '../../lib/indicators'
 import { timeAgo } from '../../lib/mission'
-import { useDashboard, useGuidance } from '../../lib/queries'
+import { useDashboard, useGuidance, useMission, useProgress } from '../../lib/queries'
 import { useNow } from '../../lib/useNow'
 
 /** Key measurements in priority order; blood pressure is one card with two numbers. */
 const KEY_MEASUREMENTS: { key: string; label: string; codes: string[]; how: string; checkin: boolean }[] = [
   { key: 'resting_hr', label: 'Resting heart rate', codes: ['resting_hr'], how: 'Measured by the wearable each morning, or enter it in the daily check-in.', checkin: true },
   { key: 'bp', label: 'Blood pressure', codes: ['bp_sys', 'bp_dia'], how: 'Take it with the blood-pressure cuff during the daily check-in.', checkin: true },
-  { key: 'glucose', label: 'Blood glucose', codes: ['glucose'], how: 'Use the glucose meter when your schedule asks for it.', checkin: true },
+  { key: 'glucose', label: 'Blood sugar', codes: ['glucose'], how: 'Measure it with the glucose meter in the daily check-in.', checkin: true },
   { key: 'body_temp', label: 'Body temperature', codes: ['body_temp'], how: 'Take it with the thermometer during the daily check-in.', checkin: true },
   { key: 'spo2', label: 'Oxygen saturation', codes: ['spo2'], how: 'Use the pulse oximeter during the daily check-in.', checkin: true },
   { key: 'sleep_hours', label: 'Sleep last night', codes: ['sleep_hours'], how: 'From the wearable, or answer in the daily check-in.', checkin: true },
@@ -43,6 +45,8 @@ export function OverviewPage({ code, readOnly = false }: { code?: string; readOn
   const user = useAuth((s) => s.user)
   const astronautCode = code ?? user?.astronautCode
   const { data, error, isPending } = useDashboard(astronautCode)
+  const progress = useProgress(readOnly ? null : astronautCode)
+  const mission = useMission()
   const now = useNow()
   // indicators already covered by an active alert (same query key as the alert cards, so cached)
   const details = useQueries({
@@ -142,10 +146,13 @@ export function OverviewPage({ code, readOnly = false }: { code?: string; readOn
               })}
             </div>
           </section>
+
+          {mission.data?.profile && <EnvironmentCard profile={mission.data.profile} />}
         </div>
 
         <aside className="space-y-6" aria-label="Today">
           <TodayTasks tasks={data.tasks} code={data.astronautCode} readOnly={readOnly} now={now} />
+          {!readOnly && progress.data && <ProgressSummary progress={progress.data} />}
           {data.wellness && <WellnessCard wellness={data.wellness} />}
         </aside>
       </div>

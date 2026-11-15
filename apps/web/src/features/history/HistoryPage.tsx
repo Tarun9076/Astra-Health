@@ -1,9 +1,10 @@
 import {
-  Activity, BellRing, CheckCircle2, ClipboardCheck, FileText, ListChecks, MessageSquareText, Search, Sparkles, Stethoscope,
+  Activity, BellRing, Camera, CheckCircle2, ClipboardCheck, FileText, ListChecks, MessageSquareText, Search, Sparkles, Stethoscope,
   type LucideIcon,
 } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { PhotoImage } from '../../components/health/PhotoImage'
 import { ErrorNote, Loading } from '../../components/ui/Panel'
 import { SeverityBadge } from '../../components/ui/Status'
 import type { TimelineEvent } from '../../lib/api'
@@ -25,13 +26,14 @@ const KIND: Record<Kind, { icon: LucideIcon; label: string; group: Group }> = {
   Insight: { icon: Sparkles, label: 'ML pattern', group: 'guidance' },
   Instruction: { icon: MessageSquareText, label: 'Flight surgeon', group: 'care' },
   Report: { icon: FileText, label: 'Medical report', group: 'care' },
+  Photo: { icon: Camera, label: 'Photo', group: 'checkins' },
 }
 
 type Group = 'measurements' | 'checkins' | 'alerts' | 'guidance' | 'care'
 const GROUPS: { id: Group | 'all'; label: string }[] = [
   { id: 'all', label: 'Everything' },
   { id: 'measurements', label: 'Measurements' },
-  { id: 'checkins', label: 'Check-ins and symptoms' },
+  { id: 'checkins', label: 'Check-ins, symptoms and photos' },
   { id: 'alerts', label: 'Alerts' },
   { id: 'guidance', label: 'Recommendations' },
   { id: 'care', label: 'Medical care and reports' },
@@ -125,7 +127,7 @@ export function HistoryPage({ code: forCode, staff = false }: { code?: string; s
           <li key={d.key}>
             <h2 className="sticky top-0 z-10 -mx-1 bg-canvas/95 px-1 py-1 text-sm font-semibold text-ink">{dayTitle(d.at)}</h2>
             <ol className="mt-2 space-y-2 border-l-2 border-line pl-4">
-              {d.events.map((e) => <EventRow key={e.id} event={e} base={staff ? `/staff/astronaut/${code}` : null} />)}
+              {d.events.map((e) => <EventRow key={e.id} event={e} code={code} base={staff ? `/staff/astronaut/${code}` : null} />)}
             </ol>
           </li>
         ))}
@@ -134,7 +136,7 @@ export function HistoryPage({ code: forCode, staff = false }: { code?: string; s
   )
 }
 
-function EventRow({ event: e, base }: { event: TimelineEvent; base: string | null }) {
+function EventRow({ event: e, base, code }: { event: TimelineEvent; base: string | null; code?: string | null }) {
   const k = KIND[e.kind]
   const Icon = k.icon
   const isAlert = e.refId && (e.kind === 'Alert' || e.kind === 'AlertClosed')
@@ -153,6 +155,9 @@ function EventRow({ event: e, base }: { event: TimelineEvent; base: string | nul
             {href ? <Link to={href} className="hover:underline">{e.title}</Link> : e.title}
           </p>
           {e.detail && <p className="mt-0.5 text-sm text-ink-muted">{e.detail}</p>}
+          {e.kind === 'Photo' && e.refId && code && (
+            <div className="mt-2"><PhotoImage code={code} id={e.refId} alt={`${e.title}${e.detail ? `: ${e.detail}` : ''}`} className="h-32 w-32" /></div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {e.severity && <SeverityBadge severity={e.severity} />}

@@ -71,12 +71,21 @@ export const INDICATOR_INFO: Record<string, IndicatorInfo> = {
     region: 'lungs',
   },
   glucose: {
-    label: 'Blood glucose',
+    label: 'Blood sugar (glucose)',
     what: 'The amount of sugar in your blood (mg/dL), from the glucose meter.',
     why: 'Stress, poor sleep, less activity and the space diet can change how the body handles sugar. Very low values affect thinking and safety.',
     how: 'Clean and dry the fingertip, use the side of the finger, apply the drop to the strip. Note if you ate in the last 2 hours.',
     help: 'Act at once on very low values (shaky, sweaty, confused): take fast sugar and tell the crew medical officer.',
     kb: 'kb-glucose-energy',
+    region: 'digestive',
+  },
+  body_weight: {
+    label: 'Body mass',
+    what: 'Your body mass in kilograms. In weightlessness scales do not work, so a mass-measuring device is used.',
+    why: 'Losing mass can mean you are not eating enough, losing muscle or bone, or are dehydrated. Steady mass is a sign that food and exercise are on track.',
+    how: 'Once a week is enough, before breakfast. Use the body mass measuring device and hold still until it shows a value. On other days choose “Not measured today”.',
+    help: 'Tell the flight surgeon if you lose more than 2 kg in a week or keep losing mass.',
+    kb: 'kb-nutrition-food',
     region: 'digestive',
   },
   sleep_hours: {

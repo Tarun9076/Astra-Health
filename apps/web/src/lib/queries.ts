@@ -204,3 +204,29 @@ export function useSymptomCatalog() {
     staleTime: Infinity,
   })
 }
+
+export function useProgress(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['progress', code],
+    queryFn: () => unwrap(api.GET('/api/astronauts/{astronaut}/progress', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}
+
+/** The mission and its environment (space station, Mars transit, Moon rover, Mars base). */
+export function useMission(enabled = true) {
+  return useQuery({
+    queryKey: ['mission'],
+    queryFn: () => unwrap(api.GET('/api/mission')),
+    enabled,
+    staleTime: 5 * 60_000,
+  })
+}
+
+export function usePhotos(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['photos', code],
+    queryFn: () => unwrap(api.GET('/api/astronauts/{astronaut}/photos', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}

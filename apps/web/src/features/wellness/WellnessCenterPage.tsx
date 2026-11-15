@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Brain, CheckCircle2, Droplets, Dumbbell, HeartHandshake, Moon, Pause, Play, Utensils, Wind } from 'lucide-react'
+import { Brain, CheckCircle2, Droplets, Dumbbell, HeartHandshake, Moon, Pause, Play, Trophy, Utensils, Wind } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { MeasurementCard } from '../../components/health/MeasurementCard'
+import { ProgressDetails } from '../../components/health/ProgressCard'
 import { Button, ErrorNote, Loading, Panel } from '../../components/ui/Panel'
 import { api, unwrap, type Vital, type WellnessCenter } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
-import { useDashboard, useWellnessCenter } from '../../lib/queries'
+import { useDashboard, useProgress, useWellnessCenter } from '../../lib/queries'
 
 // Box breathing: 4 s in, 4 s hold, 4 s out, 4 s hold — a common, simple calming exercise.
 const PHASES = [
@@ -109,6 +110,7 @@ const SECTIONS = [
   { id: 'sleep', label: 'Sleep', icon: Moon },
   { id: 'mind', label: 'Mental wellness', icon: Brain },
   { id: 'nutrition', label: 'Nutrition and hydration', icon: Utensils },
+  { id: 'progress', label: 'Progress and badges', icon: Trophy },
 ]
 
 function Section({ id, title, intro, icon: Icon, children }: { id: string; title: string; intro: string; icon: typeof Moon; children: ReactNode }) {
@@ -128,6 +130,13 @@ export function WellnessCenterPage() {
   const code = useAuth((s) => s.user?.astronautCode)
   const { data, error, isPending } = useWellnessCenter(code)
   const dash = useDashboard(code)
+  const progress = useProgress(code)
+  const { hash } = useLocation()
+  const loaded = Boolean(data)
+  useEffect(() => {
+    // links like /astronaut/wellness#progress: scroll once the sections exist
+    if (loaded && hash) document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' })
+  }, [loaded, hash])
   const vitals = Object.fromEntries((dash.data?.vitals ?? []).map((v) => [v.indicator, v])) as Record<string, Vital | undefined>
   const queryClient = useQueryClient()
   const log = useMutation({
@@ -292,6 +301,11 @@ export function WellnessCenterPage() {
               ))}
             </ul>
           </Panel>
+
+          <Section id="progress" title="Progress and badges" icon={Trophy}
+            intro="Earn points and badges for the healthy habits you control: checking in, exercising, sleeping and drinking enough, and following your guidance.">
+            {progress.data ? <ProgressDetails progress={progress.data} /> : progress.error ? <ErrorNote error={progress.error} /> : <Loading />}
+          </Section>
         </>
       )}
     </div>

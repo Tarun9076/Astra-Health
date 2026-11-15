@@ -5,7 +5,7 @@ import { Button, ErrorNote, Loading, Panel } from '../../components/ui/Panel'
 import { api, unwrap, type SyncStatus } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { timeAgo } from '../../lib/mission'
-import { useSyncStatus } from '../../lib/queries'
+import { useMission, useSyncStatus } from '../../lib/queries'
 
 /** The Ground node's sync status, read directly (the Admin otherwise talks to the Habitat). */
 function useGroundStatus() {
@@ -58,6 +58,14 @@ export function DemoControlPage() {
       void queryClient.invalidateQueries({ queryKey: ['sync-status'] })
     },
   })
+  const mission = useMission()
+  const setProfile = useMutation({
+    mutationFn: (profileCode: string) => unwrap(api.PUT('/api/admin/mission/profile', { body: { profileCode } })),
+    onSuccess: (out) => {
+      queryClient.setQueryData(['mission'], out)
+      for (const key of ['sync-status', 'dashboard', 'wellness-center', 'radiation', 'progress']) void queryClient.invalidateQueries({ queryKey: [key] })
+    },
+  })
   const inject = useMutation({
     mutationFn: (scenario: 'fatigue' | 'solar-storm') => unwrap(api.POST('/api/admin/sim/scenario', { body: { scenario, astronautId: 'AST-001' } })),
   })
@@ -90,7 +98,7 @@ export function DemoControlPage() {
               <div className="text-sm">
                 <p className="flex items-center gap-2"><Satellite className="h-4 w-4 text-accent" aria-hidden />
                   One-way delay <span className="font-mono">{link.realDelayMinutes.toFixed(1)} light-min</span>
-                  <span className="text-ink-muted">({link.delaySource === 'horizons' ? 'JPL Horizons, today' : 'manual'})</span></p>
+                  <span className="text-ink-muted">({link.delaySource === 'horizons' ? 'JPL Horizons, today' : link.delaySource === 'profile' ? 'from the environment' : 'manual'})</span></p>
                 <p className="mt-1 text-xs text-ink-muted">
                   Demo time: {link.compressionSecondsPerMinute} s per light-minute → <span className="font-mono">{link.oneWaySeconds.toFixed(0)} s</span> one way,
                   {' '}{(2 * link.oneWaySeconds).toFixed(0)} s round trip.
@@ -113,6 +121,29 @@ export function DemoControlPage() {
             {setLink.isError && <ErrorNote error={setLink.error} />}
           </div>
         )}
+      </Panel>
+
+      <Panel title="Mission environment">
+        <p className="text-sm text-ink-muted">
+          Where the crew is changes the health risks, the radiation limit, the exercise and fluid targets and the delay to Earth.
+          The change reaches the Ground node over the link.
+        </p>
+        {mission.data ? (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4" role="radiogroup" aria-label="Mission environment">
+            {mission.data.options.map((o) => {
+              const active = mission.data.profile?.code === o.code
+              return (
+                <button key={o.code} type="button" role="radio" aria-checked={active} disabled={setProfile.isPending}
+                  onClick={() => !active && setProfile.mutate(o.code)}
+                  className={`min-h-16 rounded-lg border px-3 py-2 text-left text-sm ${active ? 'border-accent bg-accent-soft font-semibold' : 'border-line-strong hover:bg-subtle'}`}>
+                  <span className="block">{o.name}</span>
+                  <span className="block text-xs font-normal text-ink-muted">{o.environment}</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : <Loading />}
+        {setProfile.isError && <ErrorNote error={setProfile.error} />}
       </Panel>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -45,6 +45,12 @@ export type GuidanceItem = Schemas['GuidanceItem']
 export type LibraryItem = Schemas['LibraryItem']
 export type SymptomOption = Schemas['SymptomOption']
 export type SymptomIn = Schemas['SymptomIn']
+export type Progress = Schemas['ProgressOut']
+export type Badge = Schemas['Badge']
+export type MissionInfo = Schemas['MissionOut']
+export type MissionProfile = Schemas['ProfileOut']
+export type Photo = Schemas['PhotoOut']
+export type PhotoIn = Schemas['PhotoIn']
 
 export class ApiError extends Error {
   readonly status: number
