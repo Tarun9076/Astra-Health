@@ -6,7 +6,7 @@ import { HomePage } from '../features/overview/OverviewPage'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
 import {
-  AlertsRoute, AnalyticsRoute, AssistantRoute, BodyRoute, CrewRoute, DemoControlRoute, GuidanceRoute, HistoryRoute,
+  AlertsRoute, AnalyticsRoute, AssistantRoute, BodyRoute, CrewRoute, DemoControlRoute, ExerciseRoute, GuidanceRoute, HistoryRoute,
   ReportsRoute, StaffAstronautRoute, WellnessRoute,
 } from './LazyPages'
 import { Moved } from './Moved'
@@ -49,6 +49,7 @@ export const router = createBrowserRouter([
         ],
       },
       { path: 'wellness', element: <WellnessRoute /> },
+      { path: 'wellness/exercise', element: <ExerciseRoute /> },
       {
         path: 'history',
         element: (

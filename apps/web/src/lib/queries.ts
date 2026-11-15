@@ -230,3 +230,20 @@ export function usePhotos(code: string | null | undefined) {
     enabled: Boolean(code),
   })
 }
+
+export function useExercisePlan(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['exercise-plan', code],
+    queryFn: () => unwrap(api.GET('/api/astronauts/{astronaut}/exercise-plan', { params: { path: { astronaut: code! } } })),
+    enabled: Boolean(code),
+  })
+}
+
+export function useExerciseSessions(code: string | null | undefined) {
+  return useQuery({
+    queryKey: ['exercise-sessions', code],
+    queryFn: () =>
+      unwrap(api.GET('/api/astronauts/{astronaut}/exercise-sessions', { params: { path: { astronaut: code! }, query: { limit: 20 } } })),
+    enabled: Boolean(code),
+  })
+}

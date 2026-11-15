@@ -1,10 +1,10 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Brain, CheckCircle2, Droplets, Dumbbell, HeartHandshake, Moon, Pause, Play, Trophy, Utensils, Wind } from 'lucide-react'
+import { Brain, Camera, CheckCircle2, Droplets, Dumbbell, HeartHandshake, Moon, Pause, Play, Trophy, Utensils, Wind } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { MeasurementCard } from '../../components/health/MeasurementCard'
 import { ProgressDetails } from '../../components/health/ProgressCard'
-import { Button, ErrorNote, Loading, Panel } from '../../components/ui/Panel'
+import { Button, ErrorNote, LinkButton, Loading, Panel } from '../../components/ui/Panel'
 import { api, unwrap, type Vital, type WellnessCenter } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useDashboard, useProgress, useWellnessCenter } from '../../lib/queries'
@@ -182,6 +182,9 @@ export function WellnessCenterPage() {
                     <p className="text-ink-muted">{sessions >= target ? 'Plan completed for this week.' : `${target - sessions} more to complete this week’s plan.`}</p>
                   </div>
                 </div>
+                <LinkButton to="/astronaut/wellness/exercise" className="mt-4 w-full">
+                  <Camera className="h-4 w-4" aria-hidden /> Start a coached workout
+                </LinkButton>
               </Panel>
               <Panel title="Muscle performance">
                 {data.strengthIndex != null ? (

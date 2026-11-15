@@ -390,3 +390,21 @@ class WellnessActivity(SQLModel, table=True):
     kind: str  # fluid | breathing
     amount: float
     at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime, index=True)
+
+
+class ExerciseSession(SQLModel, table=True):
+    """A session done with the camera exercise coach (Step 13). Only results are kept, never video.
+    The id comes from the client, so a session sent twice is stored once. Synced to Ground."""
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    started_at: datetime = Field(sa_type=UTCDateTime)
+    finished_at: datetime = Field(sa_type=UTCDateTime, index=True)
+    source: str  # camera | demo (the simulated person used for rehearsals)
+    plan_level: str  # rest | lighter | standard | more | adjusted (the plan it followed)
+    results_json: str  # [{exercise, name, sets: [{reps, target, formScore}], tips: [{tip, count}]}]
+    total_reps: int
+    form_score: int | None = None
+    summary: str
+    node_id: str
+    created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)

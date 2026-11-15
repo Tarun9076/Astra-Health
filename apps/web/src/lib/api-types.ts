@@ -822,6 +822,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/astronauts/{astronaut}/exercise-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Exercise Plan */
+        get: operations["get_exercise_plan_api_astronauts__astronaut__exercise_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/exercise-sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Exercise Sessions */
+        get: operations["get_exercise_sessions_api_astronauts__astronaut__exercise_sessions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/exercise/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Exercise Session */
+        post: operations["post_exercise_session_api_exercise_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/measurements/batch": {
         parameters: {
             query?: never;
@@ -892,6 +943,20 @@ export interface components {
              * @description mL of fluid, or seconds of breathing exercise
              */
             amount: number;
+        };
+        /** AdjustmentOut */
+        AdjustmentOut: {
+            /** Id */
+            id: string;
+            /**
+             * Effect
+             * @enum {string}
+             */
+            effect: "rest" | "lighter" | "more";
+            /** Reason */
+            reason: string;
+            /** Because */
+            because: string[];
         };
         /** AlertDetail */
         AlertDetail: {
@@ -1426,6 +1491,86 @@ export interface components {
              */
             module: string;
         };
+        /** ExerciseIn */
+        ExerciseIn: {
+            /** Exercise */
+            exercise: string;
+            /** Sets */
+            sets: components["schemas"]["SetIn"][];
+            /** Tips */
+            tips?: components["schemas"]["TipIn"][];
+        };
+        /** ExercisePlanOut */
+        ExercisePlanOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Restday */
+            restDay: boolean;
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "rest" | "lighter" | "standard" | "more" | "adjusted";
+            /** Items */
+            items: components["schemas"]["PlannedOut"][];
+            /** Restseconds */
+            restSeconds: number;
+            /** Adjustments */
+            adjustments: components["schemas"]["AdjustmentOut"][];
+            /** Sessionsweek */
+            sessionsWeek: number | null;
+            /** Targetperweek */
+            targetPerWeek: number | null;
+            /** Donetoday */
+            doneToday: number;
+            /** Recent */
+            recent: components["schemas"]["ExerciseSessionOut"][];
+            /** Disclaimer */
+            disclaimer: string;
+        };
+        /** ExerciseResultOut */
+        ExerciseResultOut: {
+            /** Exercise */
+            exercise: string;
+            /** Name */
+            name: string;
+            /** Sets */
+            sets: components["schemas"]["SetOut"][];
+            /** Tips */
+            tips: components["schemas"]["TipOut"][];
+        };
+        /** ExerciseSessionOut */
+        ExerciseSessionOut: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /**
+             * Startedat
+             * Format: date-time
+             */
+            startedAt: string;
+            /**
+             * Finishedat
+             * Format: date-time
+             */
+            finishedAt: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "camera" | "demo";
+            /** Planlevel */
+            planLevel: string;
+            /** Results */
+            results: components["schemas"]["ExerciseResultOut"][];
+            /** Totalreps */
+            totalReps: number;
+            /** Formscore */
+            formScore: number | null;
+            /** Summary */
+            summary: string;
+        };
         /** FlaggedReading */
         FlaggedReading: {
             /**
@@ -1899,6 +2044,28 @@ export interface components {
              */
             takenAt: string;
         };
+        /** PlannedOut */
+        PlannedOut: {
+            /** Exercise */
+            exercise: string;
+            /** Name */
+            name: string;
+            /** Device */
+            device: string;
+            /**
+             * Camera
+             * @enum {string}
+             */
+            camera: "side" | "front";
+            /** Howto */
+            howTo: string;
+            /** Loads */
+            loads: string;
+            /** Sets */
+            sets: number;
+            /** Reps */
+            reps: number;
+        };
         /** PointRule */
         PointRule: {
             /** Action */
@@ -2253,6 +2420,54 @@ export interface components {
             /** Channel */
             channel?: string | null;
         };
+        /** SessionIn */
+        SessionIn: {
+            /**
+             * Id
+             * @description Client id (idempotent)
+             */
+            id: string;
+            /**
+             * Startedat
+             * Format: date-time
+             */
+            startedAt: string;
+            /**
+             * Finishedat
+             * Format: date-time
+             */
+            finishedAt: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "camera" | "demo";
+            /**
+             * Planlevel
+             * @enum {string}
+             */
+            planLevel: "rest" | "lighter" | "standard" | "more" | "adjusted";
+            /** Exercises */
+            exercises: components["schemas"]["ExerciseIn"][];
+        };
+        /** SetIn */
+        SetIn: {
+            /** Reps */
+            reps: number;
+            /** Target */
+            target: number;
+            /** Formscore */
+            formScore?: number | null;
+        };
+        /** SetOut */
+        SetOut: {
+            /** Reps */
+            reps: number;
+            /** Target */
+            target: number;
+            /** Formscore */
+            formScore: number | null;
+        };
         /** SpaceWeatherNow */
         SpaceWeatherNow: {
             /** Protonfluxpfu */
@@ -2411,6 +2626,20 @@ export interface components {
             since: string;
             /** Events */
             events: components["schemas"]["TimelineEvent"][];
+        };
+        /** TipIn */
+        TipIn: {
+            /** Tip */
+            tip: string;
+            /** Count */
+            count: number;
+        };
+        /** TipOut */
+        TipOut: {
+            /** Tip */
+            tip: string;
+            /** Count */
+            count: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -3949,6 +4178,103 @@ export interface operations {
                     "image/jpeg": unknown;
                     "image/png": unknown;
                     "image/webp": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_exercise_plan_api_astronauts__astronaut__exercise_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExercisePlanOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_exercise_sessions_api_astronauts__astronaut__exercise_sessions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseSessionOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_exercise_session_api_exercise_sessions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExerciseSessionOut"];
                 };
             };
             /** @description Validation Error */

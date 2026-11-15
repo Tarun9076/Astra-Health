@@ -11,6 +11,7 @@ import { useCrewSummary, useDashboard, useInstructions, useSyncStatus } from '..
 import { useNow } from '../../lib/useNow'
 import { AlertsPage } from '../alerts/AlertsPage'
 import { OverviewPage } from '../overview/OverviewPage'
+import { ExerciseSessionsPanel } from '../exercise/SessionList'
 import { ReportsPage } from '../reports/ReportsPage'
 import { SpaceWeatherCard } from '../../components/ui/SpaceWeatherCard'
 
@@ -216,6 +217,7 @@ const VIEWS = [
   { id: 'trends', label: 'Trends' },
   { id: 'history', label: 'Health history' },
   { id: 'reports', label: 'Reports' },
+  { id: 'exercise', label: 'Exercise' },
   { id: 'instructions', label: 'Instructions' },
 ] as const
 type View = (typeof VIEWS)[number]['id']
@@ -253,6 +255,7 @@ export function StaffAstronautPage() {
       )}
       {view === 'history' && <Suspense fallback={<Loading />}><HistoryPage code={code} staff /></Suspense>}
       {view === 'reports' && <ReportsPage code={code} embedded />}
+      {view === 'exercise' && <ExerciseSessionsPanel code={code} />}
       {view === 'instructions' && <InstructionsPanel code={code} />}
     </div>
   )

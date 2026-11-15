@@ -109,7 +109,7 @@ flowchart LR
 
 | Area | Technology |
 |---|---|
-| **Frontend** | React 19, Vite, TypeScript, Tailwind CSS 4, TanStack Query, Recharts, three.js (3D body model), Dexie (offline queue), installable PWA |
+| **Frontend** | React 19, Vite, TypeScript, Tailwind CSS 4, TanStack Query, Recharts, three.js (3D body model), MediaPipe Pose (on-device body tracking for the exercise coach, Apache-2.0), Dexie (offline queue), installable PWA |
 | **Backend** | Python 3.12, FastAPI, SQLModel + SQLite, WebSockets |
 | **Machine learning** | scikit-learn (Isolation Forest anomaly detection) and trend tests. Runs inside the backend, so there is nothing extra to start. |
 | **AI assistant** | Claude (Anthropic API), with Ollama or offline template answers as fallbacks |
@@ -249,12 +249,14 @@ The menu is organised by **what you want to do**:
 | **My Health** | A human body figure (flat or 3D: turn it, zoom, click an organ) and body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
 | **Daily Check-in** | Guided measurements in about 2 minutes: heart rate, blood pressure, temperature, oxygen, blood sugar, body mass, sleep, mood, stress and symptoms, with how-to steps, units and validation. You can add photos (skin, eye, wound, a device display) for the flight surgeon |
 | **My Guidance** | Recommended actions grouped by area, plus every health alert, explained |
-| **Wellness** | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration, plus **progress and badges** |
+| **Wellness** | Physical activity with the **exercise coach**, sleep, mental wellness (breathing, support), nutrition and hydration, plus **progress and badges** |
 | **Health History** | Timeline of everything recorded, plus medical reports |
 | **AI Assistant** | Plain-language answers with sources. It never diagnoses or prescribes. |
 | **Emergency procedures** | Always at the bottom of the menu, and stored in the app so it works offline |
 
 Home also shows **My progress** (points, check-in streak, this week's goals) and **Your environment** (gravity, delay to Earth, what matters most for your health there).
+
+**Exercise coach** (Wellness → *Start a coached workout*): today's resistance plan (squats, deadlifts, heel raises), adjusted to your condition: a rest day with a fever or an urgent alert, a lighter plan when you are tired, extra sets when strength is falling, with the reason shown. Stand side-on to the laptop camera, 2–3 m away: the coach counts reps and sets, gives posture tips out loud ("keep your chest up", "go a little lower"), times your rests and saves the result, which also reaches the flight surgeon. **The video never leaves the device**; only counts and form scores are saved. No camera, or rehearsing? Use **Demo playback**: a simulated person does the plan, with a few deliberate mistakes, saved as simulated data. It is coaching, not a medical device.
 
 Points reward what you *do* (check in, exercise, sleep and drink enough, finish guidance tasks), never your readings, so a worrying value never costs points.
 
@@ -266,7 +268,7 @@ Design principles: status is never shown by colour alone (there is always an ico
 
 Sign in as `surgeon1`. The surgeon gets:
 - a **crew overview** with communication status, a "Follow-up needed" list and a crew table;
-- for each astronaut, tabs for Summary, Body, Alerts review, Trends, Health history, Reports and Instructions (messages sent back to the crew).
+- for each astronaut, tabs for Summary, Body, Alerts review, Trends, Health history, Reports, Exercise (coached sessions: reps, form, tips) and Instructions (messages sent back to the crew).
 
 ### Admin (demo control)
 
@@ -326,6 +328,7 @@ cd apps/web; npm run gen:api
 | Backend tests | `cd services/backend; .venv/Scripts/python -m pytest` |
 | Lint and types (backend) | `cd services/backend; .venv/Scripts/python -m ruff check astra tests; .venv/Scripts/python -m mypy` |
 | Lint (web) | `cd apps/web; npm run lint` |
+| Exercise coach engine (web) | `cd apps/web; npm run test:unit` |
 | Type check and build (web) | `cd apps/web; npm run build` |
 | Browser tests and accessibility | `cd apps/web; npm run e2e` |
 | Prototype metrics | `cd services/backend; .venv/Scripts/python -m astra.evaluate` |
@@ -357,7 +360,9 @@ From [the evaluation report](docs/evaluation/EVALUATION.md). These come from **s
 ```
 Astra-Health/
 ├── apps/web/            React web app (astronaut, flight surgeon, mission control, admin)
-│   ├── src/features/    One folder per screen (home, check-in, body, guidance, history…)
+│   ├── src/features/    One folder per screen (home, check-in, body, exercise, guidance, history…)
+│   ├── public/models/   Body-tracking model for the exercise coach (served locally, works offline)
+│   ├── unit/            Exercise coach engine tests (Node test runner)
 │   └── e2e/             Playwright browser and accessibility tests
 ├── services/backend/    Python FastAPI backend (package "astra")
 │   ├── astra/core/      Pure logic: baselines, rules, validation (no web or database code)
@@ -430,6 +435,7 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 | Flight surgeon doesn't see new photos or the new environment | Restart the **Ground** backend (Terminal 2) after pulling new code if you started it by hand without `--reload` (`start-demo.ps1` starts it with `--reload`). |
 | Errors after pulling new code that changed the database tables | There are no migrations yet. Stop both backends, delete `services/backend/habitat.db*` and `ground.db*`, then repeat [Step 4](#step-4-create-the-demo-databases) and [Step 6](#step-6-load-the-simulated-mission-data). |
 | Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
+| Exercise coach: camera message, or no reps counted | Allow the camera in the browser's address bar (it works on `localhost` or https). Stand side-on, 2–3 m away, with your whole body, head to feet, in the picture and good light. Use **Demo playback** to show the feature without a camera. |
 | AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` is set, so it uses offline template answers. This is expected. |
 | `uv` says Python 3.12 not found | Run `uv python install 3.12`, then repeat Step 2. |
 

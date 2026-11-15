@@ -2185,6 +2185,162 @@
     }
    }
   },
+  "/api/astronauts/{astronaut}/exercise-plan": {
+   "get": {
+    "tags": [
+     "exercise coach"
+    ],
+    "summary": "Get Exercise Plan",
+    "operationId": "get_exercise_plan_api_astronauts__astronaut__exercise_plan_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ExercisePlanOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/exercise-sessions": {
+   "get": {
+    "tags": [
+     "exercise coach"
+    ],
+    "summary": "Get Exercise Sessions",
+    "operationId": "get_exercise_sessions_api_astronauts__astronaut__exercise_sessions_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 100,
+       "minimum": 1,
+       "default": 20,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ExerciseSessionOut"
+         },
+         "title": "Response Get Exercise Sessions Api Astronauts  Astronaut  Exercise Sessions Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/exercise/sessions": {
+   "post": {
+    "tags": [
+     "exercise coach"
+    ],
+    "summary": "Post Exercise Session",
+    "operationId": "post_exercise_session_api_exercise_sessions_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SessionIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ExerciseSessionOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
   "/api/measurements/batch": {
    "post": {
     "tags": [
@@ -2423,6 +2579,42 @@
      "amount"
     ],
     "title": "ActivityIn"
+   },
+   "AdjustmentOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "effect": {
+      "type": "string",
+      "enum": [
+       "rest",
+       "lighter",
+       "more"
+      ],
+      "title": "Effect"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     },
+     "because": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Because"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "effect",
+     "reason",
+     "because"
+    ],
+    "title": "AdjustmentOut"
    },
    "AlertDetail": {
     "properties": {
@@ -3930,6 +4122,238 @@
     ],
     "title": "EnvItem"
    },
+   "ExerciseIn": {
+    "properties": {
+     "exercise": {
+      "type": "string",
+      "title": "Exercise"
+     },
+     "sets": {
+      "items": {
+       "$ref": "#/components/schemas/SetIn"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Sets"
+     },
+     "tips": {
+      "items": {
+       "$ref": "#/components/schemas/TipIn"
+      },
+      "type": "array",
+      "maxItems": 20,
+      "title": "Tips"
+     }
+    },
+    "type": "object",
+    "required": [
+     "exercise",
+     "sets"
+    ],
+    "title": "ExerciseIn"
+   },
+   "ExercisePlanOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "restDay": {
+      "type": "boolean",
+      "title": "Restday"
+     },
+     "level": {
+      "type": "string",
+      "enum": [
+       "rest",
+       "lighter",
+       "standard",
+       "more",
+       "adjusted"
+      ],
+      "title": "Level"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/PlannedOut"
+      },
+      "type": "array",
+      "title": "Items"
+     },
+     "restSeconds": {
+      "type": "integer",
+      "title": "Restseconds"
+     },
+     "adjustments": {
+      "items": {
+       "$ref": "#/components/schemas/AdjustmentOut"
+      },
+      "type": "array",
+      "title": "Adjustments"
+     },
+     "sessionsWeek": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sessionsweek"
+     },
+     "targetPerWeek": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Targetperweek"
+     },
+     "doneToday": {
+      "type": "integer",
+      "title": "Donetoday"
+     },
+     "recent": {
+      "items": {
+       "$ref": "#/components/schemas/ExerciseSessionOut"
+      },
+      "type": "array",
+      "title": "Recent"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "restDay",
+     "level",
+     "items",
+     "restSeconds",
+     "adjustments",
+     "sessionsWeek",
+     "targetPerWeek",
+     "doneToday",
+     "recent",
+     "disclaimer"
+    ],
+    "title": "ExercisePlanOut"
+   },
+   "ExerciseResultOut": {
+    "properties": {
+     "exercise": {
+      "type": "string",
+      "title": "Exercise"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "sets": {
+      "items": {
+       "$ref": "#/components/schemas/SetOut"
+      },
+      "type": "array",
+      "title": "Sets"
+     },
+     "tips": {
+      "items": {
+       "$ref": "#/components/schemas/TipOut"
+      },
+      "type": "array",
+      "title": "Tips"
+     }
+    },
+    "type": "object",
+    "required": [
+     "exercise",
+     "name",
+     "sets",
+     "tips"
+    ],
+    "title": "ExerciseResultOut"
+   },
+   "ExerciseSessionOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Startedat"
+     },
+     "finishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Finishedat"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "camera",
+       "demo"
+      ],
+      "title": "Source"
+     },
+     "planLevel": {
+      "type": "string",
+      "title": "Planlevel"
+     },
+     "results": {
+      "items": {
+       "$ref": "#/components/schemas/ExerciseResultOut"
+      },
+      "type": "array",
+      "title": "Results"
+     },
+     "totalReps": {
+      "type": "integer",
+      "title": "Totalreps"
+     },
+     "formScore": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Formscore"
+     },
+     "summary": {
+      "type": "string",
+      "title": "Summary"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "startedAt",
+     "finishedAt",
+     "source",
+     "planLevel",
+     "results",
+     "totalReps",
+     "formScore",
+     "summary"
+    ],
+    "title": "ExerciseSessionOut"
+   },
    "FlaggedReading": {
     "properties": {
      "t": {
@@ -5279,6 +5703,58 @@
     ],
     "title": "PhotoOut"
    },
+   "PlannedOut": {
+    "properties": {
+     "exercise": {
+      "type": "string",
+      "title": "Exercise"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "device": {
+      "type": "string",
+      "title": "Device"
+     },
+     "camera": {
+      "type": "string",
+      "enum": [
+       "side",
+       "front"
+      ],
+      "title": "Camera"
+     },
+     "howTo": {
+      "type": "string",
+      "title": "Howto"
+     },
+     "loads": {
+      "type": "string",
+      "title": "Loads"
+     },
+     "sets": {
+      "type": "integer",
+      "title": "Sets"
+     },
+     "reps": {
+      "type": "integer",
+      "title": "Reps"
+     }
+    },
+    "type": "object",
+    "required": [
+     "exercise",
+     "name",
+     "device",
+     "camera",
+     "howTo",
+     "loads",
+     "sets",
+     "reps"
+    ],
+    "title": "PlannedOut"
+   },
    "PointRule": {
     "properties": {
      "action": {
@@ -6162,6 +6638,131 @@
     ],
     "title": "SeriesPoint"
    },
+   "SessionIn": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "maxLength": 64,
+      "minLength": 8,
+      "pattern": "^[A-Za-z0-9-]+$",
+      "title": "Id",
+      "description": "Client id (idempotent)"
+     },
+     "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Startedat"
+     },
+     "finishedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Finishedat"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "camera",
+       "demo"
+      ],
+      "title": "Source"
+     },
+     "planLevel": {
+      "type": "string",
+      "enum": [
+       "rest",
+       "lighter",
+       "standard",
+       "more",
+       "adjusted"
+      ],
+      "title": "Planlevel"
+     },
+     "exercises": {
+      "items": {
+       "$ref": "#/components/schemas/ExerciseIn"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Exercises"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "startedAt",
+     "finishedAt",
+     "source",
+     "planLevel",
+     "exercises"
+    ],
+    "title": "SessionIn"
+   },
+   "SetIn": {
+    "properties": {
+     "reps": {
+      "type": "integer",
+      "maximum": 100.0,
+      "minimum": 0.0,
+      "title": "Reps"
+     },
+     "target": {
+      "type": "integer",
+      "maximum": 50.0,
+      "minimum": 1.0,
+      "title": "Target"
+     },
+     "formScore": {
+      "anyOf": [
+       {
+        "type": "integer",
+        "maximum": 100.0,
+        "minimum": 0.0
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Formscore"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reps",
+     "target"
+    ],
+    "title": "SetIn"
+   },
+   "SetOut": {
+    "properties": {
+     "reps": {
+      "type": "integer",
+      "title": "Reps"
+     },
+     "target": {
+      "type": "integer",
+      "title": "Target"
+     },
+     "formScore": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Formscore"
+     }
+    },
+    "type": "object",
+    "required": [
+     "reps",
+     "target",
+     "formScore"
+    ],
+    "title": "SetOut"
+   },
    "SpaceWeatherNow": {
     "properties": {
      "protonFluxPfu": {
@@ -6653,6 +7254,46 @@
      "events"
     ],
     "title": "TimelineOut"
+   },
+   "TipIn": {
+    "properties": {
+     "tip": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 1,
+      "title": "Tip"
+     },
+     "count": {
+      "type": "integer",
+      "maximum": 500.0,
+      "minimum": 1.0,
+      "title": "Count"
+     }
+    },
+    "type": "object",
+    "required": [
+     "tip",
+     "count"
+    ],
+    "title": "TipIn"
+   },
+   "TipOut": {
+    "properties": {
+     "tip": {
+      "type": "string",
+      "title": "Tip"
+     },
+     "count": {
+      "type": "integer",
+      "title": "Count"
+     }
+    },
+    "type": "object",
+    "required": [
+     "tip",
+     "count"
+    ],
+    "title": "TipOut"
    },
    "ValidationError": {
     "properties": {

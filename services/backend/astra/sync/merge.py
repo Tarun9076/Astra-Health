@@ -11,6 +11,7 @@
 | SpaceWeatherEvent   | insert-if-absent                                                          |
 | HealthPhoto         | insert-if-absent (immutable evidence)                                     |
 | Mission             | last writer wins on the environment profile (set on the Habitat)          |
+| ExerciseSession     | insert-if-absent (results of a coached session)                           |
 """
 
 from collections.abc import Callable
@@ -24,6 +25,7 @@ from astra.core.enums import NodeRole
 from astra.db.models import (
     Astronaut,
     EnvironmentReading,
+    ExerciseSession,
     HealthAlert,
     HealthMeasurement,
     HealthPhoto,
@@ -145,6 +147,12 @@ def apply_items(
                 who = session.get(Astronaut, row.astronaut_id)
                 payload = {"id": row.id, "astronautCode": who.code if who else None}
                 result.events.append(("PhotoAdded", row.astronaut_id, payload))
+        elif kind == "ExerciseSession":
+            row = _insert_if_absent(session, ExerciseSession, payload, payload["id"])
+            if isinstance(row, ExerciseSession):
+                who = session.get(Astronaut, row.astronaut_id)
+                payload = {"id": row.id, "astronautCode": who.code if who else None, "reps": row.total_reps}
+                result.events.append(("ExerciseSessionRecorded", row.astronaut_id, payload))
         elif kind == "Mission":
             mission = session.exec(select(Mission).where(Mission.code == payload["code"])).first()
             if mission is not None and mission.profile_code != payload["profile_code"]:

@@ -1,7 +1,33 @@
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { defineConfig } from 'vite'
+import { createReadStream, readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { defineConfig, type Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
+
+// The exercise coach's body tracking engine (MediaPipe, WebAssembly) is served by the app itself at
+// /mediapipe/wasm/, so it works offline: streamed from node_modules in dev, copied into the build.
+// The model file is in public/models/.
+function mediapipeWasm(): Plugin {
+  const dir = new URL('./node_modules/@mediapipe/tasks-vision/wasm/', import.meta.url)
+  const files = ['vision_wasm_internal.js', 'vision_wasm_internal.wasm', 'vision_wasm_nosimd_internal.js', 'vision_wasm_nosimd_internal.wasm']
+  return {
+    name: 'mediapipe-wasm',
+    configureServer(server) {
+      server.middlewares.use('/mediapipe/wasm', (req, res, next) => {
+        const name = (req.url ?? '').split('?')[0].replace(/^\//, '')
+        if (!files.includes(name)) return next()
+        res.setHeader('Content-Type', name.endsWith('.wasm') ? 'application/wasm' : 'text/javascript')
+        createReadStream(fileURLToPath(new URL(name, dir))).pipe(res)
+      })
+    },
+    generateBundle() {
+      for (const name of files) {
+        this.emitFile({ type: 'asset', fileName: `mediapipe/wasm/${name}`, source: readFileSync(fileURLToPath(new URL(name, dir))) })
+      }
+    },
+  }
+}
 
 // Dev proxy: the web app calls /api and /ws on its own origin; Vite forwards them to the
 // Habitat backend (FastAPI). Step 9 adds a /ground-api prefix for the Ground node on :8001.
@@ -14,6 +40,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    mediapipeWasm(),
     // Installable, offline app shell (Step 9): every built file is precached, including the bundled
     // emergency procedures, so the app opens without a connection. API data is not cached here;
     // the last screens are restored from the persisted query cache instead (src/main.tsx).
@@ -34,6 +61,14 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/, /^\/ground-api/, /^\/ws/, /^\/ground-ws/, /^\/node/],
+        // Body tracking (≈ 24 MB) is too big to precache: kept after its first use instead.
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/mediapipe/') || url.pathname.startsWith('/models/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'body-tracking', expiration: { maxEntries: 10 } },
+          },
+        ],
       },
     }),
   ],

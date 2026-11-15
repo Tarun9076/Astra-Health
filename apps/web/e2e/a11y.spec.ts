@@ -4,7 +4,7 @@ import { signIn } from './helpers'
 
 // Accessibility pass: no serious or critical WCAG 2.1 A/AA violations on every page.
 const ASTRONAUT_PAGES = [
-  'home', 'checkin', 'health', 'health/trends', 'guidance', 'guidance/alerts', 'wellness', 'history', 'history/reports',
+  'home', 'checkin', 'health', 'health/trends', 'guidance', 'guidance/alerts', 'wellness', 'wellness/exercise', 'history', 'history/reports',
   'assistant', 'emergency',
 ]
 

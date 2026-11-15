@@ -303,3 +303,30 @@ def test_restart_mid_sync_loses_nothing(nodes: dict[str, Any]) -> None:
     fresh_hab.run_once(n["gnd"], now=datetime.now(UTC) + timedelta(seconds=DELAY + 1))
     assert {o.status for o in _rows(n["hab"], SyncOutbox)} == {"Acked"}
     assert len(_rows(n["gnd"], HealthAlert)) == 2
+
+
+def test_exercise_session_reaches_the_flight_surgeon(nodes: dict[str, Any]) -> None:
+    """Step 13: a coached session (results only) and its readings arrive on Ground once."""
+    n = nodes
+    now = datetime.now(UTC).replace(microsecond=0)
+    body = {
+        "id": "ex-sync-0001", "source": "camera", "planLevel": "standard",
+        "startedAt": (now - timedelta(minutes=16)).isoformat(),
+        "finishedAt": (now - timedelta(minutes=1)).isoformat(),
+        "exercises": [{"exercise": "squat", "sets": [{"reps": 10, "target": 10, "formScore": 85}]}],
+    }  # fmt: skip
+    assert (
+        n["hab"].post("/api/exercise/sessions", json=body, headers=_auth(n["hab"], "ast1")).status_code == 201
+    )
+    assert (
+        n["gnd"].post("/api/exercise/sessions", json=body, headers=_auth(n["gnd"], "ast1")).status_code == 409
+    )
+    n["hab_sync"].run_once(n["gnd"], now=now)
+    n["gnd_sync"].run_once(n["hab"], now=now + timedelta(seconds=DELAY + 1))
+    surgeon = _auth(n["gnd"], "surgeon1")
+    sessions = n["gnd"].get("/api/astronauts/AST-001/exercise-sessions", headers=surgeon).json()
+    assert [(s["id"], s["totalReps"], s["formScore"]) for s in sessions] == [("ex-sync-0001", 10, 85)]
+    readings = n["gnd"].get(
+        "/api/astronauts/AST-001/measurements", params={"indicator": "activity_min"}, headers=surgeon
+    )
+    assert readings.status_code == 200 and readings.json()["points"][-1]["value"] == 15

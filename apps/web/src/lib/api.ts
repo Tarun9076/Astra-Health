@@ -51,6 +51,9 @@ export type MissionInfo = Schemas['MissionOut']
 export type MissionProfile = Schemas['ProfileOut']
 export type Photo = Schemas['PhotoOut']
 export type PhotoIn = Schemas['PhotoIn']
+export type ExercisePlan = Schemas['ExercisePlanOut']
+export type ExerciseSession = Schemas['ExerciseSessionOut']
+export type ExerciseSessionIn = Schemas['SessionIn']
 
 export class ApiError extends Error {
   readonly status: number

@@ -44,6 +44,9 @@ function useLiveUpdates() {
         // the environment sets the radiation limit, exercise and fluid targets and the link delay
         for (const key of ['mission', 'sync-status', ...LIVE_KEYS]) void queryClient.invalidateQueries({ queryKey: [key] })
       }
+      if (event.type === 'ExerciseSessionRecorded') {
+        for (const key of ['exercise-plan', 'exercise-sessions', ...LIVE_KEYS]) void queryClient.invalidateQueries({ queryKey: [key] })
+      }
       if (event.type === 'PhotoAdded') {
         void queryClient.invalidateQueries({ queryKey: ['photos'] })
         void queryClient.invalidateQueries({ queryKey: ['timeline'] })

@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "exercises": [
+    {
+      "id": "squat",
+      "name": "Squat",
+      "device": "ARED",
+      "camera": "side",
+      "howTo": "Feet shoulder-width apart. Sit back and down until your thighs are about level with the floor, chest up, then stand up fully.",
+      "loads": "Thighs, hips and spine: the bones that lose the most mass in weightlessness."
+    },
+    {
+      "id": "deadlift",
+      "name": "Deadlift",
+      "device": "ARED",
+      "camera": "side",
+      "howTo": "Soft knees, flat back. Push your hips back and lower your hands close to your legs, then stand up tall by pushing your hips forward.",
+      "loads": "Back, hips and hamstrings; loads the lower spine and hip bones."
+    },
+    {
+      "id": "heel_raise",
+      "name": "Heel raise",
+      "device": "ARED",
+      "camera": "side",
+      "howTo": "Stand tall with straight knees. Rise onto the balls of your feet, hold for a moment, then lower slowly.",
+      "loads": "Calves and ankles; keeps the lower legs strong for walking again after landing."
+    }
+  ],
+  "basePlan": {
+    "items": [
+      { "exercise": "squat", "sets": 3, "reps": 10 },
+      { "exercise": "deadlift", "sets": 3, "reps": 8 },
+      { "exercise": "heel_raise", "sets": 3, "reps": 15 }
+    ],
+    "restSeconds": 90
+  },
+  "adjustments": [
+    {
+      "id": "rest-fever",
+      "effect": "rest",
+      "whenAlerts": ["TH-FEVER", "TH-FEVER-HIGH", "IMM-STRESS-FEVER"],
+      "reason": "Your temperature is raised. Rest today: hard exercise with a fever strains the heart and slows recovery."
+    },
+    {
+      "id": "rest-urgent",
+      "effect": "rest",
+      "whenSeverity": "Urgent",
+      "reason": "An urgent health alert is open. Rest until the flight surgeon clears you for exercise."
+    },
+    {
+      "id": "lighter-recovery",
+      "effect": "lighter",
+      "whenAlerts": ["BEH-FATIGUE-COMPOSITE", "SLP-DEFICIT", "CV-RHR-BASELINE"],
+      "setsChange": -1,
+      "restSeconds": 120,
+      "reason": "Signs of fatigue, short sleep or a raised resting heart rate: one set fewer of each exercise and longer rests."
+    },
+    {
+      "id": "more-strength",
+      "effect": "more",
+      "whenAlerts": ["MSK-STRENGTH-DECLINE", "MSK-EXERCISE-ADHERENCE"],
+      "extraSets": { "squat": 1, "deadlift": 1 },
+      "reason": "Strength is falling or sessions are behind: one more set of squats and deadlifts to load the legs and spine."
+    }
+  ],
+  "disclaimer": "Illustrative programme for the prototype; the real programme is set by the crew's strength and conditioning specialists."
+}

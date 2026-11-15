@@ -52,3 +52,7 @@ const HistoryPage = lazy(() => import('../features/history/HistoryPage').then((m
 export const AlertsRoute = () => <Page><AlertsPage /></Page>
 export const GuidanceRoute = () => <Page><GuidancePage /></Page>
 export const HistoryRoute = () => <Page><HistoryPage /></Page>
+
+const ExerciseCoachPage = lazy(() => import('../features/exercise/ExerciseCoachPage').then((m) => ({ default: m.ExerciseCoachPage })))
+
+export const ExerciseRoute = () => <Page><ExerciseCoachPage /></Page>

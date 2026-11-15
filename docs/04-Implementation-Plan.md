@@ -474,6 +474,37 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
+### Step 13 — Camera exercise coach
+
+**Goal:** resistance exercise is the main protection against bone and muscle loss, but in the app it was only a weekly count. Add a coach that plans today's session from the astronaut's condition, watches the exercise through the laptop camera, counts reps and sets, gives posture tips (on screen and spoken), times the rest between sets, and records the result like any other reading. Details: LLD §15.6 (Exercise coach).
+
+Design rules:
+- **The video never leaves the device.** Body tracking (MediaPipe Pose Landmarker, Apache-2.0, 33 body points) runs in the browser, offline: the engine and the model (`public/models/pose_landmarker_full.task`, 9.4 MB) are served by the app itself. Only the results are saved: sets, reps, form score, and the posture tips given.
+- **Rules count and coach; the language model does not.** Rep counting and posture checks are geometry on joint angles (a state machine per exercise, testable without a camera). Thirty images a second is far too fast for a language model; the summary afterwards is plain text from the same results.
+- **Plan from approved data.** `protocols/exercise-plans.json` holds the exercises, the base plan and the adjustments, keyed on active alert rules (fever: rest day; urgent alert: rest day; fatigue, poor sleep or a high resting heart rate: lighter; strength falling or sessions behind: one more set of squats and deadlifts). It is checked at start-up like the other protocols.
+- **Same path as every reading.** A finished session is stored (`ExerciseSession`, synced to Ground) and updates `activity_min` and `exercise_sessions` through the normal intake, so rules, progress, badges, today's exercise task and the flight surgeon all see it.
+- Coaching, not a medical device; ARED, CEVIS and T2 are not simulated. Movements a camera sees well are coached: squat, deadlift (hip hinge), heel raise.
+
+- [x] Plan: `exercise-plans.json`, loader checks, pure `core/exercise.py`, `GET /api/astronauts/{id}/exercise-plan`.
+- [x] Results: `POST /api/exercise/sessions` (idempotent client id), `ExerciseSession` table and sync, readings through intake, today's exercise task done.
+- [x] Coach engine (`features/exercise/`): joint angles, per-exercise rep counter and posture checks, whole-body-visible check, form score.
+- [x] Coach page (Wellness → Exercise coach): today's plan with reasons, camera with body-point overlay, rep and set counter, posture tip (spoken, can be muted), rest countdown, summary and save; camera errors explained.
+- [x] Demo playback: a simulated person does the plan (with a few deliberate mistakes) for rehearsals, tests and a stage without space; clearly labelled.
+- [x] Flight surgeon sees recent coached sessions.
+- [x] Tests: backend (plan rules, results, sync), coach engine on generated movement, browser test with demo playback.
+
+**Done when:** the plan follows the astronaut's condition with the reason shown, a workout counts reps and sets and gives posture tips, the result reaches the flight surgeon, and the existing checks pass. **Done 2026-11-15:**
+- **Checks:** backend T-EX-01..05 (plan rules, summary, protocol check, API, sync); coach engine T-EX-06..09 (`npm run test:unit`, 8 tests: clean reps of each exercise, every deliberate mistake, front view, out of view, whole workout, early finish); browser T-UI-08 (demo workout at 20×, saved, tips) and T-UI-09 (Chrome's fake camera: engine and model load from the app, tracking runs); the coach page is in the accessibility scan. Full backend and browser suites pass; `tsc`, `oxlint`, `ruff`, `mypy` and `vite build` are clean.
+- **By hand:** a full demo workout in the browser (99 reps, all 8 mistakes caught, form 97%), saved, and seen on Ground by the flight surgeon after the link delay.
+- Package `@mediapipe/tasks-vision` pinned at 1.2.0 (released 2026-10-27); the model is committed (9.4 MB) so the demo needs no download. The engine is not precached by the PWA (≈ 24 MB); it is cached after the first use.
+- Demo playback steps the simulated person in fixed 1/30 s slices, so a slow screen or `?speed=` never skips the bottom of a rep.
+
+**Not covered:**
+- **Counting on a real person through a real camera is not yet tested.** The thresholds come from typical joint angles and were checked on the simulated person only; they need tuning with someone exercising in front of a webcam (side-on, 2–3 m, good light).
+- Posture checks from body points are limited: the camera cannot see a rounded back, the bar or the load. Bench press, CEVIS and T2 are not coached. One person in view only.
+
+---
+
 ## 4. Team split (3–4 people)
 
 With one backend language, the split is by area rather than by runtime:

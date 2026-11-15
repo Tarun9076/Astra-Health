@@ -51,7 +51,7 @@ Astronaut app (P0 modules 1–7), Flight Surgeon dashboard (module 8), simulated
 | A visual tool to assess one's own health | Home (status in words, something to pay attention to, key measurements vs your normal) |
 | Guidance on treatment and improvement | My Guidance, emergency procedures, Wellness, "how to protect" per body system |
 | Blood pressure, heart rate, blood sugar, body temperature, sleep, mood | All in the guided daily check-in (blood sugar and body mass since the gap fix), plus devices |
-| Input by keyboard, mouse or camera | Typed values and sliders; camera photos in the check-in (FR-25) |
+| Input by keyboard, mouse or camera | Typed values and sliders; camera photos in the check-in (FR-25); the camera exercise coach (FR-27) |
 | When a result needs the crew or flight surgeons | Rules: Attention vs Urgent, escalation, reports and alerts synced to Earth |
 | Clickable human figure | My Health: a realistic human figure (flat and 3D, see-through skin, organs inside), 7-part explanation per system |
 | Different environments (station, rover, base) | 4 mission profiles (FR-26, LLD §8.1) |
@@ -99,6 +99,7 @@ Astronaut app (P0 modules 1–7), Flight Surgeon dashboard (module 8), simulated
 | FR-19 | Body Explorer: clickable body regions mapped to body-system data | P1 |
 | FR-20 | Radiation dose tracking (daily + cumulative vs mission limit) and environment panel | P1 |
 | FR-21 | Wellness Center: guided breathing, sleep routine, exercise plan, wellness missions | P1 |
+| FR-27 ✅ | Exercise coach (Step 13): today's resistance plan from the astronaut's condition (open alerts → rest day, lighter or more); on-device body tracking through the camera counts reps and sets, gives spoken posture tips and times rests; video never leaves the device; results recorded and synced to Earth; demo playback with a simulated person | P2 |
 | FR-22 | Mission timeline (pre-flight → now) of measurements, alerts, interventions | P2 |
 | FR-23 | Voice input for symptom reporting (Web Speech API) | P2 |
 | FR-24 | Gamification: points, streaks, weekly goals and badges for health habits the astronaut controls, never for readings ✅ | P1 |
