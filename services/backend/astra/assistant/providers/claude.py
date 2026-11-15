@@ -21,6 +21,7 @@ from astra.assistant.providers.common import (
     REPORT_PROMPT,
     SYSTEM_PROMPT,
     LlmAnswer,
+    NoConnectionError,
     ProviderError,
     conversation,
 )
@@ -55,7 +56,7 @@ def claude_answer(
             fallbacks="default",
         )
     except anthropic.APIConnectionError as e:
-        raise ProviderError("no connection to the Claude API") from e
+        raise NoConnectionError("no connection to the Claude API") from e
     except anthropic.RateLimitError as e:
         raise ProviderError("Claude API rate limit") from e
     except anthropic.APIStatusError as e:

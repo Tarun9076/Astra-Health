@@ -9,7 +9,8 @@
 """
 
 import logging
-from dataclasses import dataclass
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +22,7 @@ from astra.assistant.knowledge import Chunk, Retriever, load_knowledge, tokens
 from astra.assistant.models import AssistantRequest, AssistantResponse, Citation
 from astra.assistant.providers import gemini as gemini_provider
 from astra.assistant.providers.claude import claude_answer, claude_report_narrative
-from astra.assistant.providers.common import LlmAnswer, ProviderError
+from astra.assistant.providers.common import LlmAnswer, NoConnectionError, ProviderError
 from astra.assistant.providers.template import template_answer
 from astra.assistant.redflag import RedFlagHit, RedFlagRouter
 from astra.core.protocols import ProtocolBundle
@@ -31,6 +32,9 @@ logger = logging.getLogger(__name__)
 TOP_K = 5
 LLM_ATTEMPTS = 2
 ADVICE = "what astronauts can do"
+# No internet (spacecraft, Wi-Fi off): after a failed connection the online model is skipped for this
+# long, so every answer comes straight from the offline template instead of waiting on the network.
+OFFLINE_PAUSE_S = 60.0
 VAGUE_QUESTION_TERMS = 3  # fewer meaningful words than this → add the active alerts to the search
 
 
@@ -44,6 +48,7 @@ class Assistant:
     default_provider: str = "auto"
     gemini: genai.Client | None = None
     gemini_model: str = "gemini-3.8-flash"
+    offline_until: float = field(default=0.0, repr=False)  # time.monotonic(); see OFFLINE_PAUSE_S
 
     @classmethod
     def load(
@@ -160,6 +165,9 @@ class Assistant:
         flags: list[str] = []
 
         provider = self.provider_for(request.preferred_provider)
+        if provider != "template" and time.monotonic() < self.offline_until:
+            flags.append("fallback: no internet, offline answer")
+            provider = "template"
         if provider != "template":
             known = {c.id: c for c in chunks}
             reminder: str | None = None
@@ -168,6 +176,8 @@ class Assistant:
                     reply = self._ask(provider, request, chunks, reminder)
                 except ProviderError as e:
                     logger.warning("%s unavailable, using the template: %s", provider, e)
+                    if isinstance(e, NoConnectionError):
+                        self.offline_until = time.monotonic() + OFFLINE_PAUSE_S
                     flags.append(f"fallback: {e}")
                     break
                 verdict = check_answer(" ".join([reply.answer, *reply.suggested_actions]))

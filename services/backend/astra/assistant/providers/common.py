@@ -86,6 +86,10 @@ class ProviderError(RuntimeError):
     pass
 
 
+class NoConnectionError(ProviderError):
+    """The model's API can't be reached at all (no internet): the service stops trying for a while."""
+
+
 def user_message(request: AssistantRequest, chunks: list[Chunk], reminder: str | None) -> str:
     knowledge = [{"chunkId": c.id, "title": c.title, "text": c.text} for c in chunks]
     parts = [

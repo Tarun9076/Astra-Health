@@ -257,6 +257,23 @@ def test_claude_failure_falls_back_to_template(assistant: Assistant, failure: An
     assert out.provider == "template" and any(f.startswith("fallback:") for f in out.safety_flags)
 
 
+def test_no_internet_skips_the_online_model_for_a_while(assistant: Assistant) -> None:
+    # T-AI-07: with no internet, only the first question waits for the network; the next ones are
+    # answered offline at once, and the model is tried again after the pause.
+    offline = anthropic.APIConnectionError(
+        request=httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    )
+    good = reply("Your resting heart rate is 92 bpm, well above your normal.", [])
+    assistant.claude = fake_claude(offline, good)
+    request = AssistantRequest(question=QUESTION, findings=FINDINGS)
+    assert assistant.answer(request).provider == "template"
+    second = assistant.answer(request)
+    assert second.provider == "template" and "fallback: no internet, offline answer" in second.safety_flags
+    assert len(assistant.claude.beta.messages.calls) == 1  # not tried again during the pause
+    assistant.offline_until = 0.0  # the pause is over
+    assert assistant.answer(request).provider == "claude"
+
+
 def test_template_preference_skips_claude(assistant: Assistant) -> None:
     assistant.claude = fake_claude()  # would raise IndexError if called
     out = assistant.answer(

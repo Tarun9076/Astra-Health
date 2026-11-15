@@ -23,6 +23,7 @@ from astra.assistant.providers.common import (
     REPORT_PROMPT,
     SYSTEM_PROMPT,
     LlmAnswer,
+    NoConnectionError,
     ProviderError,
     conversation,
     without_additional_properties,
@@ -61,7 +62,7 @@ def _generate(
     except errors.APIError as e:
         raise ProviderError(f"Gemini API error {e.code}") from e
     except Exception as e:  # network errors from the HTTP client
-        raise ProviderError(f"no connection to the Gemini API ({type(e).__name__})") from e
+        raise NoConnectionError(f"no connection to the Gemini API ({type(e).__name__})") from e
     if response.prompt_feedback is not None and response.prompt_feedback.block_reason is not None:
         raise ProviderError("Gemini declined to answer")
     finish = response.candidates[0].finish_reason if response.candidates else None
