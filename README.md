@@ -274,6 +274,8 @@ Only heart rate is read from the watch: blood oxygen, sleep and steps on most bu
 
 **Install it like an app:** click **Install app**: on the sign-in page it is the teal button under **Sign in**; once signed in, it is in the top bar next to the sun/moon button. Confirm the browser's dialog, and ASTRA HEALTH opens in its own window from your desktop or home screen and works offline. If the browser isn't ready to install yet, the button shows where install is in its menu (Chrome: ⋮ → Cast, save and share → Install page as app). On iPhone and iPad it shows Safari's **Share → Add to Home Screen** steps; Firefox on a computer can't install apps (use Chrome or Edge). The button disappears once the app is installed.
 
+**Works without internet:** the astronaut app talks only to the Habitat server (on the spacecraft; in the demo, your own computer), so with Wi-Fi off everything keeps working: check-ins, health screens, insights, the exercise coach, emergency procedures and the AI assistant (offline answers). The top bar shows a small **No internet** note. Only if the Habitat server itself stops does it say **Habitat server not reachable**; then saved screens are shown and new entries are sent when it is back. The hosted (Vercel) version needs the internet; for offline use run the servers on your computer.
+
 **Light and dark themes:** *Calm light* by default and *Mission dark* for dim cabins. Switch with the sun/moon button in the header; the choice is remembered on that device (until then the app follows the device setting).
 
 <img src="docs/screenshots/07-home-dark.png" alt="Home in the Mission dark theme: Take it easy today, today's quests and the body at a glance" width="800">
@@ -464,6 +466,7 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 | Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
 | Smartwatch: "Could not connect" or the watch is not in the list | Turn off Bluetooth on your phone (or close the watch's app), keep the watch close to the laptop and try again. Use Chrome or Edge at `localhost` (Bluetooth does not work over plain http on another address). Your watch must offer the standard heart-rate signal: check with the free nRF Connect app. |
 | Exercise coach: camera message, or no reps counted | Allow the camera in the browser's address bar (it works on `localhost` or https). Stand side-on, 2–3 m away, with your whole body, head to feet, in the picture and good light. Use **Demo playback** to show the feature without a camera. |
+| "You are offline" or nothing loads with Wi-Fi off | Make sure both backends are running on this computer (Terminal 1 and 2) and open the app at `localhost`, not the hosted address. With the internet off, the top bar should say **No internet**, and everything still works. |
 | AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` is set, so it uses offline template answers. This is expected. Restart the Habitat backend after adding a key. |
 | `uv` says Python 3.12 not found | Run `uv python install 3.12`, then repeat Step 2. |
 
