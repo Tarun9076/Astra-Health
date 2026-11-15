@@ -12,6 +12,9 @@
 | HealthPhoto         | insert-if-absent (immutable evidence)                                     |
 | Mission             | last writer wins on the environment profile (set on the Habitat)          |
 | ExerciseSession     | insert-if-absent (results of a coached session)                           |
+| MedicationDose      | state-order merge: Requested < Confirmed < Taken < Declined/Cancelled;    |
+|                     | confirmation, intake, outcome and review fields: first non-null wins      |
+| MedicalProfile      | last writer wins (newest `updated_at`)                                    |
 """
 
 from collections.abc import Callable
@@ -31,7 +34,9 @@ from astra.db.models import (
     HealthPhoto,
     Insight,
     MedicalInstruction,
+    MedicalProfile,
     MedicalReport,
+    MedicationDose,
     Mission,
     SpaceWeatherEvent,
     SyncOutbox,
@@ -49,6 +54,12 @@ ALERT_STATE_FIELDS = (
 ALERT_TRIGGER_FIELDS = (
     "last_triggered_at", "trigger_count", "reason", "evidence_json", "escalation_required", "rule_version",
     "consecutive_clear",
+)  # fmt: skip
+
+DOSE_RANK = {"Requested": 0, "Confirmed": 1, "Taken": 2, "Declined": 3, "Cancelled": 3}
+DOSE_FILL_FIELDS = (
+    "confirmed_at", "confirmed_by", "decline_reason", "self_confirm_reason", "taken_at", "follow_up_at",
+    "outcome", "outcome_at", "reviewed_at", "reviewed_by", "review_note",
 )  # fmt: skip
 
 Event = tuple[str, str, dict[str, Any]]  # (kind, astronaut_id, payload)
@@ -153,6 +164,16 @@ def apply_items(
                 who = session.get(Astronaut, row.astronaut_id)
                 payload = {"id": row.id, "astronautCode": who.code if who else None, "reps": row.total_reps}
                 result.events.append(("ExerciseSessionRecorded", row.astronaut_id, payload))
+        elif kind == "MedicationDose":
+            row = _merge_dose(session, MedicationDose.model_validate(payload), now)
+            if row is not None:
+                result.events.append(
+                    ("MedicationUpdated", row.astronaut_id, {"id": row.id, "status": row.status})
+                )
+        elif kind == "MedicalProfile":
+            row = _merge_profile(session, MedicalProfile.model_validate(payload))
+            if row is not None:
+                result.events.append(("MedicalProfileUpdated", row.astronaut_id, {}))
         elif kind == "Mission":
             mission = session.exec(select(Mission).where(Mission.code == payload["code"])).first()
             if mission is not None and mission.profile_code != payload["profile_code"]:
@@ -197,6 +218,40 @@ def _merge_instruction(
     session.add(current)
     if current.acknowledged_at is not None:
         result.events.append(("InstructionAcknowledged", current.astronaut_id, {}))
+    return current
+
+
+def _merge_dose(session: Session, incoming: MedicationDose, now: datetime) -> MedicationDose | None:
+    current = session.get(MedicationDose, incoming.id)
+    if current is None:
+        session.add(incoming)
+        return incoming
+    changed = False
+    if DOSE_RANK[incoming.status] > DOSE_RANK[current.status]:
+        current.status = incoming.status
+        current.self_confirmed = current.self_confirmed or incoming.self_confirmed
+        changed = True
+    for f in DOSE_FILL_FIELDS:
+        if getattr(current, f) is None and getattr(incoming, f) is not None:
+            setattr(current, f, getattr(incoming, f))
+            changed = True
+    if not changed:
+        return None
+    current.updated_at = now
+    session.add(current)
+    return current
+
+
+def _merge_profile(session: Session, incoming: MedicalProfile) -> MedicalProfile | None:
+    current = session.get(MedicalProfile, incoming.astronaut_id)
+    if current is None:
+        session.add(incoming)
+        return incoming
+    if incoming.updated_at <= current.updated_at:
+        return None
+    for f in ("allergies_json", "conditions_json", "medicines_json", "note", "updated_at", "updated_by"):
+        setattr(current, f, getattr(incoming, f))
+    session.add(current)
     return current
 
 

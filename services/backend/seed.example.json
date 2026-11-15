@@ -7,9 +7,12 @@
     "startDate": "2026-07-17"
   },
   "astronauts": [
-    { "code": "AST-001", "displayName": "Cmdr. A. Rao (simulated)", "roleTitle": "Commander" },
-    { "code": "AST-002", "displayName": "Dr. M. Okafor (simulated)", "roleTitle": "Crew Medical Officer" },
-    { "code": "AST-003", "displayName": "Eng. L. Fischer (simulated)", "roleTitle": "Flight Engineer" }
+    { "code": "AST-001", "displayName": "Cmdr. A. Rao (simulated)", "roleTitle": "Commander",
+      "medicalProfile": { "allergies": ["NSAID"], "note": "Hives after ibuprofen in training (simulated)." } },
+    { "code": "AST-002", "displayName": "Dr. M. Okafor (simulated)", "roleTitle": "Crew Medical Officer",
+      "medicalProfile": {} },
+    { "code": "AST-003", "displayName": "Eng. L. Fischer (simulated)", "roleTitle": "Flight Engineer",
+      "medicalProfile": { "conditions": ["asthma"], "note": "Mild asthma, well controlled (simulated)." } }
   ],
   "users": [
     { "username": "ast1", "password": "astra-demo-ast1", "role": "Astronaut", "astronautCode": "AST-001", "displayName": "Cmdr. A. Rao" },

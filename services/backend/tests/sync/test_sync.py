@@ -331,3 +331,48 @@ def test_exercise_session_reaches_the_flight_surgeon(nodes: dict[str, Any]) -> N
         "/api/astronauts/AST-001/measurements", params={"indicator": "activity_min"}, headers=surgeon
     )
     assert readings.status_code == 200 and readings.json()["points"][-1]["value"] == 15
+
+
+def test_medication_dose_reaches_the_surgeon_and_the_review_comes_back(nodes: dict[str, Any]) -> None:
+    """Step 20 (T-MED-11): a dose given onboard reaches Ground; the flight surgeon's review and a
+    profile edit made on Ground come back; the dose never goes back to an earlier state."""
+    n = nodes
+    now = datetime.now(UTC).replace(microsecond=0)
+    answers = {"worst": False, "neuro": False, "fever-neck": False, "head-injury": False}
+    body = {
+        "id": "dose-sync-0001",
+        "conditionId": "headache",
+        "medicineId": "acetaminophen",
+        "answers": answers,
+    }
+    ast1, ast2 = _auth(n["hab"], "ast1"), _auth(n["hab"], "ast2")
+    assert (
+        n["gnd"].post("/api/medication/doses", json=body, headers=_auth(n["gnd"], "ast1")).status_code == 409
+    )
+    assert n["hab"].post("/api/medication/doses", json=body, headers=ast1).status_code == 201
+    n["hab"].post("/api/medication/doses/dose-sync-0001/confirm", json={"approve": True}, headers=ast2)
+    n["hab"].post("/api/medication/doses/dose-sync-0001/taken", headers=ast1)
+    n["hab_sync"].run_once(n["gnd"], now=now)
+    n["gnd_sync"].run_once(n["hab"], now=now + timedelta(seconds=DELAY + 1))
+    surgeon = _auth(n["gnd"], "surgeon1")
+    doses = n["gnd"].get("/api/medication/doses", headers=surgeon).json()
+    assert [(d["id"], d["status"], d["confirmedBy"]) for d in doses] == [
+        ("dose-sync-0001", "Taken", "Dr. M. Okafor")
+    ]
+
+    r = n["gnd"].post("/api/medication/doses/dose-sync-0001/review", json={"note": "Fine."}, headers=surgeon)
+    assert r.status_code == 200
+    profile = {"allergies": ["NSAID", "PEG"], "conditions": [], "regularMedicines": [], "note": ""}
+    assert (
+        n["gnd"].put("/api/astronauts/AST-001/medical-profile", json=profile, headers=surgeon).status_code
+        == 200
+    )
+    later = now + timedelta(seconds=2 * DELAY + 5)
+    n["gnd_sync"].run_once(n["hab"], now=later)
+    n["hab_sync"].run_once(n["gnd"], now=later + timedelta(seconds=DELAY + 1))
+    mine = n["hab"].get("/api/astronauts/AST-001/medication/doses", headers=ast1).json()
+    assert (mine[0]["status"], mine[0]["reviewNote"]) == ("Taken", "Fine.")
+    assert n["hab"].get("/api/astronauts/AST-001/medical-profile", headers=ast1).json()["allergies"] == [
+        "NSAID",
+        "PEG",
+    ]

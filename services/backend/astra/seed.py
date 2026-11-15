@@ -16,7 +16,7 @@ from astra.config import BACKEND_ROOT, settings
 from astra.core.base import CoreModel
 from astra.core.enums import Role
 from astra.core.ids import stable_id
-from astra.db.models import Astronaut, Mission, UserAccount
+from astra.db.models import Astronaut, MedicalProfile, Mission, UserAccount
 from astra.db.session import init_db, make_engine
 from astra.security.passwords import hash_password, verify_password
 
@@ -28,10 +28,18 @@ class MissionSeed(CoreModel):
     start_date: date
 
 
+class MedicalProfileSeed(CoreModel):
+    allergies: list[str] = []
+    conditions: list[str] = []
+    regular_medicines: list[str] = []
+    note: str = ""
+
+
 class AstronautSeed(CoreModel):
     code: str
     display_name: str
     role_title: str
+    medical_profile: MedicalProfileSeed | None = None
 
 
 class UserSeed(CoreModel):
@@ -82,6 +90,17 @@ def seed_database(session: Session, data: SeedData, *, bcrypt_rounds: int = 12) 
         )
         session.add(astronaut)
         crew[a.code] = astronaut
+    session.flush()
+
+    # Medication Guide profiles: created once; later edits by the CMO or flight surgeon are kept.
+    for a in data.astronauts:
+        if a.medical_profile and session.get(MedicalProfile, crew[a.code].id) is None:
+            mp = a.medical_profile
+            session.add(MedicalProfile(
+                astronaut_id=crew[a.code].id, allergies_json=json.dumps(mp.allergies),
+                conditions_json=json.dumps(mp.conditions), medicines_json=json.dumps(mp.regular_medicines),
+                note=mp.note,
+            ))  # fmt: skip
     session.flush()
 
     for u in data.users:

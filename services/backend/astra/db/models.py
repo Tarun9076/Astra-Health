@@ -408,3 +408,56 @@ class ExerciseSession(SQLModel, table=True):
     summary: str
     node_id: str
     created_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+# --- Medication Guide (Step 20) ------------------------------------------------------------------
+
+
+class MedicalProfile(SQLModel, table=True):
+    """What the Medication Guide must know about one astronaut: allergies, health conditions and
+    regular medicines, as codes from the formulary vocabulary. Edited by the CMO or the flight surgeon;
+    synced both ways (the newest edit wins)."""
+
+    astronaut_id: str = Field(foreign_key="astronaut.id", primary_key=True)
+    allergies_json: str = "[]"
+    conditions_json: str = "[]"
+    medicines_json: str = "[]"
+    note: str = ""
+    updated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+    updated_by: str = "seed"
+
+
+class MedicationDose(SQLModel, table=True):
+    """One medicine dose from the Medication Guide, from request to follow-up. The id comes from the
+    client (a request sent twice is stored once). Synced both ways: the crew writes it onboard, the
+    flight surgeon adds the review on the ground.
+
+    Requested → Confirmed (by the CMO, or the astronaut alone: `self_confirmed`) → Taken → outcome;
+    or Requested → Declined / Cancelled."""
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    condition_id: str
+    medicine_id: str = Field(index=True)
+    units: int
+    dose_text: str  # "2 tablets (1000 mg)"
+    when_text: str  # "Now. If still needed, every 6 hours."
+    formulary_version: str
+    answers_json: str  # red-flag answers: {"worst": false, ...}
+    checks_json: str  # [{level, code, text}] at the time of the request
+    status: str = "Requested"  # Requested | Confirmed | Declined | Cancelled | Taken
+    self_confirmed: bool = False
+    self_confirm_reason: str | None = None
+    requested_at: datetime = Field(sa_type=UTCDateTime, index=True)
+    confirmed_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    confirmed_by: str | None = None
+    decline_reason: str | None = None
+    taken_at: datetime | None = Field(default=None, sa_type=UTCDateTime, index=True)
+    follow_up_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    outcome: str | None = None  # better | same | worse
+    outcome_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    reviewed_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    reviewed_by: str | None = None
+    review_note: str | None = None
+    node_id: str
+    updated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)

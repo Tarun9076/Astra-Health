@@ -32,6 +32,7 @@ from astra.api import (
     exercise,
     history,
     measurements,
+    medication,
     mission,
     photos,
     progress,
@@ -228,6 +229,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(mission.router)
     app.include_router(photos.router)
     app.include_router(exercise.router)
+    app.include_router(medication.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)
 

@@ -6,6 +6,7 @@
     protocols/mission-profiles/*.json  → MissionProfile
     protocols/rules/*.json             → Rule (checked against all of the above)
     protocols/exercise-plans.json      → ExerciseProgramme (optional; its rules must exist)
+    protocols/medications.json         → Formulary (optional; Medication Guide, Step 20)
 
 `load_protocol_bundle` collects every problem and raises one ProtocolError, so the app
 refuses to start with a clear list of what to fix.
@@ -23,6 +24,7 @@ from astra.core.enums import Hazard
 from astra.core.errors import ProtocolError, describe_validation_error
 from astra.core.exercise import ExerciseProgramme
 from astra.core.indicators import IndicatorCatalog, load_catalog
+from astra.core.medication import Formulary
 from astra.core.rules.loader import load_rules
 from astra.core.rules.models import SEMVER_PATTERN, Rule
 
@@ -104,6 +106,7 @@ class ProtocolBundle:
     emergency_protocols: dict[str, EmergencyProtocol] = field(default_factory=dict)
     mission_profiles: dict[str, MissionProfile] = field(default_factory=dict)
     exercise: ExerciseProgramme | None = None  # protocols/exercise-plans.json (Step 13)
+    formulary: Formulary | None = None  # protocols/medications.json (Step 20)
 
     def counts(self) -> ProtocolCounts:
         return ProtocolCounts(
@@ -181,6 +184,18 @@ def _load_exercise(path: Path, rule_ids: set[str], problems: list[str]) -> Exerc
     return programme
 
 
+def _load_formulary(path: Path, emergency_ids: set[str], problems: list[str]) -> Formulary | None:
+    if not path.is_file():
+        return None
+    try:
+        formulary = Formulary.model_validate_json(path.read_text(encoding="utf-8"))
+    except ValidationError as exc:
+        problems.append(f"{path.name}: {describe_validation_error(exc)}")
+        return None
+    problems += [f"{path.name}: {p}" for p in formulary.problems(emergency_ids)]
+    return formulary
+
+
 def load_protocol_bundle(root: Path) -> ProtocolBundle:
     if not root.is_dir():
         raise ProtocolError([f"protocols folder not found: {root}"])
@@ -198,6 +213,7 @@ def load_protocol_bundle(root: Path) -> ProtocolBundle:
     rules, rule_problems = load_rules(root / "rules", catalog, set(recommendations), set(emergency))
     problems += rule_problems
     exercise = _load_exercise(root / "exercise-plans.json", {r.id for r in rules}, problems)
+    formulary = _load_formulary(root / "medications.json", set(emergency), problems)
     if problems:
         raise ProtocolError(problems)
-    return ProtocolBundle(catalog, tuple(rules), recommendations, emergency, missions, exercise)
+    return ProtocolBundle(catalog, tuple(rules), recommendations, emergency, missions, exercise, formulary)
