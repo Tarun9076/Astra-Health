@@ -50,6 +50,14 @@ redFlags:
       - "(severe|heavy|a lot of|lots of) bleeding"
       - "bleeding (badly|heavily|a lot|won'?t stop|that won'?t stop|doesn'?t stop)"
       - "(coughing|vomiting|throwing) up blood"
+  - id: SEVERE-ALLERGY
+    symptom: breathing_difficulty
+    protocol: EMG-SEVERE-ALLERGY
+    title: Severe allergic reaction reported
+    patterns:
+      - "(throat|tongue|lips?|face) (is |are |feels? )?(swelling|swollen|closing|tight)"
+      - "(anaphyla|allergic shock)"
+      - "(swelling|swollen) (throat|tongue|lips?)"
   - id: SELF-HARM
     symptom: self_harm_thoughts
     protocol: EMG-BEHAVIORAL-CRISIS

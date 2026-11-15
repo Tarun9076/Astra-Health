@@ -1,0 +1,475 @@
+{
+  "version": "1.0.0",
+  "status": "demo",
+  "approvedBy": null,
+  "disclaimer": "DEMO medicine list. Doses are copied from public US over-the-counter Drug Facts labels (adults, 12 years and over) and have NOT been approved by a flight surgeon. A real mission replaces this file with the flight surgeons' approved formulary and checklists. Not for real medical use.",
+  "vocabulary": {
+    "allergies": {
+      "NSAID": "Ibuprofen, aspirin or other NSAID pain relievers",
+      "acetaminophen": "Acetaminophen (paracetamol)",
+      "antihistamine": "Antihistamines (loratadine, diphenhydramine, meclizine)",
+      "decongestant": "Decongestant nose sprays (oxymetazoline)",
+      "PEG": "Polyethylene glycol (laxative powder)",
+      "loperamide": "Loperamide",
+      "hydrocortisone": "Hydrocortisone or other steroid creams"
+    },
+    "conditions": {
+      "liver": "Liver disease",
+      "kidney": "Kidney disease",
+      "ulcer": "Stomach ulcer or stomach bleeding (now or before)",
+      "heart": "Heart disease",
+      "hypertension": "High blood pressure",
+      "asthma": "Asthma",
+      "breathing": "Emphysema or chronic bronchitis",
+      "glaucoma": "Glaucoma",
+      "prostate": "Trouble urinating (enlarged prostate)",
+      "thyroid": "Thyroid disease",
+      "diabetes": "Diabetes"
+    },
+    "regularMedicines": {
+      "anticoagulant": "Blood thinner (for example warfarin)",
+      "aspirin_heart": "Daily aspirin for the heart",
+      "sedative": "Sleeping pills or tranquilizers",
+      "steroid": "Steroid tablets (for example prednisone)",
+      "diuretic": "Water pills (diuretic)"
+    }
+  },
+  "medicines": [
+    {
+      "id": "acetaminophen",
+      "name": "Acetaminophen (paracetamol)",
+      "form": "Tablet",
+      "strength": "500 mg",
+      "strengthMg": 500,
+      "unit": "tablet",
+      "unitPlural": "tablets",
+      "how": "Swallow with a glass of water.",
+      "kitLocation": "Medical kit, drawer A1",
+      "stockUnits": 100,
+      "expires": "2028-06",
+      "groups": ["acetaminophen"],
+      "allergyGroups": ["acetaminophen"],
+      "doseUnits": 2,
+      "minIntervalHours": 6,
+      "maxUnitsPer24h": 6,
+      "maxDays": 10,
+      "drowsy": false,
+      "avoidIf": [
+        { "condition": "liver", "level": "block", "reason": "Liver disease: acetaminophen can harm the liver." }
+      ],
+      "interactions": [
+        { "with": "anticoagulant", "level": "caution", "reason": "Can change how a blood thinner works: the CMO checks with the flight surgeon." }
+      ],
+      "cautions": ["Never take it together with another medicine that also contains acetaminophen."],
+      "source": "US OTC Drug Facts label, acetaminophen 500 mg (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=acetaminophen+500+mg"
+    },
+    {
+      "id": "ibuprofen",
+      "name": "Ibuprofen",
+      "form": "Tablet",
+      "strength": "200 mg",
+      "strengthMg": 200,
+      "unit": "tablet",
+      "unitPlural": "tablets",
+      "how": "Swallow with water, with food or milk if your stomach is upset.",
+      "kitLocation": "Medical kit, drawer A2",
+      "stockUnits": 100,
+      "expires": "2028-03",
+      "groups": ["NSAID"],
+      "allergyGroups": ["NSAID"],
+      "doseUnits": 1,
+      "doseUnitsMax": 2,
+      "minIntervalHours": 4,
+      "maxUnitsPer24h": 6,
+      "maxDays": 10,
+      "drowsy": false,
+      "avoidIf": [
+        { "condition": "ulcer", "level": "block", "reason": "Stomach ulcer or bleeding: ibuprofen can cause stomach bleeding." },
+        { "condition": "kidney", "level": "block", "reason": "Kidney disease: ibuprofen can harm the kidneys." },
+        { "condition": "heart", "level": "block", "reason": "Heart disease: ibuprofen can raise the risk of heart problems." },
+        { "condition": "hypertension", "level": "caution", "reason": "High blood pressure: ibuprofen can raise blood pressure." },
+        { "condition": "asthma", "level": "caution", "reason": "Asthma: some people with asthma react to ibuprofen." }
+      ],
+      "interactions": [
+        { "with": "anticoagulant", "level": "block", "reason": "Taken with a blood thinner, ibuprofen raises the risk of bleeding." },
+        { "with": "aspirin_heart", "level": "block", "reason": "Ibuprofen can stop heart aspirin from working and raises the risk of bleeding." },
+        { "with": "steroid", "level": "caution", "reason": "With steroid tablets, the risk of stomach bleeding is higher." },
+        { "with": "diuretic", "level": "caution", "reason": "With water pills, ibuprofen is harder on the kidneys." },
+        { "with": "NSAID", "level": "block", "reason": "Another NSAID pain reliever was taken in the last 24 hours." }
+      ],
+      "cautions": ["Drink plenty of water: in space, dehydration and kidney stones are a risk."],
+      "source": "US OTC Drug Facts label, ibuprofen 200 mg (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=ibuprofen+200+mg"
+    },
+    {
+      "id": "meclizine",
+      "name": "Meclizine",
+      "form": "Tablet",
+      "strength": "25 mg",
+      "strengthMg": 25,
+      "unit": "tablet",
+      "unitPlural": "tablets",
+      "how": "Swallow with water. To prevent motion sickness, take it 1 hour before the activity.",
+      "kitLocation": "Medical kit, drawer B1",
+      "stockUnits": 30,
+      "expires": "2027-11",
+      "groups": ["sedating_antihistamine"],
+      "allergyGroups": ["antihistamine"],
+      "doseUnits": 1,
+      "doseUnitsMax": 2,
+      "minIntervalHours": 24,
+      "maxUnitsPer24h": 2,
+      "drowsy": true,
+      "avoidIf": [
+        { "condition": "glaucoma", "level": "block", "reason": "Glaucoma: this medicine can raise eye pressure." },
+        { "condition": "breathing", "level": "block", "reason": "Emphysema or chronic bronchitis: it can make breathing problems worse." },
+        { "condition": "prostate", "level": "block", "reason": "Trouble urinating: it can make it harder to pass urine." }
+      ],
+      "interactions": [
+        { "with": "sedative", "level": "caution", "reason": "With sleeping pills or tranquilizers you will be much more drowsy." },
+        { "with": "sedating_antihistamine", "level": "caution", "reason": "Another drowsy antihistamine was taken in the last 24 hours: more drowsiness." }
+      ],
+      "cautions": [],
+      "source": "US OTC Drug Facts label, meclizine HCl 25 mg (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=meclizine+25+mg"
+    },
+    {
+      "id": "diphenhydramine",
+      "name": "Diphenhydramine",
+      "form": "Capsule",
+      "strength": "25 mg",
+      "strengthMg": 25,
+      "unit": "capsule",
+      "unitPlural": "capsules",
+      "how": "Swallow with water.",
+      "kitLocation": "Medical kit, drawer B2",
+      "stockUnits": 48,
+      "expires": "2026-09",
+      "groups": ["sedating_antihistamine"],
+      "allergyGroups": ["antihistamine"],
+      "doseUnits": 1,
+      "doseUnitsMax": 2,
+      "minIntervalHours": 4,
+      "maxUnitsPer24h": 12,
+      "maxDays": 14,
+      "drowsy": true,
+      "avoidIf": [
+        { "condition": "glaucoma", "level": "block", "reason": "Glaucoma: this medicine can raise eye pressure." },
+        { "condition": "breathing", "level": "block", "reason": "Emphysema or chronic bronchitis: it can make breathing problems worse." },
+        { "condition": "prostate", "level": "block", "reason": "Trouble urinating: it can make it harder to pass urine." }
+      ],
+      "interactions": [
+        { "with": "sedative", "level": "caution", "reason": "With sleeping pills or tranquilizers you will be much more drowsy." },
+        { "with": "sedating_antihistamine", "level": "caution", "reason": "Another drowsy antihistamine was taken in the last 24 hours: more drowsiness." }
+      ],
+      "cautions": ["Do not use it with any other product that contains diphenhydramine, even a skin cream."],
+      "source": "US OTC Drug Facts labels, diphenhydramine HCl 25 mg: antihistamine and night-time sleep aid (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=diphenhydramine+25+mg"
+    },
+    {
+      "id": "loratadine",
+      "name": "Loratadine",
+      "form": "Tablet",
+      "strength": "10 mg",
+      "strengthMg": 10,
+      "unit": "tablet",
+      "unitPlural": "tablets",
+      "how": "Swallow with water. It does not usually make you drowsy.",
+      "kitLocation": "Medical kit, drawer B3",
+      "stockUnits": 30,
+      "expires": "2028-01",
+      "groups": ["antihistamine"],
+      "allergyGroups": ["antihistamine"],
+      "doseUnits": 1,
+      "minIntervalHours": 24,
+      "maxUnitsPer24h": 1,
+      "drowsy": false,
+      "avoidIf": [
+        { "condition": "liver", "level": "caution", "reason": "Liver disease: the flight surgeon may want a different dose." },
+        { "condition": "kidney", "level": "caution", "reason": "Kidney disease: the flight surgeon may want a different dose." }
+      ],
+      "interactions": [],
+      "cautions": [],
+      "source": "US OTC Drug Facts label, loratadine 10 mg (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=loratadine+10+mg"
+    },
+    {
+      "id": "oxymetazoline",
+      "name": "Oxymetazoline nose spray",
+      "form": "Nasal spray 0.05%",
+      "strength": "0.05%",
+      "unit": "dose",
+      "unitPlural": "doses",
+      "perUnit": "2 or 3 sprays in each nostril",
+      "how": "Blow your nose gently first. Spray while breathing in through the nose.",
+      "kitLocation": "Medical kit, drawer C1",
+      "stockUnits": 60,
+      "expires": "2027-12",
+      "groups": ["decongestant"],
+      "allergyGroups": ["decongestant"],
+      "doseUnits": 1,
+      "minIntervalHours": 10,
+      "maxUnitsPer24h": 2,
+      "maxDays": 3,
+      "drowsy": false,
+      "avoidIf": [
+        { "condition": "heart", "level": "block", "reason": "Heart disease: decongestants can strain the heart." },
+        { "condition": "hypertension", "level": "block", "reason": "High blood pressure: decongestants can raise it." },
+        { "condition": "thyroid", "level": "caution", "reason": "Thyroid disease: ask the flight surgeon first." },
+        { "condition": "diabetes", "level": "caution", "reason": "Diabetes: ask the flight surgeon first." },
+        { "condition": "prostate", "level": "caution", "reason": "Trouble urinating: it can make it harder to pass urine." }
+      ],
+      "interactions": [],
+      "cautions": ["Use it for 3 days at most: longer use can make the stuffiness worse."],
+      "source": "US OTC Drug Facts label, oxymetazoline HCl 0.05% nasal spray (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=oxymetazoline+0.05"
+    },
+    {
+      "id": "peg3350",
+      "name": "Polyethylene glycol 3350 (laxative powder)",
+      "form": "Powder, 17 g packet",
+      "strength": "17 g",
+      "unit": "packet",
+      "unitPlural": "packets",
+      "perUnit": "dissolved in 120–240 mL of water or another drink",
+      "how": "Stir the powder into the drink until it dissolves, then drink it all. It can take 1 to 3 days to work.",
+      "kitLocation": "Medical kit, drawer D1",
+      "stockUnits": 14,
+      "expires": "2028-02",
+      "groups": ["laxative"],
+      "allergyGroups": ["PEG"],
+      "doseUnits": 1,
+      "minIntervalHours": 24,
+      "maxUnitsPer24h": 1,
+      "maxDays": 7,
+      "drowsy": false,
+      "avoidIf": [
+        { "condition": "kidney", "level": "block", "reason": "Kidney disease: ask the flight surgeon before using a laxative." }
+      ],
+      "interactions": [],
+      "cautions": [],
+      "source": "US OTC Drug Facts label, polyethylene glycol 3350 (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=polyethylene+glycol+3350"
+    },
+    {
+      "id": "loperamide",
+      "name": "Loperamide",
+      "form": "Caplet",
+      "strength": "2 mg",
+      "strengthMg": 2,
+      "unit": "caplet",
+      "unitPlural": "caplets",
+      "how": "Swallow with water. Keep drinking fluids to replace what you lose.",
+      "kitLocation": "Medical kit, drawer D2",
+      "stockUnits": 24,
+      "expires": "2027-08",
+      "groups": ["antidiarrheal"],
+      "allergyGroups": ["loperamide"],
+      "firstDoseUnits": 2,
+      "doseUnits": 1,
+      "minIntervalHours": 0,
+      "maxUnitsPer24h": 4,
+      "maxDays": 2,
+      "drowsy": false,
+      "avoidIf": [
+        { "condition": "liver", "level": "caution", "reason": "Liver disease: ask the flight surgeon first." }
+      ],
+      "interactions": [],
+      "cautions": ["Stop and call the CMO if the diarrhoea lasts more than 2 days."],
+      "source": "US OTC Drug Facts label, loperamide HCl 2 mg (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=loperamide+2+mg"
+    },
+    {
+      "id": "hydrocortisone",
+      "name": "Hydrocortisone 1% cream",
+      "form": "Cream 1%",
+      "strength": "1%",
+      "unit": "application",
+      "unitPlural": "applications",
+      "perUnit": "a thin layer on the itchy skin",
+      "how": "Wash and dry the skin, then rub in a thin layer. Wash your hands after.",
+      "kitLocation": "Medical kit, drawer E1",
+      "stockUnits": 60,
+      "expires": "2027-10",
+      "groups": ["topical_steroid"],
+      "allergyGroups": ["hydrocortisone"],
+      "doseUnits": 1,
+      "minIntervalHours": 0,
+      "maxUnitsPer24h": 4,
+      "maxDays": 7,
+      "drowsy": false,
+      "avoidIf": [],
+      "interactions": [],
+      "cautions": ["Not on broken skin, near the eyes, or on a rash that looks infected."],
+      "source": "US OTC Drug Facts label, hydrocortisone 1% cream (DailyMed)",
+      "sourceUrl": "https://dailymed.nlm.nih.gov/dailymed/search.cfm?query=hydrocortisone+1%25+cream"
+    }
+  ],
+  "conditions": [
+    {
+      "id": "headache",
+      "title": "Headache",
+      "plain": "A dull or pressing headache. In space it often comes from fluid moving to the head, poor sleep, too little water or high CO₂ in the cabin.",
+      "keywords": ["headache", "head ache", "head hurts", "head pain", "migraine"],
+      "redFlags": [
+        { "id": "worst", "question": "Is this the worst headache of your life, or did it start suddenly, like a thunderclap?", "action": "emergency", "protocol": "EMG-NEURO-SYMPTOMS" },
+        { "id": "neuro", "question": "Do you have weakness, numbness, trouble speaking, confusion or loss of vision?", "action": "emergency", "protocol": "EMG-NEURO-SYMPTOMS" },
+        { "id": "fever-neck", "question": "Do you have a fever with a stiff neck?", "action": "emergency", "protocol": "EMG-FEVER" },
+        { "id": "head-injury", "question": "Did it start after you hit your head?", "action": "cmo" }
+      ],
+      "nonDrug": ["Drink a glass of water.", "Check the cabin CO₂ reading.", "Rest for 20 minutes in a dim, quiet place."],
+      "options": [
+        { "medicine": "acetaminophen", "when": "Now. If still needed, every 6 hours." },
+        { "medicine": "ibuprofen", "when": "Now. If still needed, every 4 to 6 hours." }
+      ],
+      "followUpHours": 2
+    },
+    {
+      "id": "back-pain",
+      "title": "Back pain",
+      "plain": "Ache or stiffness in the back. Very common in space: the spine stretches without gravity and the back muscles weaken.",
+      "keywords": ["back pain", "backache", "back ache", "back hurts", "sore back", "lower back"],
+      "redFlags": [
+        { "id": "numb", "question": "Is there numbness in your groin or legs, or trouble controlling your bladder or bowels?", "action": "emergency", "protocol": "EMG-NEURO-SYMPTOMS" },
+        { "id": "injury", "question": "Did it start after a fall or a hard hit, with severe pain?", "action": "cmo" },
+        { "id": "fever", "question": "Do you also have a fever?", "action": "cmo" }
+      ],
+      "nonDrug": ["Lie on your back and pull your knees to your chest for 1 minute.", "Put a warm pack on the sore area for 15 minutes.", "Keep moving gently; avoid lifting heavy loads today."],
+      "options": [
+        { "medicine": "ibuprofen", "when": "Now. If still needed, every 4 to 6 hours." },
+        { "medicine": "acetaminophen", "when": "Now. If still needed, every 6 hours." }
+      ],
+      "followUpHours": 3
+    },
+    {
+      "id": "fever",
+      "title": "Mild fever",
+      "plain": "A temperature between 37.5 and 39.4 °C, often with aches or chills.",
+      "keywords": ["fever", "temperature", "chills", "feverish"],
+      "redFlags": [
+        { "id": "high", "question": "Is your temperature 39.5 °C or higher?", "action": "emergency", "protocol": "EMG-FEVER" },
+        { "id": "neck", "question": "Do you have a stiff neck, confusion, or a rash that does not fade when pressed?", "action": "emergency", "protocol": "EMG-FEVER" },
+        { "id": "breath", "question": "Are you short of breath or is your oxygen reading 92% or lower?", "action": "emergency", "protocol": "EMG-LOW-OXYGEN" }
+      ],
+      "nonDrug": ["Drink extra water.", "Rest and stop strenuous tasks.", "Keep your distance from the crew and wash your hands often."],
+      "options": [
+        { "medicine": "acetaminophen", "when": "Now. If still needed, every 6 hours." },
+        { "medicine": "ibuprofen", "when": "Now. If still needed, every 4 to 6 hours." }
+      ],
+      "followUpHours": 4
+    },
+    {
+      "id": "motion-sickness",
+      "title": "Motion sickness",
+      "plain": "Nausea, dizziness or sweating when moving: common in the first days in a new gravity, and in the rover.",
+      "keywords": ["motion sickness", "nausea", "nauseous", "space sickness", "dizzy", "queasy", "sick to my stomach", "vomit"],
+      "redFlags": [
+        { "id": "blood", "question": "Are you vomiting blood or something that looks like coffee grounds?", "action": "emergency", "protocol": "EMG-SEVERE-BLEEDING" },
+        { "id": "fluids", "question": "Have you been unable to keep any fluid down for more than 12 hours?", "action": "cmo" },
+        { "id": "headache", "question": "Do you also have a severe headache or a hit to the head?", "action": "cmo" }
+      ],
+      "nonDrug": ["Keep your head still and look at a fixed point.", "Take small sips of water.", "Avoid reading or screens until it settles."],
+      "options": [
+        { "medicine": "meclizine", "when": "Once a day. To prevent it, 1 hour before the activity." }
+      ],
+      "followUpHours": 2
+    },
+    {
+      "id": "allergy",
+      "title": "Allergy (sneezing, itchy eyes, mild hives)",
+      "plain": "Sneezing, runny nose, itchy eyes or a few itchy bumps, for example from dust in the habitat.",
+      "keywords": ["allergy", "allergic", "sneezing", "itchy eyes", "hives", "runny nose"],
+      "redFlags": [
+        { "id": "swelling", "question": "Is your lips, tongue or throat swelling, or is it hard to breathe or swallow?", "action": "emergency", "protocol": "EMG-SEVERE-ALLERGY" },
+        { "id": "dizzy", "question": "Do you have hives all over your body and feel dizzy or faint?", "action": "emergency", "protocol": "EMG-SEVERE-ALLERGY" }
+      ],
+      "nonDrug": ["Rinse your eyes and face with clean water.", "Report dust or a smell in the module to the crew."],
+      "options": [
+        { "medicine": "loratadine", "when": "Once a day." },
+        { "medicine": "diphenhydramine", "when": "If still needed, every 4 to 6 hours." }
+      ],
+      "followUpHours": 3
+    },
+    {
+      "id": "stuffy-nose",
+      "title": "Stuffy nose",
+      "plain": "A blocked nose. In space fluid moves to the head, so many astronauts feel stuffy for days.",
+      "keywords": ["stuffy nose", "blocked nose", "congestion", "congested", "stuffy", "sinus"],
+      "redFlags": [
+        { "id": "face", "question": "Do you have a fever above 38.5 °C with pain in your face or teeth?", "action": "cmo" },
+        { "id": "blood", "question": "Is your nose bleeding and not stopping after 15 minutes of pressure?", "action": "emergency", "protocol": "EMG-SEVERE-BLEEDING" }
+      ],
+      "nonDrug": ["Sleep with your head raised if you can.", "Drink water; dry cabin air makes it worse."],
+      "options": [
+        { "medicine": "oxymetazoline", "when": "Every 10 to 12 hours if needed, for 3 days at most." },
+        { "medicine": "loratadine", "when": "Once a day, if it comes with sneezing or itchy eyes." }
+      ],
+      "followUpHours": 4
+    },
+    {
+      "id": "sleep",
+      "title": "Trouble sleeping (now and then)",
+      "plain": "You can't fall asleep or keep waking up. Light, noise, worry and shifted schedules all play a part.",
+      "keywords": ["can't sleep", "cannot sleep", "insomnia", "trouble sleeping", "sleeping pill", "sleep aid", "fall asleep"],
+      "redFlags": [
+        { "id": "harm", "question": "Are you having thoughts of harming yourself, or feeling hopeless?", "action": "emergency", "protocol": "EMG-BEHAVIORAL-CRISIS" },
+        { "id": "weeks", "question": "Has it lasted more than 2 weeks?", "action": "cmo" },
+        { "id": "duty", "question": "Do you have an EVA, a rover drive or a critical task in the next 8 hours?", "action": "cmo" }
+      ],
+      "nonDrug": ["Dim the lights and put screens away 30 minutes before bed.", "Use the eye mask and ear plugs.", "Try the 4-7-8 breathing exercise in Wellness."],
+      "options": [
+        { "medicine": "diphenhydramine", "doseUnits": 2, "when": "At bedtime, only on nights you need it." }
+      ],
+      "followUpHours": 10
+    },
+    {
+      "id": "constipation",
+      "title": "Constipation",
+      "plain": "Hard stools or not going for a few days. Common in space with less movement and less water.",
+      "keywords": ["constipation", "constipated", "can't poop", "hard stool"],
+      "redFlags": [
+        { "id": "belly", "question": "Do you have severe belly pain, a hard swollen belly, or are you vomiting?", "action": "cmo" },
+        { "id": "blood", "question": "Is there blood in your stool?", "action": "cmo" }
+      ],
+      "nonDrug": ["Drink an extra 500 mL of water today.", "Eat fruit, vegetables or other fibre.", "Do your exercise session; movement helps."],
+      "options": [
+        { "medicine": "peg3350", "when": "Once a day, for 7 days at most." }
+      ],
+      "followUpHours": 24
+    },
+    {
+      "id": "diarrhea",
+      "title": "Diarrhoea",
+      "plain": "Loose, watery stools. The main danger is losing too much water.",
+      "keywords": ["diarrhea", "diarrhoea", "loose stool", "runny stool", "stomach bug"],
+      "redFlags": [
+        { "id": "blood", "question": "Is there blood in your stool, or is it black?", "action": "cmo" },
+        { "id": "fever", "question": "Do you have a fever above 38.5 °C?", "action": "cmo" },
+        { "id": "dry", "question": "Are you very thirsty, dizzy when standing, or not passing urine?", "action": "cmo" }
+      ],
+      "nonDrug": ["Drink an oral rehydration drink after each loose stool.", "Wash your hands well and clean the hygiene area."],
+      "options": [
+        { "medicine": "loperamide", "when": "2 caplets after the first loose stool, then 1 after each further loose stool." }
+      ],
+      "followUpHours": 6
+    },
+    {
+      "id": "rash",
+      "title": "Itchy skin rash",
+      "plain": "A small itchy, red patch of skin, for example from dry cabin air or the suit.",
+      "keywords": ["rash", "itchy skin", "itch", "itching", "skin irritation", "eczema"],
+      "redFlags": [
+        { "id": "swelling", "question": "Is your lips, tongue or throat swelling, or is it hard to breathe?", "action": "emergency", "protocol": "EMG-SEVERE-ALLERGY" },
+        { "id": "spreading", "question": "Is the rash spreading fast, blistering or peeling, or do you have a fever?", "action": "cmo" },
+        { "id": "infected", "question": "Is it hot, swollen and painful, or leaking pus?", "action": "cmo" }
+      ],
+      "nonDrug": ["Keep the skin clean and dry.", "Use the skin moisturiser after washing.", "Don't scratch; cover it if it rubs on clothes or the suit."],
+      "options": [
+        { "medicine": "hydrocortisone", "when": "Up to 4 times a day, for 7 days at most." },
+        { "medicine": "loratadine", "when": "Once a day, if the itch is strong." }
+      ],
+      "followUpHours": 24
+    }
+  ]
+}
