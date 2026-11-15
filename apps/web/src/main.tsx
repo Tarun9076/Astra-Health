@@ -17,8 +17,15 @@ initInstall() // before rendering: the browser's install offer can arrive early
 const DAY_MS = 24 * 60 * 60 * 1000
 const CACHE_KEY = 'astra-cache'
 
+// networkMode 'always': the server is the Habitat on board (often this same computer), not the
+// internet. By default TanStack Query pauses every request while the browser reports "no internet",
+// which froze the app on a spacecraft-style setup with Wi-Fi off; now requests always go to the
+// Habitat, and only a real failure to reach it counts as offline (OfflineBanner).
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { staleTime: 30_000, gcTime: DAY_MS, refetchOnWindowFocus: false } },
+  defaultOptions: {
+    queries: { staleTime: 30_000, gcTime: DAY_MS, refetchOnWindowFocus: false, networkMode: 'always' },
+    mutations: { networkMode: 'always' },
+  },
 })
 
 // Offline reads (LLD §12.6): the last successful screens are kept on this device for a day, so the
