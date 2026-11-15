@@ -16,7 +16,7 @@ and sends reports to flight surgeons on Earth when the link allows.
 </div>
 
 > [!WARNING]
-> **This is not a medical device.** ASTRA HEALTH is a hackathon research prototype for clinical *decision support*. It does not diagnose or prescribe. All thresholds are **illustrative** and all crew health data is **simulated**.
+> **This is not a medical device.** ASTRA HEALTH is a hackathon research prototype for clinical *decision support*. It does not diagnose. Its Medication Guide follows a **demo** medicine list (public over-the-counter label doses, not approved by a flight surgeon), and every dose needs the crew medical officer's confirmation. All thresholds are **illustrative** and all crew health data is **simulated**.
 
 <p align="center">
   <img src="docs/screenshots/01-home.png" alt="Astronaut Home: one sentence on how you are, today's quests with points, the body at a glance and your level" width="900">
@@ -61,7 +61,7 @@ ASTRA HEALTH helps with that in three ways:
 
 It has two sides:
 
-- **Astronaut app** (on the spacecraft): home summary, guided daily check-in, body systems, trends, guidance, wellness, health history, an AI assistant and offline emergency procedures.
+- **Astronaut app** (on the spacecraft): home summary, guided daily check-in, body systems, trends, guidance, a **Medication Guide**, wellness, health history, an AI assistant and offline emergency procedures.
 - **Flight surgeon dashboard** (on Earth): crew overview, communication status, follow-ups, alerts, reports and secure instructions back to the crew.
 
 ### Safety by design
@@ -70,7 +70,8 @@ It has two sides:
 |---|---|
 | **Rules engine** | Decides how serious something is, using fixed, versioned and testable rules. |
 | **Machine learning** | Only *supports* a finding (anomaly and trend detection). It never raises an Urgent alert on its own. |
-| **AI assistant** | Only *explains*, citing NASA and CSA sources. It never diagnoses, prescribes or overrides an alert. Emergency symptoms skip the AI and go straight to the emergency steps. |
+| **AI assistant** | Only *explains*, citing NASA and CSA sources. It never diagnoses, chooses a medicine or overrides an alert. Emergency symptoms skip the AI and go straight to the emergency steps. |
+| **Medication Guide** | Gives the medicine and dose from the flight surgeons' medicine list (`protocols/medications.json`), only after safety questions and fixed checks (allergies, health conditions, other medicines, time since the last dose, 24-hour limit, days of use, kit stock and expiry). The crew medical officer confirms before it is taken; the flight surgeon reviews it. |
 
 ---
 
@@ -250,9 +251,10 @@ The menu is organised by **what you want to do**:
 | **My Health** | A human body figure (flat or 3D: turn it, zoom, click an organ) and body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
 | **Daily Check-in** | Guided measurements in about 2 minutes: heart rate, blood pressure, temperature, oxygen, blood sugar, body mass, sleep, mood, stress and symptoms, with how-to steps, units and validation. You can add photos (skin, eye, wound, a device display) for the flight surgeon |
 | **My Guidance** | *What should I do?* Short action cards (why, when, Mark as done +5 points), plus every health alert in plain words |
+| **Medicines** | *What can I safely take?* Pick the problem (headache, back pain, fever, motion sickness, allergy, stuffy nose, sleep, constipation, diarrhoea, rash), answer the safety questions, and get the medicine from the kit, how much, when and where it is, or why it is not safe for you now |
 | **Wellness** | Physical activity with the **exercise coach**, sleep, mental wellness (breathing, support), nutrition and hydration, plus **progress and badges** |
 | **Health History** | Timeline of everything recorded, plus medical reports |
-| **AI Assistant** | A short answer first (one or two sentences), up to 3 steps that help, and when to get help; the explanation and sources are one tap away. It never diagnoses or prescribes. |
+| **AI Assistant** | A short answer first (one or two sentences), up to 3 steps that help, and when to get help; the explanation and sources are one tap away. It never diagnoses or chooses a medicine: medicine questions get a button to the Medication Guide. |
 | **Emergency procedures** | Always at the bottom of the menu, and stored in the app so it works offline |
 
 Home also shows **My progress** (points, check-in streak, this week's goals) and **Your environment** (gravity, delay to Earth, what matters most for your health there).
@@ -272,6 +274,10 @@ Design principles: every page answers its own question first, in everyday words 
 
 Only heart rate is read from the watch: blood oxygen, sleep and steps on most budget watches use the maker's private format.
 
+**Medication Guide** (menu → *Medicines*): on Mars there is no pharmacy and no doctor nearby, so the crew must treat common problems themselves. Pick the problem and answer a few yes/no safety questions. Any "yes" stops the guide: it shows the emergency steps or tells you to call the crew medical officer (CMO). Otherwise it shows things to try first, then the medicine from the kit with the dose, when to take it and the drawer it is in. Medicines that are not safe for you are listed with the reason (for example *Allergy on record*, *too soon after the last dose*, *the 24-hour limit*). Tap **Ask the CMO to confirm**: the CMO (sign in as `ast2`) sees the request in Medicines and confirms or declines it. When no CMO is available you can confirm it yourself with a reason; the flight surgeon is shown that. After you take it, the app asks **Did it help?** a few hours later; *Worse* tells you to call the CMO and alerts the flight surgeon. Every dose reaches Earth with the next link window, where the flight surgeon reviews it and keeps each astronaut's allergies, conditions and regular medicines up to date. The AI assistant never gives a dose: medicine questions get a button to the guide, and only a dose the CMO has confirmed can be repeated in its answer.
+
+> ⚠️ The medicine list is a **demo**: doses are copied from public US over-the-counter labels (Drug Facts, linked for each medicine) and have **not** been approved by a flight surgeon. A real mission replaces `protocols/medications.json` with the flight surgeons' approved list. Not for real medical use.
+
 **Install it like an app:** click **Install app**: on the sign-in page it is the teal button under **Sign in**; once signed in, it is in the top bar next to the sun/moon button. Confirm the browser's dialog, and ASTRA HEALTH opens in its own window from your desktop or home screen and works offline. If the browser isn't ready to install yet, the button shows where install is in its menu (Chrome: ⋮ → Cast, save and share → Install page as app). On iPhone and iPad it shows Safari's **Share → Add to Home Screen** steps; Firefox on a computer can't install apps (use Chrome or Edge). The button disappears once the app is installed.
 
 **Works without internet:** the astronaut app talks only to the Habitat server (on the spacecraft; in the demo, your own computer), so with Wi-Fi off everything keeps working: check-ins, health screens, insights, the exercise coach, emergency procedures and the AI assistant (offline answers). The top bar shows a small **No internet** note. Only if the Habitat server itself stops does it say **Habitat server not reachable**; then saved screens are shown and new entries are sent when it is back. The hosted (Vercel) version needs the internet; for offline use run the servers on your computer.
@@ -286,7 +292,8 @@ Only heart rate is read from the watch: blood oxygen, sleep and steps on most bu
 
 Sign in as `surgeon1`. The surgeon gets:
 - a **crew overview** with communication status, a "Follow-up needed" list and a crew table;
-- for each astronaut, tabs for Summary, Body, Alerts review, Trends, Health history, Reports, Exercise (coached sessions: reps, form, tips) and Instructions (messages sent back to the crew).
+- a **Medicines to review** list: doses given onboard, the ones confirmed without the CMO or followed by *Worse* first;
+- for each astronaut, tabs for Summary, Body, Alerts review, Trends, Health history, Reports, Exercise (coached sessions: reps, form, tips), Medicines (doses with the checks, *Mark reviewed* with a note; allergies, conditions and regular medicines to edit) and Instructions (messages sent back to the crew).
 
 ### Admin (demo control)
 
@@ -467,6 +474,7 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 | Smartwatch: "Could not connect" or the watch is not in the list | Turn off Bluetooth on your phone (or close the watch's app), keep the watch close to the laptop and try again. Use Chrome or Edge at `localhost` (Bluetooth does not work over plain http on another address). Your watch must offer the standard heart-rate signal: check with the free nRF Connect app. |
 | Exercise coach: camera message, or no reps counted | Allow the camera in the browser's address bar (it works on `localhost` or https). Stand side-on, 2–3 m away, with your whole body, head to feet, in the picture and good light. Use **Demo playback** to show the feature without a camera. |
 | "You are offline" or nothing loads with Wi-Fi off | Make sure both backends are running on this computer (Terminal 1 and 2) and open the app at `localhost`, not the hosted address. With the internet off, the top bar should say **No internet**, and everything still works. |
+| Medicines: an allergy is not blocking a medicine (for example AST-001 is offered ibuprofen) | Your database was created before Step 20, so the astronauts have no allergy profile yet. Run the seed again (it keeps everything else): `cd services/backend; .venv/Scripts/python -m astra.seed`. |
 | AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` is set, so it uses offline template answers. This is expected. Restart the Habitat backend after adding a key. |
 | `uv` says Python 3.12 not found | Run `uv python install 3.12`, then repeat Step 2. |
 

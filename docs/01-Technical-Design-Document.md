@@ -6,7 +6,7 @@
 **Related docs:** [02-High-Level-Design.md](02-High-Level-Design.md) · [03-Low-Level-Design.md](03-Low-Level-Design.md) · [04-Implementation-Plan.md](04-Implementation-Plan.md)
 
 > **Safety statement (repeat this in the app, the README, and the pitch).**
-> ASTRA HEALTH is a research/hackathon prototype for **clinical decision support**. It does **not** diagnose, prescribe, or replace a flight surgeon. All thresholds in this repository are **illustrative** and must be replaced by values approved by aerospace medicine experts before any real use. All demo data is **simulated** and labelled as such.
+> ASTRA HEALTH is a research/hackathon prototype for **clinical decision support**. It does **not** diagnose or replace a flight surgeon. Its Medication Guide (ADR-15) only follows a versioned medicine list, which in this repository is a **demo** (public over-the-counter label doses, not approved by a flight surgeon), and every dose needs the crew medical officer's confirmation. All thresholds in this repository are **illustrative** and must be replaced by values approved by aerospace medicine experts before any real use. All demo data is **simulated** and labelled as such.
 
 ---
 
@@ -234,6 +234,11 @@ Four stacks were compared on 2026-11-14:
 **Not used:**
 - Microsoft Planetary Computer hosts Earth-observation data, not space weather, Mars or human-health data. It needs no key for public data (a subscription key only raises rate limits). Optional use: an "Earth benefits" slide.
 - NASA's InSight Mars weather API: the lander ended operations in 2022, so there is no current data.
+
+### ADR-15 — Medication Guide: medicines and doses from a versioned list, never from the AI (Step 20)
+**Context:** on a Mars mission a message to Earth takes up to ~20 minutes one way and blackouts last days, so the crew must treat common problems with the onboard kit on their own (Earth-independent medical operations).
+**Decision:** a **formulary file** (`protocols/medications.json`) holds the kit medicines, doses, limits, allergy groups, conditions to avoid and interactions, plus the conditions with their safety questions. Fixed, tested checks (`core/medication.py`) pick the first medicine that is safe for this astronaut now; a red-flag "yes" stops the guide. The **crew medical officer confirms** every dose (or the astronaut alone, with a reason that the flight surgeon sees), and every dose syncs to Earth for review. The LLM keeps its rule *never choose a medicine or a dose*: it links to the guide and may only repeat a dose the CMO confirmed; the guard rejects any other.
+**Why:** the same authority order as ADR-03: a dose must be checkable, versioned and approved by a physician, never generated. **Limit:** the list in this repository is a demo built from US over-the-counter labels; a mission replaces it with the flight surgeons' approved formulary.
 
 ---
 
