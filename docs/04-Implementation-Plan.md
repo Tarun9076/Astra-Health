@@ -576,10 +576,11 @@ Design rules:
 **Goal:** the app was installable (PWA) only through the browser's own menu, which most people never find. Add a clear button.
 
 - [x] `lib/install.ts`: the browser's `beforeinstallprompt` offer is caught at startup (before React renders; it can arrive early) and kept; `installApp()` shows the browser's install dialog; `appinstalled` and `display-mode: standalone` mark the app as installed. Safari on iPhone and iPad has no such offer, so it is detected separately.
-- [x] `InstallButton`: in the header (all roles) and on the sign-in page, shown only when the browser can install and the app isn't installed yet; on iPhone and iPad it opens short Share → Add to Home Screen steps.
+- [x] `InstallButton`: in the header (all roles) and under the sign-in form, **always visible until the app is installed**. With the browser's offer it opens the install dialog; without it, it shows where install is in this browser's menu (Chrome, Edge, Android), Safari's Share → Add to Home Screen steps (iPhone, iPad), or "use Chrome or Edge" (Firefox on a computer).
+- [x] Installable on the dev server too (`devOptions` in `vite.config.ts`): before, the manifest was only linked in a production build, so on `localhost:5173` Chrome never offered installation and the button (then shown only with an offer) stayed hidden.
 - [x] Proper install icons: 192 and 512 px PNGs, a maskable 512 px icon (logo inside the safe zone) and an Apple touch icon, generated from the logo; manifest, `theme-color` and Apple title in `index.html`.
 
-**Done 2026-11-15:** browser test T-UI-12 (4 tests: offer → dialog → hidden once accepted; declined → hidden until offered again; already installed → no button; iPhone Safari → instructions). The sign-in and Home pages still pass the accessibility scan. `tsc`, `oxlint`, `vite build` clean.
+**Done 2026-11-15:** browser test T-UI-12 (5 tests: no offer → menu steps, then offer → dialog → hidden once accepted; declined → stays and opens the dialog when offered again; already installed → no button; iPhone Safari → Add to Home Screen; Firefox → use Chrome or Edge). Full browser suite passes (44) with the development service worker on. The sign-in and Home pages still pass the accessibility scan. `tsc`, `oxlint`, `vite build` clean.
 
 **Not covered:** the real Chrome install dialog and the iPhone home-screen icon were not tried on a device (test browsers never offer installation; the event is simulated).
 
