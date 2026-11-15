@@ -1,5 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="96" fill="#070b16"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#38bdf8" stroke-width="28"/>
-  <path d="M136 268h70l30-70 44 140 34-90h62" fill="none" stroke="#e6ecff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>ASTRA HEALTH</title>
+  <rect width="64" height="64" rx="14" fill="#0a1120"/>
+  <ellipse cx="32" cy="33" rx="27" ry="10" fill="none" stroke="#38bdf8" stroke-width="2.5" transform="rotate(-22 32 33)"/>
+  <path d="M32 52C18 42 11 34 11 25c0-7 5-12 11.5-12 4.2 0 7.6 2.3 9.5 5.6C33.9 15.3 37.3 13 41.5 13 48 13 53 18 53 25c0 9-7 17-21 27z" fill="#2dd4bf"/>
+  <path d="M15 30h9l4-7 5 13 4-9h12" fill="none" stroke="#0a1120" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="51" cy="10" r="2.6" fill="#ffffff"/>
 </svg>
