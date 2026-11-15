@@ -223,7 +223,7 @@ The menu is organised by **what you want to do**:
 | Section | What it is for |
 |---|---|
 | **Home** | How you are right now, what changed, what to pay attention to and why, key measurements, today's tasks |
-| **My Health** | Body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
+| **My Health** | A human body figure (flat or 3D: turn it, zoom, click an organ) and body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
 | **Daily Check-in** | Guided measurements in about 2 minutes: heart rate, blood pressure, temperature, oxygen, blood sugar, body mass, sleep, mood, stress and symptoms, with how-to steps, units and validation. You can add photos (skin, eye, wound, a device display) for the flight surgeon |
 | **My Guidance** | Recommended actions grouped by area, plus every health alert, explained |
 | **Wellness** | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration, plus **progress and badges** |

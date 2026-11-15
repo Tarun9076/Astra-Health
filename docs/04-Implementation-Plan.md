@@ -334,7 +334,7 @@ Today is mission day 121; the history covers days −29…120.
   - "what changes in space" and "what you can do" from the knowledge base, with the source;
   - a status: RED Urgent / YELLOW Attention or ≥ 2σ / GREEN / GREY no data.
 - [x] **BodyMap2D** (SVG, keyboard-accessible regions) → `RegionPanel` (readings, sparkline with the ±2σ normal band, alerts linking to the Alerts Center, next steps, knowledge).
-- [x] **BodyModel3D** (React Three Fiber 9.8 + drei 10.7, three 0.187): a stylised body built from primitives, so there is no external model licence to track.
+- [x] **BodyModel3D** (React Three Fiber 9.8 + drei 10.7, three 0.187): first a stylised body from primitives; replaced in Step 11d by a human figure sculpted in code (no external model licence to track).
   - Meshes per region, coloured by status, with hover and click; drag to rotate.
   - A 2D/3D toggle; lazy-loaded (≈ 0.9 MB chunk, only in the 3D view).
 - [x] **Wellness Center** (`GET /api/astronauts/{id}/wellness-center`, `POST /api/wellness/activity`):
@@ -440,6 +440,24 @@ Today is mission day 121; the history covers days −29…120.
 - Live camera tested only through the file input in Playwright; `getUserMedia` was not exercised by an automated test.
 - Mission environment values are illustrative; switching keeps the same simulated crew history (made for Mars).
 - The running Ground node must be restarted to pick up the new sync items (it runs without `--reload`).
+
+---
+
+### Step 11d — Realistic human body figure ✅
+
+**Goal:** the body figure was built from circles and spheres and did not look human. Replace it with a realistic, interactive figure, with no downloaded model (no licence, no large asset). Details: LLD §15.5 (Body figure).
+
+- [x] **One anatomy model in code** (`features/body/anatomy.ts`): the body and organ systems as signed distance functions: a 1.76 m adult (head with face, ears and nose; neck, shoulders, chest, abdomen, hips; arms with hands and thumbs; legs with knees, calves and feet) smoothly blended into one skin. Inside: brain (lobes, cerebellum, stem), eyes, lungs (domed base, heart notch), heart with aorta, liver, stomach, intestines, lymph nodes, spleen and thymus, limb muscles, and a skeleton (spine, collarbones, pelvis, arm and leg bones, kneecaps).
+- [x] **3D view**: meshed in a Web Worker with surface nets (`surfaceNets.ts`, `bodyMesh.worker.ts`, ≈ 1–2 s once per visit); see-through skin (rim-lit shader); the chosen system and any system not within normal are solid and status-coloured (the chosen one pulses), the others are faint ghosts. Hover names the part and its status; click selects the front-most part; choosing a system moves the camera to it. Controls: Front / Side / Back, Turn (slow auto-rotate, off with reduced motion or on any drag), Skin (show or hide), soft floor shadow.
+- [x] **Flat view**: generated from the same model (`scripts/gen-body-map.ts` → `bodyMapPaths.ts`, front projection traced with marching squares, 12 KB); skin shading, the same solid / faint rule, keyboard buttons for the 8 systems plus the skin (whole body, radiation).
+
+**Done when:** both views look like a human body, every system can be chosen by mouse and keyboard, and the existing checks pass. **Done 2026-11-15:**
+- **Checks:** new browser test T-UI-07 (flat clicks and keyboard, 3D build and controls); the full browser suite passes (26 tests); `tsc`, `oxlint` and `vite build` are clean. The worker is a 7 kB chunk; the 3D chunk is unchanged (≈ 0.94 MB, lazy).
+- To change the anatomy, edit `anatomy.ts`, then run `node scripts/gen-body-map.ts` (Node 23.6+) to redraw the flat view.
+
+**Not covered:**
+- Shapes are educational, not a medical atlas: no skin texture, face detail, fingers or individual ribs.
+- Clicking inside the 3D canvas is tested by hand only (the automated test drives the buttons and the list).
 
 ---
 

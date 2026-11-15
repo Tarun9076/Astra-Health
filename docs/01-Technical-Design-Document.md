@@ -53,7 +53,7 @@ Astronaut app (P0 modules 1–7), Flight Surgeon dashboard (module 8), simulated
 | Blood pressure, heart rate, blood sugar, body temperature, sleep, mood | All in the guided daily check-in (blood sugar and body mass since the gap fix), plus devices |
 | Input by keyboard, mouse or camera | Typed values and sliders; camera photos in the check-in (FR-25) |
 | When a result needs the crew or flight surgeons | Rules: Attention vs Urgent, escalation, reports and alerts synced to Earth |
-| Clickable human figure | My Health: 2D/3D body, 7-part explanation per system |
+| Clickable human figure | My Health: a realistic human figure (flat and 3D, see-through skin, organs inside), 7-part explanation per system |
 | Different environments (station, rover, base) | 4 mission profiles (FR-26, LLD §8.1) |
 | Prompts to measure as a routine | Daily check-in task with "Due" badge, routine tasks |
 | Gamification | My progress and badges (FR-24) |
