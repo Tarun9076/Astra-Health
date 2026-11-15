@@ -264,6 +264,13 @@ Points reward what you *do* (check in, exercise, sleep and drink enough, finish 
 
 Design principles: every page answers its own question first, in everyday words (no statistics jargon); the numbers, sources and how a rule decided are one tap away under **More detail**. Three levels everywhere: **OK**, **Take care**, **Get help now**, never shown by colour alone (always an icon and a word). Missing data is never shown as normal.
 
+**Connect your smartwatch:** any watch or chest strap that offers the standard Bluetooth heart-rate signal works (tested design: Fire-Boltt BGR002). Use **Chrome or Edge** on a laptop with Bluetooth, at `http://localhost:5173`:
+1. Turn off Bluetooth on your phone for now (the watch talks to one device at a time), and wear the watch snugly.
+2. Sign in as an astronaut and click **Connect watch** at the top. Pick your watch in the list and click **Pair**.
+3. The top bar shows your live heart rate. One reading a minute is saved to your health record (source: your watch). In the daily check-in, **Measure with my watch (30 s)** fills in your resting heart rate; the exercise coach shows your heart rate while you train.
+
+Only heart rate is read from the watch: blood oxygen, sleep and steps on most budget watches use the maker's private format.
+
 **Light and dark themes:** *Calm light* by default and *Mission dark* for dim cabins. Switch with the sun/moon button in the header; the choice is remembered on that device (until then the app follows the device setting).
 
 <img src="docs/screenshots/07-home-dark.png" alt="Home in the Mission dark theme: Take it easy today, today's quests and the body at a glance" width="800">
@@ -441,6 +448,7 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 | Flight surgeon doesn't see new photos or the new environment | Restart the **Ground** backend (Terminal 2) after pulling new code if you started it by hand without `--reload` (`start-demo.ps1` starts it with `--reload`). |
 | Errors after pulling new code that changed the database tables | There are no migrations yet. Stop both backends, delete `services/backend/habitat.db*` and `ground.db*`, then repeat [Step 4](#step-4-create-the-demo-databases) and [Step 6](#step-6-load-the-simulated-mission-data). |
 | Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
+| Smartwatch: "Could not connect" or the watch is not in the list | Turn off Bluetooth on your phone (or close the watch's app), keep the watch close to the laptop and try again. Use Chrome or Edge at `localhost` (Bluetooth does not work over plain http on another address). Your watch must offer the standard heart-rate signal: check with the free nRF Connect app. |
 | Exercise coach: camera message, or no reps counted | Allow the camera in the browser's address bar (it works on `localhost` or https). Stand side-on, 2–3 m away, with your whole body, head to feet, in the picture and good light. Use **Demo playback** to show the feature without a camera. |
 | AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` is set, so it uses offline template answers. This is expected. |
 | `uv` says Python 3.12 not found | Run `uv python install 3.12`, then repeat Step 2. |

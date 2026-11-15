@@ -534,6 +534,27 @@ Design rules:
 
 ---
 
+### Step 15 — Connect a real smartwatch ✅
+
+**Goal:** test the system with real readings from the astronaut's own watch (here a Fire-Boltt BGR002, paired with an Android phone). Fire-Boltt has no public data API and Health Connect has no web API, but the watch offers the standard Bluetooth **Heart Rate** service (checked with nRF Connect), so the browser can read it directly with Web Bluetooth: nothing to install. Details: LLD §15.8 (Smartwatch).
+
+- [x] Heart-rate parser (`lib/heartRate.ts`): Bluetooth Heart Rate Measurement (0x2A37): 8- and 16-bit rate, skin contact, energy field, RR intervals; readings off the wrist, 0 bpm or out of range are ignored; median against single wrong beats.
+- [x] Connection (`lib/watch.ts`): **Connect watch** in the header opens Chrome's device chooser (all devices listed, because many watches do not announce the service before connecting), subscribes to heart-rate notifications, reconnects 3 times after a drop, plain-language errors (no Bluetooth, not your watch, the watch still busy with the phone). The connection stays while moving around the app.
+- [x] Saving (`lib/watchRecorder.ts`): while connected, one `heart_rate` reading a minute (median of that minute, at least 5 beats) is saved as a **Wearable** reading (`deviceId` `WATCH:<name>`) through the offline outbox and the normal intake, so it gets the personal normal, the rules, the timeline and Earth sync.
+- [x] Check-in: **Measure with my watch (30 s)** on the resting-heart-rate step fills in the median of 30 s at rest; the astronaut sees and can change the value before sending. Exercise coach: live heart rate under the rep counter.
+
+**Done when:** a real watch connects from Chrome, its heart rate shows live, a reading a minute reaches the health record, and the check-in can take its resting heart rate from the watch. **Done 2026-11-15:**
+- **Checks:** unit T-W-01 (`npm run test:unit`: 6 parser tests from the Bluetooth byte layouts); browser T-UI-11 with a simulated Bluetooth watch sending real watch bytes: connect, live 64 bpm, a saved reading found through the measurements API, connection kept across pages, 30 s check-in measurement fills 64, disconnect.
+- Works in Chrome or Edge on a laptop with Bluetooth, on `localhost` (or https). Not in the Claude app's built-in browser.
+
+**Not covered:**
+- **Only heart rate.** Blood oxygen, sleep, steps and blood pressure on this watch use Fire-Boltt's private protocol and are not readable; they still come from the check-in. Health Connect (an Android app) would be the route for sleep and steps.
+- The watch talks to one device at a time: Bluetooth on the phone (or the Fire-Boltt app) must be off while it is connected to the laptop.
+- Tested with the simulated watch only; the connection with the real FB BGR002 is to be confirmed by the user.
+- Watch readings are real data next to simulated mission data for the same astronaut; the personal normal mixes both at first.
+
+---
+
 ## 4. Team split (3–4 people)
 
 With one backend language, the split is by area rather than by runtime:

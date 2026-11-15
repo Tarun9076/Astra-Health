@@ -99,6 +99,7 @@ Astronaut app (P0 modules 1–7), Flight Surgeon dashboard (module 8), simulated
 | FR-19 | Body Explorer: clickable body regions mapped to body-system data | P1 |
 | FR-20 | Radiation dose tracking (daily + cumulative vs mission limit) and environment panel | P1 |
 | FR-21 | Wellness Center: guided breathing, sleep routine, exercise plan, wellness missions | P1 |
+| FR-29 ✅ | The astronaut's own smartwatch over Bluetooth (Step 15): live heart rate in the app, one reading a minute saved as a wearable reading, resting heart rate measured by the watch in the check-in, live heart rate in the exercise coach | P2 |
 | FR-28 ✅ | Simple, calm crew screens (Step 14): every astronaut page answers its question first in everyday words (no statistics jargon), details folded; daily quests with points; short assistant answers (1–2 sentences, up to 3 steps); light and dark themes | P1 |
 | FR-27 ✅ | Exercise coach (Step 13): today's resistance plan from the astronaut's condition (open alerts → rest day, lighter or more); on-device body tracking through the camera counts reps and sets, gives spoken posture tips and times rests; video never leaves the device; results recorded and synced to Earth; demo playback with a simulated person | P2 |
 | FR-22 | Mission timeline (pre-flight → now) of measurements, alerts, interventions | P2 |
