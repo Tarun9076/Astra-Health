@@ -503,3 +503,6 @@ seed.local.json
 # Step 11 end-to-end tests
 playwright-report/
 services/backend/models-e2e/
+
+# start-demo.ps1: windows it started (for -Stop)
+.demo-pids
