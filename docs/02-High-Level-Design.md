@@ -293,12 +293,15 @@ Redesigned after Step 11 around the astronaut's tasks (UI redesign, see LLD §15
 ```
 /login
 /astronaut
-  ├── home             Home: how am I now, what changed, something to pay attention to, key measurements, today's tasks
+  ├── home             Home: how am I now, what changed, something to pay attention to, key measurements, today's tasks,
+  │                    my progress (points, streaks, weekly goals), your environment (what matters most here)
   ├── health           My Health → Body systems (list + diagram + 7-part explanation) · /trends (charts vs your normal)
-  ├── checkin          Daily Check-in: 8 guided steps (heart rate, blood pressure, temperature + oxygen, sleep,
-  │                    mood + energy, stress, symptoms, review); explicit "not measured"; unusual-value re-measure
+  ├── checkin          Daily Check-in: 9 guided steps (heart rate, blood pressure, temperature + oxygen, blood sugar +
+  │                    body mass, sleep, mood + energy, stress, symptoms + optional photos, review); explicit
+  │                    "not measured"; unusual-value re-measure; camera photos go to the flight surgeon
   ├── guidance         My Guidance → Recommended actions (by area, search, filters, approved library) · /alerts
-  ├── wellness         Wellness: physical activity, sleep, mental wellness (breathing, support), nutrition + hydration
+  ├── wellness         Wellness: physical activity, sleep, mental wellness (breathing, support), nutrition + hydration,
+  │                    progress and badges (points for actions, never for readings)
   ├── history          Health History → Timeline (filters, search, by day) · /reports (medical reports)
   ├── assistant        AI Assistant (chat, citations, what it can / cannot do)
   └── emergency        Emergency procedures (bundled, offline; always in the side menu)
@@ -306,10 +309,10 @@ Redesigned after Step 11 around the astronaut's tasks (UI redesign, see LLD §15
   ├── (index)          Crew overview: communication status, follow-up needed, crew table / cards, space weather
   ├── astronaut/:code  Tabs: summary, body, alerts review, trends, health history, reports, instructions
   ├── emergency        Emergency procedures
-  └── sim              Demo control (Admin)
+  └── sim              Demo control (Admin): link, scenarios, mission environment (station / transit / rover / base)
 ```
 
-Persistent chrome: top bar with **Mission Day / Sol**, **link status pill** (🟢 LINK UP · delay 12 min / 🔴 BLACKOUT · 41 items queued), **SIMULATED DATA** badge, user/role.
+Persistent chrome: top bar with **Mission Day / Sol** (Sol only on Mars), the **environment** (e.g. "Mars surface stay · 0.38 g"), **link status pill** (🟢 LINK UP · delay 12 min / 🔴 BLACKOUT · 41 items queued), **SIMULATED DATA** badge, user/role.
 
 ---
 
@@ -321,7 +324,7 @@ Persistent chrome: top bar with **Mission Day / Sol**, **link status pill** (�
 | IDs | UUIDv7 everywhere, generated at the edge |
 | Errors | Consistent JSON error body `{type, title, status, detail}` (RFC 7807 style) via FastAPI exception handlers; toasts in UI; ML/LLM failures degrade, never block |
 | Logging | Python `logging` with structured JSON output and a request-id middleware |
-| Config | `pydantic-settings` reading env vars / `.env` (`ASTRA_*`), mission profile JSON |
+| Config | `pydantic-settings` reading env vars / `.env` (`ASTRA_*`), mission profile JSON (4 environments: space station, Mars transit, Moon rover, Mars base; LLD §8.1) |
 | Health checks | `/health` reports DB, ML models, LLM provider, link status; shown on Demo Control Panel |
 | Observability for demo | "System status" panel: API, AI, LLM provider, link, outbox size |
 

@@ -43,7 +43,22 @@ Astronaut app (P0 modules 1–7), Flight Surgeon dashboard (module 8), simulated
 - Diagnosing disease, predicting disease, recommending medication or dosages.
 - Inferring bone density, immune function, or radiation-induced cellular damage from HR/sleep. Those come only from **scheduled assessments** entered as results.
 - Production-grade security accreditation (we design for it, but don't certify it).
-- Medical image analysis (Phase 3 stretch only).
+- Medical image analysis. Photos are stored and sent to the flight surgeon for a human to look at; the app never interprets them.
+
+### 1.6 Coverage of the challenge brief
+| The brief asks for | Where it is |
+|---|---|
+| A visual tool to assess one's own health | Home (status in words, something to pay attention to, key measurements vs your normal) |
+| Guidance on treatment and improvement | My Guidance, emergency procedures, Wellness, "how to protect" per body system |
+| Blood pressure, heart rate, blood sugar, body temperature, sleep, mood | All in the guided daily check-in (blood sugar and body mass since the gap fix), plus devices |
+| Input by keyboard, mouse or camera | Typed values and sliders; camera photos in the check-in (FR-25) |
+| When a result needs the crew or flight surgeons | Rules: Attention vs Urgent, escalation, reports and alerts synced to Earth |
+| Clickable human figure | My Health: 2D/3D body, 7-part explanation per system |
+| Different environments (station, rover, base) | 4 mission profiles (FR-26, LLD §8.1) |
+| Prompts to measure as a routine | Daily check-in task with "Due" badge, routine tasks |
+| Gamification | My progress and badges (FR-24) |
+| Dynamic charts, colour coding | Trends; status colours always with an icon and a word |
+| Simple instructions | How-to for every measurement, "What this means", AI assistant with sources |
 
 ---
 
@@ -86,6 +101,9 @@ Astronaut app (P0 modules 1–7), Flight Surgeon dashboard (module 8), simulated
 | FR-21 | Wellness Center: guided breathing, sleep routine, exercise plan, wellness missions | P1 |
 | FR-22 | Mission timeline (pre-flight → now) of measurements, alerts, interventions | P2 |
 | FR-23 | Voice input for symptom reporting (Web Speech API) | P2 |
+| FR-24 | Gamification: points, streaks, weekly goals and badges for health habits the astronaut controls, never for readings ✅ | P1 |
+| FR-25 | Camera input: astronaut attaches photos (skin, eye, wound, device display) to the check-in for the flight surgeon; not analysed by the app ✅ | P1 |
+| FR-26 | Mission environments: space station, Mars transit spacecraft, Moon rover, Mars base change the targets, link delay and health focus ✅ | P1 |
 
 ### 3.2 Non-functional requirements (NFR)
 | ID | Category | Requirement |

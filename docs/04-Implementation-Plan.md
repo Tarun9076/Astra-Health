@@ -421,6 +421,28 @@ Today is mission day 121; the history covers days −29…120.
 
 ---
 
+### Step 11c — Challenge-brief gaps ✅
+
+**Goal:** close what a review against the challenge brief found missing: blood sugar could not be entered by hand, gamification was thin, there was one environment and no camera input. Details: LLD §8, §8.1, §13.2, §15.5; TDD §1.6.
+
+- [x] Daily check-in: new step **Blood sugar and body mass** (how-to, mg/dL / kg, your normal, re-measure; < 54, < 70 and ≥ 250 mg/dL show safety advice with the procedure link; body mass is weekly, so "Not measured today" is normal). The backend already accepted both.
+- [x] **My progress**: `GET /astronauts/{id}/progress` (points, 10 levels, 4 streaks, weekly goals, 8 badges), computed from existing data. Points reward actions, never readings. Home card, Wellness "Progress and badges", streak and points on the check-in result.
+- [x] **Mission environments**: 4 profiles (ISS, Mars transit, Moon rover, Mars base) with environment, gravity, delay, evacuation, targets and health focus; `GET /mission`, Admin `PUT /admin/mission/profile` (link delay follows; synced to Ground as a `Mission` item); Home "Your environment" card; header chip; Demo control picker.
+- [x] **Photos**: `HealthPhoto` table; `POST /photos` (JPEG/PNG/WebP, ≤ 2 MB, magic bytes checked, idempotent), list and image endpoints; synced to Ground (`PhotoAdded` toast for the surgeon); check-in photo step with live camera or file/tablet camera, shrunk to ≤ 1280 px; Health History shows the image.
+
+**Done when:** each gap works end to end and the existing checks still pass. **Done 2026-11-15:**
+- **Checks:** 273 backend tests (8 new: T-PS-01..03) and 25 browser tests (2 new: T-UI-06) pass, including 16 axe scans of the pages with the new cards. ruff, mypy, `tsc`, `oxlint` and `vite build` are clean.
+- **Changed by the review:** with 150 days of history the demo astronaut started at the top level, so the levels were spread to 10 (the demo now lands at level 7 of 10).
+- `ASTRA_E2E_WEB_PORT` lets the browser tests run when port 5174 is taken.
+
+**Not covered:**
+- Photos are never analysed (by design); there is no image annotation or comparison over time.
+- Live camera tested only through the file input in Playwright; `getUserMedia` was not exercised by an automated test.
+- Mission environment values are illustrative; switching keeps the same simulated crew history (made for Mars).
+- The running Ground node must be restarted to pick up the new sync items (it runs without `--reload`).
+
+---
+
 ### Step 12 — Demo, pitch, documentation (Days 29–30) → **M7**
 
 - [ ] `start-demo.ps1`: starts Habitat (8000), Ground (8001) and web (5173), then seeds.

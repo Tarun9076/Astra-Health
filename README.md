@@ -224,12 +224,16 @@ The menu is organised by **what you want to do**:
 |---|---|
 | **Home** | How you are right now, what changed, what to pay attention to and why, key measurements, today's tasks |
 | **My Health** | Body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
-| **Daily Check-in** | Guided measurements in about 2 minutes, with how-to steps, units, validation and symptoms |
+| **Daily Check-in** | Guided measurements in about 2 minutes: heart rate, blood pressure, temperature, oxygen, blood sugar, body mass, sleep, mood, stress and symptoms, with how-to steps, units and validation. You can add photos (skin, eye, wound, a device display) for the flight surgeon |
 | **My Guidance** | Recommended actions grouped by area, plus every health alert, explained |
-| **Wellness** | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration |
+| **Wellness** | Physical activity, sleep, mental wellness (breathing, support), nutrition and hydration, plus **progress and badges** |
 | **Health History** | Timeline of everything recorded, plus medical reports |
 | **AI Assistant** | Plain-language answers with sources. It never diagnoses or prescribes. |
 | **Emergency procedures** | Always at the bottom of the menu, and stored in the app so it works offline |
+
+Home also shows **My progress** (points, check-in streak, this week's goals) and **Your environment** (gravity, delay to Earth, what matters most for your health there).
+
+Points reward what you *do* (check in, exercise, sleep and drink enough, finish guidance tasks), never your readings, so a worrying value never costs points.
 
 Design principles: status is never shown by colour alone (there is always an icon and a word), missing data is never shown as normal, and every number says what it means.
 
@@ -242,6 +246,15 @@ Sign in as `surgeon1`. The surgeon gets:
 ### Admin (demo control)
 
 Sign in as `admin` to switch the Earth link up or down, change the light-time delay and run scenarios live.
+
+You can also switch the **mission environment**. Each one changes the targets, the radiation limit, the delay to Earth and the health advice:
+
+| Environment | Gravity | Delay to Earth |
+|---|---|---|
+| International Space Station | weightless | under a second |
+| Mars transit (spacecraft) | weightless | 3–22 minutes |
+| Moon rover traverse | 0.17 g | about 1.5 seconds |
+| Mars surface stay (default) | 0.38 g | 3–22 minutes |
 
 ### API documentation
 
@@ -292,7 +305,7 @@ cd apps/web; npm run gen:api
 | Browser tests and accessibility | `cd apps/web; npm run e2e` |
 | Prototype metrics | `cd services/backend; .venv/Scripts/python -m astra.evaluate` |
 
-**Browser tests:** install the browser once with `npx playwright install chromium`. The tests start their own backend (port 8100, fresh database) and web app (port 5174), so your running demo is not touched. They also run **axe accessibility scans** on every page.
+**Browser tests:** install the browser once with `npx playwright install chromium`. If port 5174 is busy, set another one first, e.g. `$env:ASTRA_E2E_WEB_PORT = '5175'`. The tests start their own backend (port 8100, fresh database) and web app (port 5174), so your running demo is not touched. They also run **axe accessibility scans** on every page.
 
 **Prototype metrics** replays the simulated missions and writes [docs/evaluation/EVALUATION.md](docs/evaluation/EVALUATION.md).
 
@@ -386,6 +399,7 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 | `address already in use` / port busy | Something is already running on that port (8000, 8001 or 5173). Stop it with **Ctrl+C** in its terminal, or close the old terminal. |
 | `The token '&&' is not a valid statement separator` | Windows PowerShell 5.1 doesn't support `&&`. Use `;` instead, as in the commands above. |
 | Flight surgeon sees no data | Start the **Ground** backend (Terminal 2), then check the link is up on the admin **Demo control** page. |
+| Flight surgeon doesn't see new photos or the new environment | Restart the **Ground** backend (Terminal 2) after pulling new code; it runs without `--reload`. |
 | Errors after pulling new code that changed the database tables | There are no migrations yet. Stop both backends, delete `services/backend/habitat.db*` and `ground.db*`, then repeat [Step 4](#step-4-create-the-demo-databases) and [Step 6](#step-6-load-the-simulated-mission-data). |
 | Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
 | AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` is set, so it uses offline template answers. This is expected. |

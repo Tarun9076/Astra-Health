@@ -72,7 +72,7 @@ astra-health/
 │   ├── rules/                        # *.json rule files
 │   ├── recommendations.json
 │   ├── emergency/                    # EMG-*.md step-by-step procedures
-│   └── mission-profiles/             # mars-surface.json, transit.json, iss.json
+│   └── mission-profiles/             # iss-leo, mars-transit, lunar-rover, mars-surface (§8.1)
 ├── knowledge/                        # curated KB markdown with front-matter source URLs
 ├── docs/
 ├── start-demo.ps1                    # launches habitat + ground + web
@@ -166,6 +166,9 @@ WellnessCheckins   (Id, AstronautId, Date, SleepHours, SleepQuality, Mood, Stres
                     -- on save, also emits HealthMeasurements rows for each score (single analytics path)
 Symptoms           (Id, AstronautId, SymptomCode 'dizziness', FreeText NULL, Severity 1-10, OnsetAt,
                     ResolvedAt NULL, BodyRegion NULL, RedFlag BOOL, Source ENUM[Form,Voice,Assistant])
+HealthPhotos       (Id from the client, AstronautId, Kind ENUM[Skin,Eye,Wound,DeviceReading,Other], Note NULL,
+                    ContentType image/jpeg|png|webp, SizeBytes ≤ 2 MB, DataB64, CheckinId NULL, TakenAt, NodeId)
+                    -- as built (gap fix): base64 text so it travels in the JSON sync envelope; never analysed by the app
 ExerciseRecords    (Id, AstronautId, Type ENUM[Resistance,Aerobic,Treadmill,Cycle], DurationMin, LoadKg NULL,
                     PerceivedExertion 1-10, PerformedAt)
 -- Radiation (as built): personal dosimeter readings are HealthMeasurements with indicator radiation_dose
@@ -534,6 +537,22 @@ Rules (as built in `astra/core/alerts.py` + `astra/services/alerts.py`):
   - a resistance session, when the latest weekly count is below the mission profile's target.
   Yesterday's unfinished routine tasks become `Skipped`. Assessment-due tasks wait for assessment records.
 - Wellness "missions" (gamification) = routine tasks with streak counters; **never** tied to health values themselves.
+- **My progress** (as built, `astra/api/progress.py`, read-only over existing data): points, level, streaks, weekly goals and badges.
+  - Points reward actions the astronaut controls, never readings: check-in day +10 (a day with a `mood` score or a `WellnessCheckin`), active day (≥ 30 min `activity_min`) +5, good night (`sleep_hours` ≥ 7) +5, fluid goal met (`hydration_ml` ≥ the profile's target) +5, guidance task done +5. A worrying value never costs points, so nobody is pushed to hide or "improve" a reading.
+  - 10 levels (0 → 5,000 points); streaks count days in a row up to today (or yesterday while today is open), with the best run; weekly goals over the last 7 days (check-in 7, exercise = profile target, sleep 5, fluid 5).
+  - 8 badges, each with progress and the date earned: first check-in, 7- and 30-day check-in streaks, 100 check-ins, exercise target met in a week, 5 good nights in a row, fluid goal 7 days in a row, 10 guidance tasks.
+
+### 8.1 Mission environments (`protocols/mission-profiles/*.json`)
+The environment changes the risks, so it is data, not code. Each profile: `code, name, environment` (Space station | Spacecraft | Pressurized rover | Planetary base), `location, gravityG` (0 = weightless), `solLengthHours, dayName` (Sol on Mars), `commsDelayMinutes{min,max}`, `lightTime` (`horizons-mars` = the real JPL Horizons Earth–Mars value, else the profile midpoint), `evacuation`, `radiationLimitMsv`, `exerciseTargetSessionsPerWeek`, `hydrationTargetMlPerDay`, `healthFocus[{title, detail, kb}]` (4 per profile, each citing a knowledge note), `disclaimer` (⚠️ illustrative values).
+
+| Profile | Environment | Gravity | Delay to Earth | Radiation limit | Exercise / fluid | Health focus |
+|---|---|---|---|---|---|---|
+| `iss-leo` | Space station | 0 | < 1 s | 200 mSv | 6 days / 2.5 L | bone and muscle loss, fluid shift and vision, cabin CO₂, radiation partly shielded |
+| `mars-transit` | Spacecraft | 0 | 3–22 min (Horizons) | 600 mSv | 6 days / 2.5 L | highest radiation (shelter), bone and muscle, isolation and delays, no quick way home |
+| `lunar-rover` | Pressurized rover | 0.166 | ≈ 1.5 s | 300 mSv | 3 days / 3 L | spacewalk effort and heat, lunar dust, small cabin and sleep, radiation |
+| `mars-surface` (default) | Planetary base | 0.38 | 3–22 min (Horizons) | 600 mSv | 5 days / 2.5 L | adapting to Mars gravity, surface radiation, longer sol, isolation |
+
+Switching (Admin, Habitat, `PUT /admin/mission/profile`) sets `Mission.profileCode`, resets the link delay for the environment and queues a `Mission` sync item, so the Ground node follows after the light time. Everything that reads the profile follows at once: radiation limit (rules, radiation panel, reports), exercise and fluid targets (routine tasks, Wellness, progress), assistant context and the Home "Your environment" card.
 
 ---
 
@@ -770,6 +789,8 @@ send ACK through link simulator (delayed)
 | Entity | Authority | Strategy |
 |---|---|---|
 | HealthMeasurement, Symptom, Checkin, Exercise, Radiation, Environment | Habitat | Insert-if-absent (immutable) |
+| HealthPhoto ✅ | Habitat | Insert-if-absent (immutable evidence); Ground publishes `PhotoAdded` |
+| Mission ✅ (environment profile) | Habitat (Admin) | Last-writer-wins on `profileCode`; Ground publishes `MissionChanged` |
 | HealthAlert | Shared | State-order merge (§7) |
 | Recommendation status | Habitat | Last-writer-wins by `UpdatedAt` |
 | MedicalInstruction | Ground (create) / Habitat (ack) | Insert-if-absent; field merge for `DeliveredAt`, `AcknowledgedAt` |
@@ -821,7 +842,10 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/astronauts/{id}/body-systems` ✅ | self, surgeon | → `{astronautCode, regions:[{id, title, status: GREEN|YELLOW|RED|GREY, metrics:[{indicator, name, unit, value, measuredAt, baseline, sigma, z, spark:[{day, value}]}], alerts, tasks, knowledge:[{noteId, title, whatHappens, whatYouCanDo, source}]}]}`; regions brain, eyes, heart, lungs, digestive, immune, muscles, bones, whole_body |
 | GET | `/astronauts/{id}/wellness-center` ✅ · POST `/wellness/activity` `{kind: fluid|breathing, amount}` ✅ | self, surgeon (read); astronaut (log) | hydration today/target and 7 days, exercise sessions vs target, strength, sleep 7 days vs normal, breathing this week, missions `[{id, title, progress, goal, unit, streak, done}]` |
 | GET | `/astronauts/{id}/radiation?range=30d|mission` ✅ | self, surgeon | daily dose per channel (total, neutron, charged), mission total vs limit, neutron share, active SEP alert + protocol, the replayed DONKI storm, stored SEP events, light time |
-| GET | `/astronauts/{id}/timeline?days=1–400` ✅ | self, surgeon | → `{astronautCode, since, events:[{id, at, kind: Readings|Checkin|Symptom|Alert|AlertClosed|Recommendation|RecommendationDone|Insight|Instruction|Report, title, detail, severity?, refId?}]}`, newest first. `Readings` = one daily summary of the key indicators (last valid value of each day); insights: Trend only |
+| GET | `/astronauts/{id}/timeline?days=1–400` ✅ | self, surgeon | → `{astronautCode, since, events:[{id, at, kind: Readings|Checkin|Symptom|Alert|AlertClosed|Recommendation|RecommendationDone|Insight|Instruction|Report|Photo, title, detail, severity?, refId?}]}`, newest first. `Readings` = one daily summary of the key indicators (last valid value of each day); insights: Trend only |
+| GET | `/astronauts/{id}/progress` ✅ | self, surgeon | → `{astronautCode, points, pointsToday, level:{number, title, minPoints, nextPoints}, streaks:[{id: checkin|active|sleep|hydration, label, current, best, doneToday}], weekly:[{id, label, done, target}], badges:[{id, title, description, earned, earnedOn, progress, target}], howPointsWork:[{action, points}]}` (§8) |
+| POST | `/photos` ✅ | self (Astronaut, Habitat) | `{id?, kind: Skin|Eye|Wound|DeviceReading|Other, note?, checkinId?, takenAt?, dataUrl}` (JPEG/PNG/WebP data URL, ≤ 2 MB, magic bytes checked) → 201 `{id, astronautCode, kind, kindLabel, note, contentType, sizeBytes, checkinId, takenAt}`; re-sent id = no-op; queued for sync; `PhotoAdded` |
+| GET | `/astronauts/{id}/photos` ✅ · `/astronauts/{id}/photos/{photo}/image` ✅ | self, surgeon | list (metadata only, newest first, 100) · the image bytes (`nosniff`, private cache); 404 if the photo is another astronaut's |
 | GET | `/astronauts/{id}/guidance` ✅ | self, surgeon | → `{items:[{id, code, title, body, category, priority, status, dueAt, createdAt, completedAt, alert:{id, title, reason, severity, status, escalationRequired}?, medicalReview, source}], library:[{code, title, body, category, source}]}`: open tasks plus those finished in the last 7 days; `medicalReview` = the linked alert is open and Urgent or escalated |
 
 ### 13.3 Alerts, recommendations, instructions, reports
@@ -849,6 +873,8 @@ Base: `/api` · Auth: `Authorization: Bearer <jwt>` · Errors: RFC 7807 ProblemD
 | GET | `/assistant/history?astronautId=&limit=` ✅ | same as chat |
 | GET | `/assistant/status` ✅ → `{defaultProvider, claudeConfigured, model, knowledgeNotes, knowledgeChunks, redFlags}` | any signed-in |
 | GET | `/crew` → `[{astronaut, status, wellnessIndex, activeAlerts, lastDataAt}]` | surgeon, mission |
+| GET | `/mission` ✅ → `{code, name, startDate, profile:{code, name, environment, location, gravityG, dayName, dayLengthHours, commsDelayMinMinutes, commsDelayMaxMinutes, evacuation, radiationLimitMsv, exerciseTargetSessionsPerWeek, hydrationTargetMlPerDay, healthFocus[], disclaimer}, options:[{code, name, environment}]}` | any signed-in |
+| PUT | `/admin/mission/profile` ✅ `{profileCode}` → the same as GET `/mission` (§8.1); 422 unknown profile | admin (Habitat; 409 on Ground) |
 | GET | `/mission/overview` → aggregates only | mission, surgeon |
 | GET | `/environment/current` ✅ (cabin temp / humidity / CO₂: latest, illustrative range, status, last 8 readings) · POST `/environment/readings` ✅ (Admin/device; Habitat; `X-Backfill`) | any signed-in / admin |
 | GET | `/space-weather/now` ✅ → `{protonFluxPfu, fluxTime, sScale, thresholdPfu: 10, source: noaa-live|noaa-fixture, recentSepEvents, lightTimeMinutes}` | any signed-in |
@@ -971,11 +997,14 @@ Principle: an astronaut who is tired, busy and far from Earth should understand 
 | Home (`OverviewPage`) | greeting and context line; urgent banner with "Open emergency procedure"; **How you are right now** (headline in words + checklist: urgent alerts, alerts to review, readings outside normal, check-in done, readings > 2 days old; "How is this status decided?"); **Something to pay attention to**; **Key measurements**; Today's tasks with progress bar; wellness summary with "What is this number?" |
 | `MeasurementCard` | value + unit, status in words + icon (Within your normal / Higher or Lower than your normal / Check this reading / Out of date / No personal normal yet), your normal and usual range (±2σ), previous reading and change, time and source, "What this means", View history. `MissingMeasurementCard` for no reading |
 | `ObservationCard` | an alert explained: What changed · The measurement (evidence in sentences, `lib/alertText.ts`) · What it means · Why it matters · What to do · When to get medical help. `ReadingObservation`: a reading outside normal with no open alert, and why there is no alert |
-| Daily Check-in | 8 steps; each measurement: how to measure, unit, your normal and last value, validation (impossible → blocked; ≥ 3σ from normal → "Measure again" / "Keep this value"; SpO₂ < 90 % and temp ≥ 39.5 °C → safety note), explicit **Not measured today**; today's wearable reading can be used instead of typing (not sent twice); symptoms with severity, red flags show the emergency card; review table with source and time and Edit per row |
+| Daily Check-in | 9 steps (heart rate, blood pressure, temperature and oxygen, **blood sugar and body mass**, sleep, mood and energy, stress, symptoms and photos, review); each measurement: how to measure, unit, your normal and last value, validation (impossible → blocked; ≥ 3σ from normal → "Measure again" / "Keep this value"; SpO₂ < 90 %, temp ≥ 39.5 °C, blood sugar < 70 or ≥ 250 mg/dL → safety note with the procedure link), explicit **Not measured today**; today's wearable reading can be used instead of typing (not sent twice); symptoms with severity, red flags show the emergency card; **optional photos** (`PhotoCapture`: live camera via `getUserMedia`, or a file input with `capture` that opens the tablet camera; shrunk to ≤ 1280 px JPEG; up to 3; sent after the check-in through the offline outbox); review table with source and time and Edit per row |
 | My Health | body-system list (large targets, status words) + flat/3D diagram; panel: 1 what it does, 2 how spaceflight affects it, 3 what is monitored, 4 latest readings + 14-day change, 5 symptoms to watch for, 6 how to protect it; cabin environment and radiation. Trends: quick views (sleep and fatigue, mood and stress, heart rate and sleep, exercise, strength, blood pressure), 7/30/90 days/mission, **What changed** sentences, daily and weekly tables |
 | My Guidance | counts (to do, need medical review, done in 7 days), To do/Done/All, area filter, search; cards grouped by area (heart, bones and muscles, sleep, mental wellness, nutrition and hydration, radiation, general): what needs attention, recommended action, when (overdue), medical review, source; Mark as done / Start check-in; approved-guidance library. Health alerts: NORMAL / ATTENTION / URGENT legend, plain-language explanation on every alert, technical evidence collapsed |
 | Wellness | physical activity (resistance sessions vs plan, strength vs pre-flight, exercise today), sleep (7 nights, quality, schedule tips), mental wellness (mood, stress, fatigue, box breathing, psychological support), nutrition and hydration (water logging; food logging stated as not built) |
-| Health History | timeline by day with mission day; period (7/30/90/mission), type filters, search; links to alerts and reports. Surgeons see it per astronaut |
+| Home additions | **My progress** (level and points, check-in streak, this week's goals, badges link) and **Your environment** (`EnvironmentCard`: gravity, delay to Earth, evacuation, "What matters most for your health here", the profile's targets); the header shows the environment and Sol only on Mars |
+| Wellness: Progress and badges | `ProgressDetails`: level, how points are earned, streaks (current and best), weekly goals, 8 badges with progress or date earned; the fair-play rule stated |
+| Demo control | **Mission environment** picker (radio group of the 4 profiles); the link delay source shows "from the environment" |
+| Health History | timeline by day with mission day; photo events show the image (fetched with the token, `PhotoImage`); period (7/30/90/mission), type filters, search; links to alerts and reports. Surgeons see it per astronaut |
 | AI Assistant | header, "What the assistant can do" and "It will never" (diagnose, prescribe, override an alert) |
 | Flight surgeon | Crew overview: communication status (link, delay, queued, last received), **Follow-up needed** (urgent, awaiting review, unacknowledged instructions, stale data), dense crew table or cards; astronaut page gains a Health history tab |
 
@@ -1141,12 +1170,16 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-SEC-02 ✅ | Security | 5 wrong passwords for one user in 5 min | 6th try → 429 + `Retry-After`; other users unaffected; success resets the counter |
 | T-SEC-03 ✅ | Security | any `/api` response; preflight from another origin | `nosniff`, `DENY`, `no-referrer`, `no-store`; foreign origin gets no CORS header |
 | T-SEC-04 ✅ | Security | repository files | `.env`, `*.db` ignored; `.env.example` has no secret values |
-| T-UI-01 ✅ | Check-in | complete the 8-step guided check-in (Playwright): unusual heart rate kept, blood pressure and SpO₂ "not measured" | Next blocked until re-measured or kept; review shows "Not measured today"; < 60 s; findings shown, same findings in Health alerts and on Home, which explains them |
+| T-UI-01 ✅ | Check-in | complete the 9-step guided check-in (Playwright): unusual heart rate kept, blood sugar entered, blood pressure, SpO₂ and body mass "not measured" | Next blocked until re-measured or kept; review shows "Not measured today"; < 60 s; findings shown, same findings in Health alerts and on Home, which explains them |
 | T-UI-02 ✅ | Offline | block `/api/checkins`, submit, unblock (Playwright) | "saved on this device", outbox flushed on `online`, exactly one record |
 | T-UI-03 ✅ | Emergency | type "I have chest pain" in the assistant (Playwright) | emergency card at once; Urgent alert in Health alerts (old `/astronaut/alerts` link redirects) |
 | T-UI-04 ✅ | Check-in symptoms | choose "Fainting or nearly fainting" (Playwright; API test for chest pain + headache) | emergency card before sending; Urgent `SYM-SYNCOPE` alert; Home shows "Urgent: act now"; headache alone raises nothing; symptoms in the timeline |
 | T-UI-05 ✅ | Navigation | every side-menu item, tabs, quick views, filters, old links; phone width 390 px (Playwright) | each page opens with its heading; drawer opens and closes; no horizontal scroll |
 | T-H-01 ✅ | History / guidance API | readings, alert, tasks; re-sent check-in id; another astronaut's data | timeline newest first with daily readings, alert and recommendation; guidance links the alert with `medicalReview`; library of 22; re-send is a no-op; 403 |
+| T-PS-01 ✅ | Problem-statement gaps (API) | check-in with glucose 50 and body mass; 7 days of mood + 45 min exercise; a high heart rate | `MET-GLUCOSE-LOW` Urgent with `EMG-LOW-GLUCOSE`; 75 points, 7-day streak, badge dated; the high reading changes no points; 403 for another astronaut |
+| T-PS-02 ✅ | Environments | load all profiles; Admin switches to `iss-leo`; Ground receives the `Mission` item | 4 profiles, 4 environments, every `healthFocus.kb` exists; radiation limit 200, link delay < 0.1 min, one sync item; Ground applies once |
+| T-PS-03 ✅ | Photos | JPEG upload, re-send, list, image, surgeon, other astronaut; script renamed as image, GIF, broken base64, surgeon upload | stored once, served with its type, in the timeline, synced and applied on Ground; 422 / 422 / 422 / 403; 403 / 404 for others |
+| T-UI-06 ✅ | Problem-statement gaps (Playwright) | check-in with blood sugar 50 → 96 and a photo; Home; Badges; Admin switches to the space station and back | safety note at 50; photo previewed, counted in review, shown in Health History; streak + points on the result; My progress and Mars environment on Home; badges page; the crew sees "International Space Station", weightless, < 1 s delay |
 | T-A11Y-01 ✅ | Accessibility | axe-core WCAG 2.1 A/AA on login, 11 astronaut pages (incl. tabs and emergency) and 4 flight-surgeon views | no serious or critical violations (the report lists each failing element with its colours and ratio) |
 | T-E-01 ✅ | Edge cases | sparse data; astronaut with no data; µSv / °F inputs; spo2 0.97 %; HR in mmHg; 2,001-char question | baseline or none (no crash); GREEN; converted; rejected; rejected; 422 |
 | T-PERF-01 ✅ | Performance | 150 days × 3 crew (`python -m astra.evaluate`) | dashboard < 1 s (measured 47 ms median) |
