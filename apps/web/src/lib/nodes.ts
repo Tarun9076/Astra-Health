@@ -1,6 +1,6 @@
 // Which backend node a signed-in user talks to (Step 9; HLD §4):
 // astronauts (and the Admin's demo controls) use the Habitat node onboard; the flight surgeon and
-// mission control work on Earth, on the Ground node's synced copy. Vite proxies /ground-api and
+// mission control work on Earth, on the Ground node's synced copy. Vite (dev), Caddy or Vercel forward /ground-api and
 // /ground-ws to the Ground node (port 8001).
 import { useAuth } from './auth'
 

@@ -1,0 +1,33 @@
+# Serves the web app and sends API and live-update traffic to the two backends, on one HTTPS address.
+# ASTRA_DOMAIN: e.g. 34-93-12-7.sslip.io (your server's IP with dashes; no domain purchase needed).
+{$ASTRA_DOMAIN} {
+	encode zstd gzip
+
+	# Earth roles (flight surgeon, mission control) use the Ground node's synced copy
+	handle_path /ground-api/* {
+		rewrite * /api{path}?{query}
+		reverse_proxy ground:8001
+	}
+	handle /ground-ws* {
+		rewrite * /ws?{query}
+		reverse_proxy ground:8001
+	}
+
+	# the Habitat node (spacecraft): sign-in, astronaut data, live updates
+	handle /api/* {
+		reverse_proxy habitat:8000
+	}
+	handle /ws* {
+		reverse_proxy habitat:8000
+	}
+
+	# the app itself; unknown paths are app pages (client-side routing)
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+		header /assets/* Cache-Control "public, max-age=31536000, immutable"
+		header /index.html Cache-Control "no-cache"
+		header /sw.js Cache-Control "no-cache"
+	}
+}

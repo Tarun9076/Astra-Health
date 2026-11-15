@@ -1,0 +1,67 @@
+# ASTRA HEALTH on one server: Habitat + Ground backends and the web app behind Caddy (HTTPS).
+#   cp deploy/.env.example deploy/.env    (then fill in the values)
+#   docker compose -f deploy/docker-compose.yml up -d --build
+# The databases live in the habitat-data and ground-data volumes; `down -v` deletes them (fresh demo).
+name: astra-health
+
+x-backend: &backend
+  image: astra-health-backend
+  env_file: .env
+  restart: unless-stopped
+
+services:
+  habitat:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      ASTRA_NODE_ROLE: Habitat
+      ASTRA_NODE_ID: HAB-ARES-1
+      ASTRA_DATABASE_URL: sqlite:////data/habitat.db
+      ASTRA_DB_FILE: /data/habitat.db
+      ASTRA_MODELS_PATH: /data/models
+      ASTRA_PEER_URL: http://ground:8001
+      PORT: "8000"
+    volumes:
+      - habitat-data:/data
+
+  ground:
+    <<: *backend
+    build: # the same image as habitat (the second build is all cache)
+      context: ..
+      dockerfile: deploy/backend.Dockerfile
+    environment:
+      ASTRA_NODE_ROLE: Ground
+      ASTRA_NODE_ID: GND-MCC
+      ASTRA_DATABASE_URL: sqlite:////data/ground.db
+      ASTRA_DB_FILE: /data/ground.db
+      ASTRA_MODELS_PATH: /data/models
+      ASTRA_PEER_URL: http://habitat:8000
+      PORT: "8001"
+    volumes:
+      - ground-data:/data
+
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/web.Dockerfile
+    environment:
+      ASTRA_DOMAIN: ${ASTRA_DOMAIN:?set ASTRA_DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - habitat
+      - ground
+    restart: unless-stopped
+
+volumes:
+  habitat-data:
+  ground-data:
+  caddy-data:
+  caddy-config:

@@ -36,8 +36,7 @@ export class RealtimeClient {
   connect(): void {
     const status = useLiveStatus.getState()
     status.set(this.attempt === 0 ? 'connecting' : 'reconnecting')
-    const scheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
-    const ws = new WebSocket(`${scheme}://${window.location.host}${websocketPath()}?token=${encodeURIComponent(this.token)}`)
+    const ws = new WebSocket(`${liveOrigin()}${websocketPath()}?token=${encodeURIComponent(this.token)}`)
     this.ws = ws
 
     ws.onopen = () => {
@@ -69,4 +68,15 @@ export class RealtimeClient {
     this.ws?.close()
     useLiveStatus.getState().set('off')
   }
+}
+
+/**
+ * Where live updates connect. Same server as the page by default (dev server, or one server with
+ * Caddy). When the app is hosted elsewhere (Vercel, which cannot forward WebSockets), the build sets
+ * VITE_LIVE_ORIGIN to the backend server, e.g. wss://34-93-12-7.sslip.io.
+ */
+function liveOrigin(): string {
+  const configured = (import.meta.env.VITE_LIVE_ORIGIN as string | undefined)?.trim()
+  if (configured) return configured.replace(/\/+$/, '')
+  return `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`
 }
