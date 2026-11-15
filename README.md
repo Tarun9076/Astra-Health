@@ -18,6 +18,16 @@ and sends reports to flight surgeons on Earth when the link allows.
 > [!WARNING]
 > **This is not a medical device.** ASTRA HEALTH is a hackathon research prototype for clinical *decision support*. It does not diagnose or prescribe. All thresholds are **illustrative** and all crew health data is **simulated**.
 
+<p align="center">
+  <img src="docs/screenshots/01-home.png" alt="Astronaut Home: how you are right now, readings to watch, today's tasks and progress" width="900">
+</p>
+
+| Daily check-in | My Health: 3D body |
+|---|---|
+| <img src="docs/screenshots/02-checkin.png" alt="Guided daily check-in, step 1 of 9: resting heart rate with how to measure and your normal"> | <img src="docs/screenshots/03-body-3d.png" alt="My Health with the see-through 3D human body; the heart, which needs attention, is shown solid"> |
+| **Flight surgeon on Earth** | **Demo control** |
+| <img src="docs/screenshots/05-flight-surgeon.png" alt="Flight surgeon crew overview: link status, follow-ups and crew table"> | <img src="docs/screenshots/06-demo-control.png" alt="Demo control: deep-space link, light-time delay, mission environment and scenarios"> |
+
 ---
 
 ## Contents
@@ -111,6 +121,19 @@ flowchart LR
 
 > [!NOTE]
 > Commands are written for **Windows PowerShell** and run from the project root. On macOS or Linux, replace `.venv/Scripts/python` with `.venv/bin/python`.
+
+> [!TIP]
+> **Already installed (steps 1–3)? Start everything with one command:**
+> ```powershell
+> .\start-demo.ps1
+> ```
+> It creates the databases the first time, opens a window each for the Habitat backend, the Ground backend and the web app, loads the mission data and opens the browser (about 75 s the first time, a few seconds after that).
+> - `.\start-demo.ps1 -Fresh`: start over from mission day 121. **Run this on the morning of a demo**, since the mission day moves on each day and rehearsal check-ins stay in the database.
+> - `.\start-demo.ps1 -Stop`: close everything it started.
+> - Ports busy? `.\start-demo.ps1 -HabitatPort 8100 -GroundPort 8101 -WebPort 5180`
+> - If Windows blocks the script, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once.
+>
+> Steps 4–6 below do the same by hand.
 
 ### Step 1: Install the prerequisites
 
@@ -235,6 +258,8 @@ Home also shows **My progress** (points, check-in streak, this week's goals) and
 
 Points reward what you *do* (check in, exercise, sleep and drink enough, finish guidance tasks), never your readings, so a worrying value never costs points.
 
+<img src="docs/screenshots/04-progress.png" alt="Wellness, progress and badges: level and points, how points are earned, streaks and this week's goals" width="800">
+
 Design principles: status is never shown by colour alone (there is always an icon and a word), missing data is never shown as normal, and every number says what it means.
 
 ### Flight surgeon side
@@ -344,8 +369,9 @@ Astra-Health/
 ├── simulator/           Simulated crew data generator, plus cached real space data
 ├── protocols/           Indicators, versioned alert rules, recommendations, emergency procedures
 ├── knowledge/           Knowledge base used by the assistant (NASA / CSA sourced)
-├── docs/                Design documents (Markdown, plus PDFs in docs/pdf/)
-└── tools/docs-pdf/      Regenerates the PDFs
+├── docs/                Design documents (Markdown, PDFs in docs/pdf/, screenshots in docs/screenshots/)
+├── tools/docs-pdf/      Regenerates the PDFs
+└── start-demo.ps1       Starts the whole demo with one command
 ```
 
 ---
@@ -396,10 +422,12 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 
 | Problem | Fix |
 |---|---|
-| `address already in use` / port busy | Something is already running on that port (8000, 8001 or 5173). Stop it with **Ctrl+C** in its terminal, or close the old terminal. |
+| `address already in use` / port busy | Something is already running on that port (8000, 8001 or 5173). Stop it with **Ctrl+C** in its terminal, or close the old terminal. `start-demo.ps1` says which program holds the port, and reuses it if it is already the demo. |
+| `start-demo.ps1 cannot be loaded because running scripts is disabled` | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once, then try again. |
+| Mission day or dates look wrong, or yesterday's rehearsal check-ins are still there | `.\start-demo.ps1 -Fresh` (it resets the databases to mission day 121 and today's date). |
 | `The token '&&' is not a valid statement separator` | Windows PowerShell 5.1 doesn't support `&&`. Use `;` instead, as in the commands above. |
 | Flight surgeon sees no data | Start the **Ground** backend (Terminal 2), then check the link is up on the admin **Demo control** page. |
-| Flight surgeon doesn't see new photos or the new environment | Restart the **Ground** backend (Terminal 2) after pulling new code; it runs without `--reload`. |
+| Flight surgeon doesn't see new photos or the new environment | Restart the **Ground** backend (Terminal 2) after pulling new code if you started it by hand without `--reload` (`start-demo.ps1` starts it with `--reload`). |
 | Errors after pulling new code that changed the database tables | There are no migrations yet. Stop both backends, delete `services/backend/habitat.db*` and `ground.db*`, then repeat [Step 4](#step-4-create-the-demo-databases) and [Step 6](#step-6-load-the-simulated-mission-data). |
 | Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
 | AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` is set, so it uses offline template answers. This is expected. |

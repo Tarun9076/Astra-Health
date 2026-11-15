@@ -464,10 +464,12 @@ Today is mission day 121; the history covers days −29…120.
 
 ### Step 12 — Demo, pitch, documentation (Days 29–30) → **M7**
 
-- [ ] `start-demo.ps1`: starts Habitat (8000), Ground (8001) and web (5173), then seeds.
+- [x] `start-demo.ps1` (repo root): checks the setup and the ports (reuses a port that already runs the demo; otherwise says which program holds it), creates the databases on first run (mission day 121), opens one window each for Habitat (8000), Ground (8001, now with `--reload`) and web (5173), waits for all three, loads the mission data and opens the browser. `-Fresh` resets to mission day 121, `-Stop` closes what it started (`.demo-pids`), `-HabitatPort/-GroundPort/-WebPort` move the ports. Tested 2026-11-15 from an empty checkout on spare ports: ready in 74 s, 6,649 readings, Ground received the data, `-Stop` freed all ports; and with the servers already running (all reused).
 - [ ] Rehearse the 5-minute script (§7) at least 5 times; record a backup video.
 - [ ] Slides: problem (5 hazards, comms delay, from the organizer sources) → solution → live demo → architecture (HLD diagram) → safety design (rules decide, ML corroborates, LLM explains) → **NASA 17-risk coverage** (TDD §13) → metrics → **Earth benefits** (TDD §14) → roadmap.
-- [ ] README with screenshots, how to run, disclaimers, sources, licence credits. Regenerate doc PDFs (`tools/docs-pdf`).
+- [x] README with screenshots, how to run, disclaimers, sources, licence credits. Regenerate doc PDFs (`tools/docs-pdf`).
+  - Screenshots in `docs/screenshots/` (Home, check-in, 3D body, progress, flight surgeon, demo control) are taken by `apps/web/scripts/screenshots.ts` from a fresh demo (it waits until the link has delivered the mission data). To refresh: `.\start-demo.ps1 -Fresh`, then `cd apps/web; node scripts/screenshots.ts`.
+  - Fixed on the way: a reached weekly goal read "6 of 5 days"; it now reads "6 days · goal met".
 - [ ] **Tag `v1.0-demo`.**
 
 ---
