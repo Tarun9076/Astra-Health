@@ -647,7 +647,7 @@ def trend(series: pd.Series, sigma: float) -> TrendResult                    # i
 
 ## 11. AI assistant (`astra/assistant/`)
 
-**As built (Step 7)** — `astra/assistant/` (`knowledge.py`, `redflag.py`, `guard.py`, `providers/{template,claude}.py`,
+**As built (Step 7; Gemini in Step 17)** — `astra/assistant/` (`knowledge.py`, `redflag.py`, `guard.py`, `providers/{template,common,claude,gemini}.py`,
 `service.py`). Differences from the design below:
 - **Red flags** live in `protocols/redflags.yaml` and are checked against the emergency procedures at startup.
   - 6 flags: chest pain, breathing, fainting, neurological signs, severe bleeding, self-harm.
@@ -1229,6 +1229,7 @@ Ground uses the same file with `ASTRA_NODE_ROLE=Ground`, `ASTRA_NODE_ID=GND-MCC`
 | T-A11Y-02 ✅ | Accessibility, dark theme | axe-core on Home, My Health, My Guidance, Wellness, Assistant, History with Mission dark | no serious or critical violations |
 | T-W-01 ✅ | Watch parser (`npm run test:unit`) | 8-bit, 16-bit, contact present/absent, energy + RR, too short, 0 / 255 bpm, median with a wrong beat | 72; 300; true/false and off-wrist ignored; RR 1000 and 500 ms; null / not usable; 62 |
 | T-UI-11 ✅ | Smartwatch (Playwright, simulated Bluetooth watch sending 0x00 64) | Connect watch; open the panel; move to the check-in; Measure with my watch; Disconnect | chip "64 beats per minute"; a reading saved and found by `GET /measurements?indicator=heart_rate` (64, < 1 min old); connection kept; field filled with 64; Connect watch again |
+| T-AI-05 ✅ | Gemini provider (Step 17, simulated Gemini) | answer with a made-up citation; provider choice; dose answer; SAFETY / MAX_TOKENS / API 503 / connection error / not JSON; report narrative; API with only a Gemini key | provider gemini, citation dropped, system instruction + JSON schema (no additionalProperties) + low thinking; Claude first in auto unless gemini chosen; retried then template; template with a fallback flag; narrative from Gemini; status `defaultProvider: gemini`, model gemini-3.8-flash, chat answers with Gemini |
 | T-UI-09 ✅ | Exercise coach, live camera (Playwright, Chrome fake camera: a test pattern, no person) | Start with the camera | engine (`/mediapipe/wasm/*.wasm`) and model load from the app (200); tracking runs and asks to step back; End workout → nothing to save |
 | T-UI-06 ✅ | Problem-statement gaps (Playwright) | check-in with blood sugar 50 → 96 and a photo; Home; Badges; Admin switches to the space station and back | safety note at 50; photo previewed, counted in review, shown in Health History; streak + points on the result; My progress and Mars environment on Home; badges page; the crew sees "International Space Station", weightless, < 1 s delay |
 | T-A11Y-01 ✅ | Accessibility | axe-core WCAG 2.1 A/AA on login, 11 astronaut pages (incl. tabs and emergency) and 4 flight-surgeon views | no serious or critical violations (the report lists each failing element with its colours and ratio) |

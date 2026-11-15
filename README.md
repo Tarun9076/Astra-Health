@@ -171,6 +171,7 @@ Then open `services/backend/.env` and fill in:
 | `ASTRA_JWT_SECRET` | Random secret for login tokens. Generate one with `python -c "import secrets; print(secrets.token_urlsafe(48))"` | Recommended |
 | `ASTRA_NASA_API_KEY` | Free key from https://api.nasa.gov/ for live solar-storm data | Optional |
 | `ANTHROPIC_API_KEY` | Enables Claude for the AI assistant | Optional |
+| `GEMINI_API_KEY` | Enables Google Gemini for the AI assistant instead (free key from aistudio.google.com) | Optional |
 
 > [!CAUTION]
 > `.env` holds secrets. It is git-ignored, so never commit it.
@@ -318,9 +319,11 @@ All settings live in `services/backend/.env`. The full list is in [LLD §18](doc
 | `ASTRA_SYNC_KEY` | dev value | Shared secret that signs messages between nodes. Use the same random value on both. |
 | `ASTRA_DATABASE_URL` | `sqlite:///habitat.db` | Database file |
 | `ASTRA_JWT_SECRET` | none | Secret for login tokens |
-| `ASTRA_LLM_PROVIDER` | `auto` | `auto`, `claude`, `ollama` or `template` (offline) |
+| `ASTRA_LLM_PROVIDER` | `auto` | `auto` (Claude if its key is set, else Gemini, else offline), `claude`, `gemini` or `template` (offline) |
 | `ASTRA_LLM_MODEL` | `claude-opus-5-5` | Claude model for the assistant |
 | `ANTHROPIC_API_KEY` | none | Enables Claude |
+| `GEMINI_API_KEY` | none | Enables Gemini |
+| `ASTRA_GEMINI_MODEL` | `gemini-3.8-flash` | Gemini model for the assistant |
 | `ASTRA_NASA_API_KEY` | none | Enables live NASA DONKI solar-storm data |
 
 **Changed a backend endpoint?** Regenerate the web app's API types:
@@ -459,7 +462,7 @@ Responses are cached in `simulator/fixtures/`, so the demo works offline. Detail
 | Web app shows "API types" errors after a backend change | Regenerate the types (see [Configuration](#5-configuration)). |
 | Smartwatch: "Could not connect" or the watch is not in the list | Turn off Bluetooth on your phone (or close the watch's app), keep the watch close to the laptop and try again. Use Chrome or Edge at `localhost` (Bluetooth does not work over plain http on another address). Your watch must offer the standard heart-rate signal: check with the free nRF Connect app. |
 | Exercise coach: camera message, or no reps counted | Allow the camera in the browser's address bar (it works on `localhost` or https). Stand side-on, 2–3 m away, with your whole body, head to feet, in the picture and good light. Use **Demo playback** to show the feature without a camera. |
-| AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` is set, so it uses offline template answers. This is expected. |
+| AI assistant gives short, generic answers | No `ANTHROPIC_API_KEY` or `GEMINI_API_KEY` is set, so it uses offline template answers. This is expected. Restart the Habitat backend after adding a key. |
 | `uv` says Python 3.12 not found | Run `uv python install 3.12`, then repeat Step 2. |
 
 ---

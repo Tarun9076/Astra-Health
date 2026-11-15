@@ -177,6 +177,8 @@ Deterministic rules  >  ML insights  >  LLM explanation
 - Tier 2 (Ollama) is not built.
 - Red flags never reach any model.
 
+**Step 17:** tier 1 can also be **Google Gemini** (`google-genai` SDK, model `gemini-3.8-flash`, `GEMINI_API_KEY`). Both models share one contract (`providers/common.py`: instructions, JSON answer, conversation) and the same guard, retry and fallback; `ASTRA_LLM_PROVIDER=auto` uses Claude if its key is set, else Gemini, else the template.
+
 ### ADR-08 — RAG over a curated, cited knowledge base; BM25 first
 **Decision:** Curated Markdown notes (written by the team from NASA HRP / human-research-roadmap / NASA-STD-3001 public sources, with source URLs) chunked and indexed with BM25 (`rank_bm25`); embeddings (local `sentence-transformers`) are a Phase-2 upgrade.
 **Why:** Fully offline, no model download, deterministic, good enough for ~50–200 chunks.

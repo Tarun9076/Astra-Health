@@ -556,6 +556,21 @@ Design rules:
 
 ---
 
+### Step 17 — Gemini as the assistant's online model ✅
+
+**Goal:** let the team use Google Gemini (free key from Google AI Studio) instead of Claude, without changing the safety design.
+
+- [x] `providers/common.py`: what both models share (instructions, JSON answer format, conversation, report prompt, `LlmAnswer`, `ProviderError`). `providers/claude.py` uses it unchanged.
+- [x] `providers/gemini.py` with the official `google-genai` SDK (pinned `>=2.34,<3`; 2.34.0 released 2026-10-29): `generate_content` with the system instruction, `response_mime_type` JSON and `response_json_schema`, thinking level low, 45 s timeout; blocked (safety, prohibited, recitation…) or cut-off answers and any API or network error raise `ProviderError`; the report narrative too.
+- [x] Service: `ASTRA_LLM_PROVIDER` auto (Claude if its key is set, else Gemini, else template), claude, gemini or template; the same guard, one retry with a reminder, then the template. Settings `GEMINI_API_KEY`, `ASTRA_GEMINI_MODEL` (default `gemini-3.8-flash`, the current stable Flash model).
+- [x] Screen: the badge says "Earth relay · Gemini"; "Answer offline only" works for either model; a neutral note when the online model was unavailable. Status API adds `llmConfigured`, `geminiConfigured`.
+
+**Done 2026-11-15:** backend T-AI-05 (9 tests with a simulated Gemini, and one through the API); the tests switch both keys off so they never call a real model. Full backend suite passes; `ruff`, `mypy`, `tsc`, `oxlint` clean.
+
+**Not covered:** no call to the real Gemini API was made (no key on the development laptop); the first real answer is to be checked with your key. On Google's free tier, prompts may be used to improve Google's products: fine for simulated data, not for real health data.
+
+---
+
 ## 4. Team split (3–4 people)
 
 With one backend language, the split is by area rather than by runtime:
