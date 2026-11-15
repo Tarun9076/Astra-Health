@@ -114,6 +114,25 @@ class Symptom(SQLModel, table=True):
     source: str = "Form"
 
 
+class HealthPhoto(SQLModel, table=True):
+    """A photo taken by the astronaut (skin, eye, wound, a device's display) for the flight surgeon.
+
+    Stored as base64 text so it can travel inside a JSON sync envelope; the web app shrinks photos
+    to about 1280 px (a few hundred kB) before sending.
+    """
+
+    id: str = Field(primary_key=True)  # from the client (offline outbox), so a re-send is a no-op
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    kind: str  # Skin | Eye | Wound | DeviceReading | Other
+    note: str | None = None
+    content_type: str  # image/jpeg | image/png | image/webp
+    size_bytes: int
+    data_b64: str
+    checkin_id: str | None = None
+    taken_at: datetime = Field(sa_type=UTCDateTime)
+    node_id: str = ""
+
+
 # --- Derived (re-computable) ---------------------------------------------------------------------
 
 

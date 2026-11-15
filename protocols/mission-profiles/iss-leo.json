@@ -1,0 +1,41 @@
+{
+  "code": "iss-leo",
+  "name": "International Space Station",
+  "environment": "Space station",
+  "location": "Low Earth orbit, about 400 km up",
+  "gravityG": 0,
+  "solLengthHours": 24,
+  "dayName": "Day",
+  "commsDelayMinutes": {
+    "min": 0,
+    "max": 0.01
+  },
+  "lightTime": "profile",
+  "evacuation": "Return to Earth in about 6 to 24 hours in the docked crew vehicle.",
+  "radiationLimitMsv": 200,
+  "exerciseTargetSessionsPerWeek": 6,
+  "hydrationTargetMlPerDay": 2500,
+  "healthFocus": [
+    {
+      "title": "Bone and muscle loss",
+      "detail": "In weightlessness bones and muscles are barely loaded. Daily resistance and treadmill exercise is the main protection.",
+      "kb": "kb-bone-loss"
+    },
+    {
+      "title": "Fluid shift, head pressure and vision",
+      "detail": "Body fluids move towards the head: a puffy face, a blocked nose and, over months, eye changes. Report any change in vision.",
+      "kb": "kb-sans-vision"
+    },
+    {
+      "title": "Cabin air (CO₂)",
+      "detail": "Carbon dioxide can build up where air does not move. Headaches and poor concentration can be a sign; check the cabin reading.",
+      "kb": "kb-hazard-hostile-environment"
+    },
+    {
+      "title": "Radiation, partly shielded",
+      "detail": "Earth's magnetic field still blocks much of the radiation, but doses are higher than on Earth, especially when crossing the South Atlantic Anomaly.",
+      "kb": "kb-hazard-radiation"
+    }
+  ],
+  "disclaimer": "Illustrative values for the prototype; replace with mission-approved values."
+}

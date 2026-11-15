@@ -1,0 +1,41 @@
+{
+  "code": "mars-transit",
+  "name": "Mars transit",
+  "environment": "Spacecraft",
+  "location": "Deep space, between Earth and Mars",
+  "gravityG": 0,
+  "solLengthHours": 24,
+  "dayName": "Day",
+  "commsDelayMinutes": {
+    "min": 3,
+    "max": 22
+  },
+  "lightTime": "horizons-mars",
+  "evacuation": "None. Earth is months away, so the crew must treat every problem onboard.",
+  "radiationLimitMsv": 600,
+  "exerciseTargetSessionsPerWeek": 6,
+  "hydrationTargetMlPerDay": 2500,
+  "healthFocus": [
+    {
+      "title": "Highest radiation of the mission",
+      "detail": "Outside Earth's magnetic field there is no natural shield. During a solar storm, go to the storm shelter at once.",
+      "kb": "kb-radiation-shelter-spe"
+    },
+    {
+      "title": "Bone and muscle loss",
+      "detail": "Months of weightlessness before landing. Keep up resistance exercise so you can stand and work on Mars.",
+      "kb": "kb-exercise-countermeasures"
+    },
+    {
+      "title": "Isolation and long delays",
+      "detail": "Messages to Earth take up to 22 minutes each way. Look after sleep, mood and team relations; use the support options early.",
+      "kb": "kb-hazard-isolation"
+    },
+    {
+      "title": "No quick way home",
+      "detail": "Medical decisions are made onboard. Daily check-ins catch problems early, while they are still easy to treat.",
+      "kb": "kb-hazard-distance"
+    }
+  ],
+  "disclaimer": "Illustrative values for the prototype; replace with mission-approved values."
+}

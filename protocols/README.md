@@ -9,7 +9,7 @@ Medical "knowledge as data", loaded and cross-checked by the backend at startup 
 | `recommendations.json` | 22 actions linked from rules and the daily routine (LLD §8) | ✅ Steps 1, 5, 10 |
 | `emergency/EMG-*.md` | 10 step-by-step emergency procedures (YAML front matter + Markdown), shown offline and bundled into the web app | ✅ Steps 1, 5, 7 |
 | `redflags.yaml` | Red-flag phrases for the AI assistant → emergency procedure (negations, hypothetical questions) | ✅ Step 7 |
-| `mission-profiles/*.json` | Gravity, comms delay, radiation limit, exercise and hydration targets | ✅ `mars-surface.json` |
+| `mission-profiles/*.json` | Environment, gravity, comms delay, evacuation, radiation limit, exercise and hydration targets, health focus | ✅ `iss-leo`, `mars-transit`, `lunar-rover`, `mars-surface` (default) |
 
 ## Editing a rule
 

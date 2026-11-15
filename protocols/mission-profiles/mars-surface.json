@@ -1,11 +1,41 @@
 {
   "code": "mars-surface",
   "name": "Mars surface stay",
+  "environment": "Planetary base",
+  "location": "Mars surface habitat",
   "gravityG": 0.38,
   "solLengthHours": 24.66,
-  "commsDelayMinutes": { "min": 3, "max": 22 },
+  "dayName": "Sol",
+  "commsDelayMinutes": {
+    "min": 3,
+    "max": 22
+  },
+  "lightTime": "horizons-mars",
+  "evacuation": "None. Earth is months away, so the crew must treat every problem onboard.",
   "radiationLimitMsv": 600,
   "exerciseTargetSessionsPerWeek": 5,
   "hydrationTargetMlPerDay": 2500,
+  "healthFocus": [
+    {
+      "title": "Adapting to Mars gravity",
+      "detail": "After months of weightlessness, standing up can make you dizzy. Stand up slowly and report fainting or near-fainting.",
+      "kb": "kb-orthostatic-dizziness"
+    },
+    {
+      "title": "Radiation on the surface",
+      "detail": "The thin air blocks only part of the radiation. Follow the dose plan and use the shelter during solar storms.",
+      "kb": "kb-hazard-radiation"
+    },
+    {
+      "title": "A longer day (sol)",
+      "detail": "A sol is 39 minutes longer than an Earth day, which can disturb your body clock. Keep regular light and sleep times.",
+      "kb": "kb-sleep-circadian"
+    },
+    {
+      "title": "Isolation and long delays",
+      "detail": "Messages to Earth take up to 22 minutes each way. Look after sleep, mood and team relations.",
+      "kb": "kb-hazard-isolation"
+    }
+  ],
   "disclaimer": "Illustrative values for the prototype; replace with mission-approved values."
 }

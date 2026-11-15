@@ -1,0 +1,41 @@
+{
+  "code": "lunar-rover",
+  "name": "Moon rover traverse",
+  "environment": "Pressurized rover",
+  "location": "Lunar south pole, away from the base",
+  "gravityG": 0.166,
+  "solLengthHours": 24,
+  "dayName": "Day",
+  "commsDelayMinutes": {
+    "min": 0.02,
+    "max": 0.03
+  },
+  "lightTime": "profile",
+  "evacuation": "Drive back to the base within hours; reaching Earth takes about 3 to 5 days.",
+  "radiationLimitMsv": 300,
+  "exerciseTargetSessionsPerWeek": 3,
+  "hydrationTargetMlPerDay": 3000,
+  "healthFocus": [
+    {
+      "title": "Spacewalk effort and heat",
+      "detail": "Moonwalks are hard physical work in a hot suit. Drink before and after, and watch your heart rate and temperature.",
+      "kb": "kb-hydration"
+    },
+    {
+      "title": "Lunar dust",
+      "detail": "Fine, sharp dust can irritate the eyes, skin and lungs. Clean suits before entering and report coughing or eye irritation.",
+      "kb": "kb-hazard-hostile-environment"
+    },
+    {
+      "title": "Small cabin, poor sleep",
+      "detail": "Two people in a small rover for days. Noise, light and cramped sleep reduce rest; protect your sleep period.",
+      "kb": "kb-sleep-circadian"
+    },
+    {
+      "title": "No atmosphere or magnetic field",
+      "detail": "Radiation is higher than on the space station. During a solar storm, use the rover's shielded area.",
+      "kb": "kb-radiation-shelter-spe"
+    }
+  ],
+  "disclaimer": "Illustrative values for the prototype; replace with mission-approved values."
+}

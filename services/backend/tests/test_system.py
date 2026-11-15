@@ -25,7 +25,7 @@ def test_health_shows_loaded_protocol_counts(client: TestClient) -> None:
         "rules": 19,
         "recommendations": 22,
         "emergencyProtocols": 10,
-        "missionProfiles": 1,
+        "missionProfiles": 4,
     }
     assert body["nasaApi"] in {"enabled", "disabled"}
 

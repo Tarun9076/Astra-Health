@@ -13,12 +13,14 @@ from sqlmodel import col, or_, select
 
 from astra.api.base import ApiModel
 from astra.api.checkins import CHECKIN_SYMPTOMS
+from astra.api.photos import KIND_LABEL
 from astra.core.alerts import ACTIVE_STATUSES
 from astra.core.enums import MeasurementQuality
 from astra.core.protocols import ProtocolBundle
 from astra.db.models import (
     HealthAlert,
     HealthMeasurement,
+    HealthPhoto,
     Insight,
     MedicalInstruction,
     MedicalReport,
@@ -33,7 +35,7 @@ router = APIRouter(prefix="/api", tags=["history"])
 
 EventKind = Literal[
     "Readings", "Checkin", "Symptom", "Alert", "AlertClosed", "Recommendation", "RecommendationDone",
-    "Insight", "Instruction", "Report",
+    "Insight", "Instruction", "Report", "Photo",
 ]  # fmt: skip
 
 # Daily summary of the indicators an astronaut cares about most, in display order.
@@ -148,6 +150,17 @@ def get_timeline(
             id=f"S-{s.id}", at=s.onset_at, kind="Symptom", title=f"Symptom reported: {label}",
             detail=f"Severity {s.severity}/10 · {where}" + (f" · “{s.free_text[:120]}”" if s.free_text else ""),
             severity="Urgent" if s.red_flag else None,
+        ))  # fmt: skip
+
+    photos = session.exec(  # metadata only: the image data stays in the database
+        select(HealthPhoto.id, HealthPhoto.taken_at, HealthPhoto.kind, HealthPhoto.note).where(
+            HealthPhoto.astronaut_id == aid, col(HealthPhoto.taken_at) >= since
+        )
+    ).all()
+    for pid, taken_at, photo_kind, note in photos:
+        events.append(TimelineEvent(
+            id=f"F-{pid}", at=taken_at, kind="Photo", title=f"Photo added: {KIND_LABEL.get(photo_kind, photo_kind)}",
+            detail=note, ref_id=pid,
         ))  # fmt: skip
 
     for a in session.exec(

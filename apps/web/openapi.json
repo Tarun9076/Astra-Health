@@ -1915,6 +1915,276 @@
     }
    }
   },
+  "/api/astronauts/{astronaut}/progress": {
+   "get": {
+    "tags": [
+     "progress"
+    ],
+    "summary": "Get Progress",
+    "operationId": "get_progress_api_astronauts__astronaut__progress_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProgressOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/mission": {
+   "get": {
+    "tags": [
+     "mission"
+    ],
+    "summary": "Get Mission",
+    "operationId": "get_mission_api_mission_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MissionOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/admin/mission/profile": {
+   "put": {
+    "tags": [
+     "mission"
+    ],
+    "summary": "Put Mission Profile",
+    "operationId": "put_mission_profile_api_admin_mission_profile_put",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProfileIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MissionOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/photos": {
+   "post": {
+    "tags": [
+     "photos"
+    ],
+    "summary": "Post Photo",
+    "operationId": "post_photo_api_photos_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/PhotoIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PhotoOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts/{astronaut}/photos": {
+   "get": {
+    "tags": [
+     "photos"
+    ],
+    "summary": "List Photos",
+    "operationId": "list_photos_api_astronauts__astronaut__photos_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/PhotoOut"
+         },
+         "title": "Response List Photos Api Astronauts  Astronaut  Photos Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/astronauts/{astronaut}/photos/{photo}/image": {
+   "get": {
+    "tags": [
+     "photos"
+    ],
+    "summary": "Photo Image",
+    "operationId": "photo_image_api_astronauts__astronaut__photos__photo__image_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "photo",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Photo"
+      }
+     },
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "image/jpeg": {},
+       "image/png": {},
+       "image/webp": {}
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/measurements/batch": {
    "post": {
     "tags": [
@@ -2685,6 +2955,57 @@
      "missionStart"
     ],
     "title": "AstronautOut"
+   },
+   "Badge": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "description": {
+      "type": "string",
+      "title": "Description"
+     },
+     "earned": {
+      "type": "boolean",
+      "title": "Earned"
+     },
+     "earnedOn": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Earnedon"
+     },
+     "progress": {
+      "type": "integer",
+      "title": "Progress"
+     },
+     "target": {
+      "type": "integer",
+      "title": "Target"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "description",
+     "earned",
+     "earnedOn",
+     "progress",
+     "target"
+    ],
+    "title": "Badge"
    },
    "CabinPoint": {
     "properties": {
@@ -3885,6 +4206,37 @@
     ],
     "title": "Health"
    },
+   "HealthFocus": {
+    "properties": {
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "detail": {
+      "type": "string",
+      "title": "Detail"
+     },
+     "kb": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Kb"
+     }
+    },
+    "additionalProperties": false,
+    "type": "object",
+    "required": [
+     "title",
+     "detail"
+    ],
+    "title": "HealthFocus",
+    "description": "What matters most for health in this environment, shown to the crew."
+   },
    "HistoryItem": {
     "properties": {
      "id": {
@@ -4275,6 +4627,41 @@
     ],
     "title": "LatestReport"
    },
+   "Level": {
+    "properties": {
+     "number": {
+      "type": "integer",
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "minPoints": {
+      "type": "integer",
+      "title": "Minpoints"
+     },
+     "nextPoints": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Nextpoints"
+     }
+    },
+    "type": "object",
+    "required": [
+     "number",
+     "title",
+     "minPoints",
+     "nextPoints"
+    ],
+    "title": "Level"
+   },
    "LibraryItem": {
     "properties": {
      "code": {
@@ -4626,6 +5013,49 @@
     ],
     "title": "MeasurementSource"
    },
+   "MissionOut": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "startDate": {
+      "type": "string",
+      "format": "date",
+      "title": "Startdate"
+     },
+     "profile": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/ProfileOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "options": {
+      "items": {
+       "$ref": "#/components/schemas/ProfileOption"
+      },
+      "type": "array",
+      "title": "Options"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "name",
+     "startDate",
+     "profile",
+     "options"
+    ],
+    "title": "MissionOut"
+   },
    "Mission_": {
     "properties": {
      "id": {
@@ -4697,6 +5127,356 @@
     },
     "type": "object",
     "title": "NoteIn"
+   },
+   "PhotoIn": {
+    "properties": {
+     "id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 64
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Id",
+      "description": "From the client; generated if missing"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "Skin",
+       "Eye",
+       "Wound",
+       "DeviceReading",
+       "Other"
+      ],
+      "title": "Kind"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "checkinId": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 64
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Checkinid"
+     },
+     "takenAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Takenat"
+     },
+     "dataUrl": {
+      "type": "string",
+      "maxLength": 2800000,
+      "title": "Dataurl",
+      "description": "data:image/jpeg;base64,… (JPEG, PNG or WebP, at most 2 MB)"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "dataUrl"
+    ],
+    "title": "PhotoIn"
+   },
+   "PhotoOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "Skin",
+       "Eye",
+       "Wound",
+       "DeviceReading",
+       "Other"
+      ],
+      "title": "Kind"
+     },
+     "kindLabel": {
+      "type": "string",
+      "title": "Kindlabel"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "contentType": {
+      "type": "string",
+      "title": "Contenttype"
+     },
+     "sizeBytes": {
+      "type": "integer",
+      "title": "Sizebytes"
+     },
+     "checkinId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Checkinid"
+     },
+     "takenAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Takenat"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "kind",
+     "kindLabel",
+     "note",
+     "contentType",
+     "sizeBytes",
+     "checkinId",
+     "takenAt"
+    ],
+    "title": "PhotoOut"
+   },
+   "PointRule": {
+    "properties": {
+     "action": {
+      "type": "string",
+      "title": "Action"
+     },
+     "points": {
+      "type": "integer",
+      "title": "Points"
+     }
+    },
+    "type": "object",
+    "required": [
+     "action",
+     "points"
+    ],
+    "title": "PointRule"
+   },
+   "ProfileIn": {
+    "properties": {
+     "profileCode": {
+      "type": "string",
+      "title": "Profilecode"
+     }
+    },
+    "type": "object",
+    "required": [
+     "profileCode"
+    ],
+    "title": "ProfileIn"
+   },
+   "ProfileOption": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "environment": {
+      "type": "string",
+      "title": "Environment"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "name",
+     "environment"
+    ],
+    "title": "ProfileOption"
+   },
+   "ProfileOut": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "environment": {
+      "type": "string",
+      "title": "Environment"
+     },
+     "location": {
+      "type": "string",
+      "title": "Location"
+     },
+     "gravityG": {
+      "type": "number",
+      "title": "Gravityg"
+     },
+     "dayName": {
+      "type": "string",
+      "title": "Dayname"
+     },
+     "dayLengthHours": {
+      "type": "number",
+      "title": "Daylengthhours"
+     },
+     "commsDelayMinMinutes": {
+      "type": "number",
+      "title": "Commsdelayminminutes"
+     },
+     "commsDelayMaxMinutes": {
+      "type": "number",
+      "title": "Commsdelaymaxminutes"
+     },
+     "evacuation": {
+      "type": "string",
+      "title": "Evacuation"
+     },
+     "radiationLimitMsv": {
+      "type": "number",
+      "title": "Radiationlimitmsv"
+     },
+     "exerciseTargetSessionsPerWeek": {
+      "type": "integer",
+      "title": "Exercisetargetsessionsperweek"
+     },
+     "hydrationTargetMlPerDay": {
+      "type": "integer",
+      "title": "Hydrationtargetmlperday"
+     },
+     "healthFocus": {
+      "items": {
+       "$ref": "#/components/schemas/HealthFocus"
+      },
+      "type": "array",
+      "title": "Healthfocus"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "name",
+     "environment",
+     "location",
+     "gravityG",
+     "dayName",
+     "dayLengthHours",
+     "commsDelayMinMinutes",
+     "commsDelayMaxMinutes",
+     "evacuation",
+     "radiationLimitMsv",
+     "exerciseTargetSessionsPerWeek",
+     "hydrationTargetMlPerDay",
+     "healthFocus",
+     "disclaimer"
+    ],
+    "title": "ProfileOut"
+   },
+   "ProgressOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "points": {
+      "type": "integer",
+      "title": "Points"
+     },
+     "pointsToday": {
+      "type": "integer",
+      "title": "Pointstoday"
+     },
+     "level": {
+      "$ref": "#/components/schemas/Level"
+     },
+     "streaks": {
+      "items": {
+       "$ref": "#/components/schemas/Streak"
+      },
+      "type": "array",
+      "title": "Streaks"
+     },
+     "weekly": {
+      "items": {
+       "$ref": "#/components/schemas/WeeklyGoal"
+      },
+      "type": "array",
+      "title": "Weekly"
+     },
+     "badges": {
+      "items": {
+       "$ref": "#/components/schemas/Badge"
+      },
+      "type": "array",
+      "title": "Badges"
+     },
+     "howPointsWork": {
+      "items": {
+       "$ref": "#/components/schemas/PointRule"
+      },
+      "type": "array",
+      "title": "Howpointswork"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "points",
+     "pointsToday",
+     "level",
+     "streaks",
+     "weekly",
+     "badges",
+     "howPointsWork"
+    ],
+    "title": "ProgressOut"
    },
    "ProtocolCounts": {
     "properties": {
@@ -5462,6 +6242,45 @@
     ],
     "title": "SpaceWeatherNow"
    },
+   "Streak": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "enum": [
+       "checkin",
+       "active",
+       "sleep",
+       "hydration"
+      ],
+      "title": "Id"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "current": {
+      "type": "integer",
+      "title": "Current"
+     },
+     "best": {
+      "type": "integer",
+      "title": "Best"
+     },
+     "doneToday": {
+      "type": "boolean",
+      "title": "Donetoday"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "label",
+     "current",
+     "best",
+     "doneToday"
+    ],
+    "title": "Streak"
+   },
    "SymptomIn": {
     "properties": {
      "code": {
@@ -5752,7 +6571,8 @@
        "RecommendationDone",
        "Insight",
        "Instruction",
-       "Report"
+       "Report",
+       "Photo"
       ],
       "title": "Kind"
      },
@@ -6044,6 +6864,40 @@
      "unit"
     ],
     "title": "VitalIn"
+   },
+   "WeeklyGoal": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "enum": [
+       "checkin",
+       "active",
+       "sleep",
+       "hydration"
+      ],
+      "title": "Id"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "done": {
+      "type": "integer",
+      "title": "Done"
+     },
+     "target": {
+      "type": "integer",
+      "title": "Target"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "label",
+     "done",
+     "target"
+    ],
+    "title": "WeeklyGoal"
    },
    "WellnessCenterOut": {
     "properties": {

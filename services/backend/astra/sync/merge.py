@@ -9,6 +9,8 @@
 | MedicalInstruction  | insert-if-absent; DeliveredAt / AcknowledgedAt: first non-null wins       |
 | Insight             | upsert (derived, last writer wins)                                        |
 | SpaceWeatherEvent   | insert-if-absent                                                          |
+| HealthPhoto         | insert-if-absent (immutable evidence)                                     |
+| Mission             | last writer wins on the environment profile (set on the Habitat)          |
 """
 
 from collections.abc import Callable
@@ -16,7 +18,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlmodel import Session, SQLModel
+from sqlmodel import Session, SQLModel, select
 
 from astra.core.enums import NodeRole
 from astra.db.models import (
@@ -24,9 +26,11 @@ from astra.db.models import (
     EnvironmentReading,
     HealthAlert,
     HealthMeasurement,
+    HealthPhoto,
     Insight,
     MedicalInstruction,
     MedicalReport,
+    Mission,
     SpaceWeatherEvent,
     SyncOutbox,
 )
@@ -135,6 +139,21 @@ def apply_items(
                 result.events.append(
                     ("SpaceWeatherNotice", "", {"id": row.id, "eventTime": payload["event_time"]})
                 )
+        elif kind == "HealthPhoto":
+            row = _insert_if_absent(session, HealthPhoto, payload, payload["id"])
+            if isinstance(row, HealthPhoto):
+                who = session.get(Astronaut, row.astronaut_id)
+                payload = {"id": row.id, "astronautCode": who.code if who else None}
+                result.events.append(("PhotoAdded", row.astronaut_id, payload))
+        elif kind == "Mission":
+            mission = session.exec(select(Mission).where(Mission.code == payload["code"])).first()
+            if mission is not None and mission.profile_code != payload["profile_code"]:
+                mission.profile_code = payload["profile_code"]
+                session.add(mission)
+                result.events.append(("MissionChanged", "", {"profileCode": mission.profile_code}))
+                row = mission
+            else:
+                row = None
         else:
             row = None
         if row is None:

@@ -720,6 +720,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/astronauts/{astronaut}/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress */
+        get: operations["get_progress_api_astronauts__astronaut__progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/mission": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mission */
+        get: operations["get_mission_api_mission_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/mission/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Mission Profile */
+        put: operations["put_mission_profile_api_admin_mission_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Photo */
+        post: operations["post_photo_api_photos_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Photos */
+        get: operations["list_photos_api_astronauts__astronaut__photos_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/photos/{photo}/image": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Photo Image */
+        get: operations["photo_image_api_astronauts__astronaut__photos__photo__image_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/measurements/batch": {
         parameters: {
             query?: never;
@@ -1002,6 +1104,23 @@ export interface components {
              * Format: date
              */
             missionStart: string;
+        };
+        /** Badge */
+        Badge: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Earned */
+            earned: boolean;
+            /** Earnedon */
+            earnedOn: string | null;
+            /** Progress */
+            progress: number;
+            /** Target */
+            target: number;
         };
         /** CabinPoint */
         CabinPoint: {
@@ -1403,6 +1522,18 @@ export interface components {
             /** Websocketclients */
             websocketClients: number;
         };
+        /**
+         * HealthFocus
+         * @description What matters most for health in this environment, shown to the crew.
+         */
+        HealthFocus: {
+            /** Title */
+            title: string;
+            /** Detail */
+            detail: string;
+            /** Kb */
+            kb?: string | null;
+        };
         /** HistoryItem */
         HistoryItem: {
             /** Id */
@@ -1543,6 +1674,17 @@ export interface components {
             /** Transmissionstatus */
             transmissionStatus: string;
         };
+        /** Level */
+        Level: {
+            /** Number */
+            number: number;
+            /** Title */
+            title: string;
+            /** Minpoints */
+            minPoints: number;
+            /** Nextpoints */
+            nextPoints: number | null;
+        };
         /** LibraryItem */
         LibraryItem: {
             /** Code */
@@ -1667,6 +1809,21 @@ export interface components {
          * @enum {string}
          */
         MeasurementSource: "Manual" | "Wearable" | "Device" | "Derived" | "Simulated";
+        /** MissionOut */
+        MissionOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /**
+             * Startdate
+             * Format: date
+             */
+            startDate: string;
+            profile: components["schemas"]["ProfileOut"] | null;
+            /** Options */
+            options: components["schemas"]["ProfileOption"][];
+        };
         /** Mission_ */
         Mission_: {
             /** Id */
@@ -1690,6 +1847,129 @@ export interface components {
         NoteIn: {
             /** Note */
             note?: string | null;
+        };
+        /** PhotoIn */
+        PhotoIn: {
+            /**
+             * Id
+             * @description From the client; generated if missing
+             */
+            id?: string | null;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "Skin" | "Eye" | "Wound" | "DeviceReading" | "Other";
+            /** Note */
+            note?: string | null;
+            /** Checkinid */
+            checkinId?: string | null;
+            /** Takenat */
+            takenAt?: string | null;
+            /**
+             * Dataurl
+             * @description data:image/jpeg;base64,… (JPEG, PNG or WebP, at most 2 MB)
+             */
+            dataUrl: string;
+        };
+        /** PhotoOut */
+        PhotoOut: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "Skin" | "Eye" | "Wound" | "DeviceReading" | "Other";
+            /** Kindlabel */
+            kindLabel: string;
+            /** Note */
+            note: string | null;
+            /** Contenttype */
+            contentType: string;
+            /** Sizebytes */
+            sizeBytes: number;
+            /** Checkinid */
+            checkinId: string | null;
+            /**
+             * Takenat
+             * Format: date-time
+             */
+            takenAt: string;
+        };
+        /** PointRule */
+        PointRule: {
+            /** Action */
+            action: string;
+            /** Points */
+            points: number;
+        };
+        /** ProfileIn */
+        ProfileIn: {
+            /** Profilecode */
+            profileCode: string;
+        };
+        /** ProfileOption */
+        ProfileOption: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Environment */
+            environment: string;
+        };
+        /** ProfileOut */
+        ProfileOut: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
+            /** Environment */
+            environment: string;
+            /** Location */
+            location: string;
+            /** Gravityg */
+            gravityG: number;
+            /** Dayname */
+            dayName: string;
+            /** Daylengthhours */
+            dayLengthHours: number;
+            /** Commsdelayminminutes */
+            commsDelayMinMinutes: number;
+            /** Commsdelaymaxminutes */
+            commsDelayMaxMinutes: number;
+            /** Evacuation */
+            evacuation: string;
+            /** Radiationlimitmsv */
+            radiationLimitMsv: number;
+            /** Exercisetargetsessionsperweek */
+            exerciseTargetSessionsPerWeek: number;
+            /** Hydrationtargetmlperday */
+            hydrationTargetMlPerDay: number;
+            /** Healthfocus */
+            healthFocus: components["schemas"]["HealthFocus"][];
+            /** Disclaimer */
+            disclaimer: string;
+        };
+        /** ProgressOut */
+        ProgressOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Points */
+            points: number;
+            /** Pointstoday */
+            pointsToday: number;
+            level: components["schemas"]["Level"];
+            /** Streaks */
+            streaks: components["schemas"]["Streak"][];
+            /** Weekly */
+            weekly: components["schemas"]["WeeklyGoal"][];
+            /** Badges */
+            badges: components["schemas"]["Badge"][];
+            /** Howpointswork */
+            howPointsWork: components["schemas"]["PointRule"][];
         };
         /** ProtocolCounts */
         ProtocolCounts: {
@@ -1996,6 +2276,22 @@ export interface components {
             /** Lighttimeminutes */
             lightTimeMinutes: number | null;
         };
+        /** Streak */
+        Streak: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "checkin" | "active" | "sleep" | "hydration";
+            /** Label */
+            label: string;
+            /** Current */
+            current: number;
+            /** Best */
+            best: number;
+            /** Donetoday */
+            doneToday: boolean;
+        };
         /** SymptomIn */
         SymptomIn: {
             /**
@@ -2094,7 +2390,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "Readings" | "Checkin" | "Symptom" | "Alert" | "AlertClosed" | "Recommendation" | "RecommendationDone" | "Insight" | "Instruction" | "Report";
+            kind: "Readings" | "Checkin" | "Symptom" | "Alert" | "AlertClosed" | "Recommendation" | "RecommendationDone" | "Insight" | "Instruction" | "Report" | "Photo";
             /** Title */
             title: string;
             /** Detail */
@@ -2183,6 +2479,20 @@ export interface components {
              * @example bpm
              */
             unit: string;
+        };
+        /** WeeklyGoal */
+        WeeklyGoal: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "checkin" | "active" | "sleep" | "hydration";
+            /** Label */
+            label: string;
+            /** Done */
+            done: number;
+            /** Target */
+            target: number;
         };
         /** WellnessCenterOut */
         WellnessCenterOut: {
@@ -3457,6 +3767,188 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GuidanceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_progress_api_astronauts__astronaut__progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProgressOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mission_api_mission_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"];
+                };
+            };
+        };
+    };
+    put_mission_profile_api_admin_mission_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MissionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_photo_api_photos_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PhotoIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_photos_api_astronauts__astronaut__photos_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    photo_image_api_astronauts__astronaut__photos__photo__image_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photo: string;
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": unknown;
+                    "image/png": unknown;
+                    "image/webp": unknown;
                 };
             };
             /** @description Validation Error */

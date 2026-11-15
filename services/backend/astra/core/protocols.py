@@ -55,16 +55,31 @@ class EmergencyProtocol(CoreModel):
 
 
 class CommsDelay(CoreModel):
-    min: float = Field(gt=0)
-    max: float = Field(gt=0)
+    min: float = Field(ge=0)  # one-way, minutes; ~0 near Earth
+    max: float = Field(ge=0)
+
+
+class HealthFocus(CoreModel):
+    """What matters most for health in this environment, shown to the crew."""
+
+    title: str
+    detail: str
+    kb: str | None = None  # knowledge-base note with the sources
 
 
 class MissionProfile(CoreModel):
     code: str
     name: str
-    gravity_g: float = Field(gt=0, le=1)
+    environment: Literal["Space station", "Spacecraft", "Pressurized rover", "Planetary base"]
+    location: str
+    gravity_g: float = Field(ge=0, le=1)  # 0 = weightlessness (microgravity)
     sol_length_hours: float = Field(gt=0)
+    day_name: str = "Day"  # "Sol" on Mars
     comms_delay_minutes: CommsDelay
+    # "horizons-mars": the real Earth-Mars light time for today (JPL Horizons); else the midpoint above
+    light_time: Literal["horizons-mars", "profile"] = "profile"
+    evacuation: str  # how quickly a sick crew member could reach a hospital
+    health_focus: list[HealthFocus] = Field(min_length=1)
     radiation_limit_msv: float = Field(gt=0)
     exercise_target_sessions_per_week: int = Field(ge=0)
     hydration_target_ml_per_day: int = Field(ge=0)

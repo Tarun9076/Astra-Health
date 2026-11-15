@@ -31,6 +31,9 @@ from astra.api import (
     environment,
     history,
     measurements,
+    mission,
+    photos,
+    progress,
     realtime,
     reports,
     sync,
@@ -219,6 +222,9 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(sync.node_router)
     app.include_router(checkins.router)
     app.include_router(history.router)
+    app.include_router(progress.router)
+    app.include_router(mission.router)
+    app.include_router(photos.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)
 
