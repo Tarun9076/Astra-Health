@@ -6,6 +6,7 @@ import { EarthCopyBanner } from '../components/ui/EarthCopyBanner'
 import { NodeStatusPill } from '../components/ui/NodeStatusPill'
 import { OfflineBanner } from '../components/ui/OfflineBanner'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
+import { WatchButton } from '../components/ui/WatchButton'
 import { Toaster } from '../components/ui/Toaster'
 import { useAuth } from '../lib/auth'
 import { missionDay, missionSol } from '../lib/mission'
@@ -13,6 +14,7 @@ import { startOutboxSync } from '../lib/outbox'
 import { useCrewSummary, useDashboard, useMission } from '../lib/queries'
 import { RealtimeClient, type LiveEvent } from '../lib/realtime'
 import { useToasts } from '../lib/toasts'
+import { useWatchRecorder } from '../lib/watchRecorder'
 import { useNow } from '../lib/useNow'
 import { ASTRONAUT_NAV, CHECKIN_TASK } from './sections'
 
@@ -188,6 +190,7 @@ export function AppLayout() {
   const { user, signOut } = useAuth()
   useLiveUpdates()
   useOutboxSync()
+  useWatchRecorder(user?.role === 'Astronaut' ? user.astronautCode : null)
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
   const [lastPath, setLastPath] = useState(location.pathname)
@@ -256,6 +259,7 @@ export function AppLayout() {
             SIMULATED DATA
           </span>
           <NodeStatusPill />
+          {isAstronaut && <WatchButton />}
           <ThemeToggle />
           {user && (
             <span className="hidden text-right text-xs leading-tight lg:block">

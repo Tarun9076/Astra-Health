@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import {
-  Camera, CheckCircle2, Clapperboard, Dumbbell, Lock, MonitorPlay, Moon, RotateCcw, SkipForward, Square, Volume2, VolumeX,
+  Camera, CheckCircle2, Clapperboard, Dumbbell, HeartPulse, Lock, MonitorPlay, Moon, RotateCcw, SkipForward, Square, Volume2, VolumeX,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -9,6 +9,8 @@ import type { ExercisePlan, ExerciseSession, ExerciseSessionIn } from '../../lib
 import { useAuth } from '../../lib/auth'
 import { sendOrQueue } from '../../lib/outbox'
 import { useExercisePlan } from '../../lib/queries'
+import { useNow } from '../../lib/useNow'
+import { liveBpm, useWatch } from '../../lib/watch'
 import { spoken, TIPS, Workout, type CoachEvent, type CoachState, type ExerciseId, type ExerciseSummary, type PlanItem } from './coach'
 import { BONES, toBody, type Landmark } from './pose'
 import { cameraError, loadPoseLandmarker } from './poseEngine'
@@ -384,6 +386,7 @@ function WorkoutView({ items, restSeconds, source, speed, onFinish, onStop, onSw
                     style={{ width: `${Math.round((frame?.progress ?? 0) * 100)}%` }} />
                 </div>
               </div>
+              <WatchHeartRate />
             </>
           )}
           <p className="mt-4 min-h-12 rounded-lg bg-subtle px-3 py-2 text-sm" role="status" aria-live="polite" aria-label="Coach says">{message}</p>
@@ -573,5 +576,20 @@ function WorkoutSummary({ source, startedAt, finishedAt, results, level, onAgain
         </div>
       </Panel>
     </div>
+  )
+}
+
+/** Live heart rate from the astronaut's watch during the workout (Step 15); hidden without a watch. */
+function WatchHeartRate() {
+  const watch = useWatch()
+  const now = useNow(2000)
+  const bpm = liveBpm(watch, now)
+  if (bpm == null) return null
+  return (
+    <p className="mt-3 flex items-center gap-2 text-sm" aria-live="off">
+      <HeartPulse className="h-4 w-4 text-status-red motion-safe:animate-pulse" aria-hidden />
+      Heart rate <span className="font-semibold tabular-nums">{bpm} bpm</span>
+      <span className="text-ink-muted">· your watch</span>
+    </p>
   )
 }

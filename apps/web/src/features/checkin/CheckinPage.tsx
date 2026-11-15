@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Camera, Check, Clock, Flame, Info, Pencil, Rotat
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { PhotoCapture, type DraftPhoto } from '../../components/health/PhotoCapture'
+import { WatchMeasure } from '../../components/health/WatchMeasure'
 import { EmergencyProtocolCard } from '../../components/ui/EmergencyProtocolCard'
 import { Button, ErrorNote, LinkButton, Panel } from '../../components/ui/Panel'
 import { SeverityBadge } from '../../components/ui/Status'
@@ -211,6 +212,7 @@ export function CheckinPage() {
           <DeviceOffer active={useWearableHr} onToggle={() => setUseWearableHr((u) => !u)}
             text={`Your wearable recorded ${formatValue(wearableHr!.value, 0)} bpm at ${new Date(wearableHr!.measuredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} today.`} />
         )}
+        {!useWearableHr && <WatchMeasure onResult={(bpm) => setValue('resting_hr', String(bpm))} />}
         {!useWearableHr && <NumberField {...fieldProps('resting_hr')} />}
       </MeasurementStep>
     ),
