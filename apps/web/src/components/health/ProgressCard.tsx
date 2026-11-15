@@ -13,6 +13,10 @@ function Bar({ value, max, label }: { value: number; max: number; label: string 
   )
 }
 
+/** "3 of 5 days", or "6 days · goal met" once the goal is reached (never "6 of 5"). */
+const goalText = (g: Progress['weekly'][number]) =>
+  g.done >= g.target ? `${g.done} day${g.done === 1 ? '' : 's'} · goal met` : `${g.done} of ${g.target} days`
+
 const FAIR_PLAY = 'Points reward what you do, never your readings: a worrying value never costs points, so always record it as it is.'
 
 function LevelLine({ p }: { p: Progress }) {
@@ -55,8 +59,8 @@ export function ProgressSummary({ progress: p }: { progress: Progress }) {
             <div className="flex justify-between gap-2">
               <span>{g.label}</span>
               <span className={g.done >= g.target ? 'font-semibold' : 'text-ink-muted'}>
-                {g.done >= g.target && <CheckCircle2 className="mr-1 inline h-4 w-4 text-status-green" aria-label="Goal met" />}
-                {g.done} of {g.target} days
+                {g.done >= g.target && <CheckCircle2 className="mr-1 inline h-4 w-4 text-status-green" aria-hidden />}
+                {goalText(g)}
               </span>
             </div>
             <div className="mt-1"><Bar value={g.done} max={g.target} label={`${g.label}: ${g.done} of ${g.target} days`} /></div>
@@ -130,7 +134,7 @@ export function ProgressDetails({ progress: p }: { progress: Progress }) {
             <li key={g.id} className="text-sm">
               <div className="flex justify-between gap-2">
                 <span>{g.label}</span>
-                <span className={g.done >= g.target ? 'font-semibold' : 'text-ink-muted'}>{g.done} of {g.target} days</span>
+                <span className={g.done >= g.target ? 'font-semibold' : 'text-ink-muted'}>{goalText(g)}</span>
               </div>
               <div className="mt-1"><Bar value={g.done} max={g.target} label={`${g.label}: ${g.done} of ${g.target} days`} /></div>
             </li>
