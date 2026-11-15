@@ -1,6 +1,6 @@
 {
   "id": "ML-ANOMALY-CORROBORATED",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Unusual pattern confirmed by readings",
   "category": "Behavioral",
   "hazard": "Isolation",
@@ -19,7 +19,7 @@
     ]
   },
   "persistence": { "minTriggers": 1 },
-  "reasonTemplate": "The anomaly model scored your recent readings {anomaly.value:.2f} (unusual for you) and recovery strain has been rising ({strain.value:+.1f}σ). Readings confirm it: resting heart rate {resting_hr.z:+.1f}σ, fatigue {fatigue.z:+.1f}σ, sleep {sleep_hours.z:+.1f}σ from your normal.",
+  "reasonTemplate": "Taken together, your recent readings look unusual for you, and your body has been recovering less well over the last days. Your own measurements (sleep, resting heart rate or tiredness) agree.",
   "recommendations": ["REC-RECHECK-RHR", "REC-FATIGUE-ASSESS", "REC-SLEEP-ROUTINE"],
   "disclaimer": "Illustrative rule for the prototype. ML alone never raises an alert: the anomaly score and the strain trend must agree, a deterministic reading must confirm them, and the alert can only be Attention (TDD ADR-03). Measured on the simulated mission: 0 extra alerts for the healthy crew."
 }

@@ -14,7 +14,7 @@ mkdirSync(OUT, { recursive: true })
 const browser = await chromium.launch()
 
 async function as(user: string, shots: (page: Page) => Promise<void>) {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' })
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce', colorScheme: 'light' })
   const page = await context.newPage()
   await page.goto(`${BASE}/login`)
   await page.getByLabel('Username').fill(user)
@@ -36,7 +36,7 @@ await as('ast1', async (page) => {
   await page.goto(`${BASE}/astronaut/home`)
   // just after loading the mission data the link is still sending it to Earth ("N queued"): wait for it
   await page.waitForFunction(() => !/\d+ queued/.test(document.querySelector('header')?.textContent ?? ''), null, { timeout: 300_000 })
-  await page.getByRole('heading', { name: 'My progress' }).waitFor()
+  await page.getByRole('heading', { name: "Today's quests" }).waitFor()
   await shot(page, '01-home')
 
   await page.goto(`${BASE}/astronaut/checkin`)
@@ -53,6 +53,18 @@ await as('ast1', async (page) => {
   await page.goto(`${BASE}/astronaut/wellness#progress`)
   await page.getByRole('heading', { name: 'Progress and badges' }).waitFor()
   await shot(page, '04-progress')
+
+  await page.goto(`${BASE}/astronaut/assistant`)
+  await page.getByRole('button', { name: 'Why am I so tired?' }).click()
+  await page.getByText('What helps', { exact: true }).last().waitFor()
+  await shot(page, '08-assistant')
+
+  // the Mission dark theme (Step 14)
+  await page.evaluate(() => localStorage.setItem('astra-theme', 'dark'))
+  await page.goto(`${BASE}/astronaut/home`)
+  await page.getByRole('heading', { name: "Today's quests" }).waitFor()
+  await shot(page, '07-home-dark')
+  await page.evaluate(() => localStorage.removeItem('astra-theme'))
 })
 
 await as('surgeon1', async (page) => {

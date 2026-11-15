@@ -52,14 +52,15 @@ test('check-in with blood sugar and a photo, then progress and the environment o
 
   // Home: progress and the environment
   await page.goto('/astronaut/home')
-  await expect(page.getByRole('heading', { name: 'My progress' })).toBeVisible()
-  await expect(page.getByText(/of check-ins in a row/)).toBeVisible()
+  await expect(page.getByRole('heading', { name: "Today's quests" })).toBeVisible()
+  await expect(page.getByText(/^Level \d+ · /)).toBeVisible()
+  await expect(page.getByText(/\d+-day streak/)).toBeVisible()
   await expect(page.getByText('Mars surface stay', { exact: true })).toBeVisible()
-  await expect(page.getByText('What matters most for your health here')).toBeVisible()
+  await page.getByText('What matters for your health here').click()
   await expect(page.getByText('Adapting to Mars gravity')).toBeVisible()
 
   // badges
-  await page.getByRole('link', { name: 'Badges' }).click()
+  await page.getByRole('link', { name: /^\d+ badges?$/ }).click()
   await expect(page).toHaveURL(/\/astronaut\/wellness#progress$/)
   await expect(page.getByRole('heading', { name: 'Progress and badges' })).toBeVisible()
   await expect(page.getByText('First check-in, earned')).toBeAttached()
@@ -79,9 +80,9 @@ test('the demo operator switches the mission environment and the crew sees it', 
   await signIn(astronaut, 'ast3')
   await astronaut.goto('/astronaut/home')
   await expect(astronaut.getByText('International Space Station', { exact: true })).toBeVisible()
-  await expect(astronaut.getByText('Weightless (microgravity)')).toBeVisible()
-  await expect(astronaut.getByText('Under a second (live voice and video)')).toBeVisible()
-  await expect(astronaut.getByText('Bone and muscle loss')).toBeVisible()
+  await expect(astronaut.getByText(/weightless · you can talk to Earth live/)).toBeVisible()
+  await astronaut.getByText('What matters for your health here').click()
+  await expect(astronaut.getByText('Bone and muscle loss.')).toBeVisible()
   await crew.close()
 
   // back to the default for the other tests

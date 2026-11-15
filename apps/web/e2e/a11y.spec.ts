@@ -49,3 +49,16 @@ for (const path of ['', 'astronaut/AST-001', 'astronaut/AST-001?view=alerts', 'a
     await expectNoSeriousViolations(page)
   })
 }
+
+// Step 14: the Mission dark theme must meet the same contrast rules
+for (const path of ['home', 'health', 'guidance', 'wellness', 'assistant', 'history']) {
+  test(`astronaut ${path} (dark theme)`, async ({ page }) => {
+    await page.addInitScript(() => localStorage.setItem('astra-theme', 'dark'))
+    await signIn(page, 'ast1')
+    await page.goto(`/astronaut/${path}`)
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark')
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
+    await page.waitForLoadState('networkidle')
+    await expectNoSeriousViolations(page)
+  })
+}

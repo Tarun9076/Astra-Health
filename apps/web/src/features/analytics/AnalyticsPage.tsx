@@ -88,7 +88,7 @@ export function AnalyticsPage({ code: forCode, embedded = false }: { code?: stri
           <div className="flex rounded-lg border border-line-strong p-0.5" role="group" aria-label="Chart type">
             {(['single', 'compare'] as const).map((m) => (
               <button key={m} type="button" aria-pressed={mode === m} onClick={() => update({ mode: m })}
-                className={`min-h-9 rounded-md px-3 text-sm ${mode === m ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+                className={`min-h-9 rounded-md px-3 text-sm ${mode === m ? 'bg-accent text-on-accent' : 'text-ink hover:bg-subtle'}`}>
                 {m === 'compare' ? 'Compare two' : 'One measurement'}
               </button>
             ))}
@@ -98,7 +98,7 @@ export function AnalyticsPage({ code: forCode, embedded = false }: { code?: stri
           <div className="ml-auto flex rounded-lg border border-line-strong p-0.5" role="group" aria-label="Time range">
             {RANGES.map((r) => (
               <button key={r.id} type="button" onClick={() => update({ range: r.id })} aria-pressed={range === r.id}
-                className={`min-h-9 rounded-md px-3 text-sm ${range === r.id ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+                className={`min-h-9 rounded-md px-3 text-sm ${range === r.id ? 'bg-accent text-on-accent' : 'text-ink hover:bg-subtle'}`}>
                 {r.label}
               </button>
             ))}

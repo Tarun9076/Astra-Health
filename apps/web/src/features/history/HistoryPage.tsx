@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { PhotoImage } from '../../components/health/PhotoImage'
 import { ErrorNote, Loading } from '../../components/ui/Panel'
+import { MoreDetail } from '../../components/ui/Simple'
 import { SeverityBadge } from '../../components/ui/Status'
 import type { TimelineEvent } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -53,7 +54,7 @@ function dayKey(iso: string) {
 export function HistoryPage({ code: forCode, staff = false }: { code?: string; staff?: boolean } = {}) {
   const user = useAuth((s) => s.user)
   const code = forCode ?? user?.astronautCode
-  const [days, setDays] = useState(30)
+  const [days, setDays] = useState(staff ? 30 : 7)
   const [group, setGroup] = useState<Group | 'all'>('all')
   const [query, setQuery] = useState('')
   const { data, error, isPending } = useTimeline(code, days)
@@ -91,7 +92,7 @@ export function HistoryPage({ code: forCode, staff = false }: { code?: string; s
           <div role="group" aria-label="Period" className="flex flex-wrap gap-1">
             {PERIODS.map((p) => (
               <button key={p.days} type="button" aria-pressed={days === p.days} onClick={() => setDays(p.days)}
-                className={`min-h-10 rounded-lg px-3 text-sm font-medium ${days === p.days ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+                className={`min-h-10 rounded-lg px-3 text-sm font-medium ${days === p.days ? 'bg-accent text-on-accent' : 'text-ink hover:bg-subtle'}`}>
                 {p.label}
               </button>
             ))}
@@ -103,14 +104,19 @@ export function HistoryPage({ code: forCode, staff = false }: { code?: string; s
               className="min-h-10 w-full rounded-lg border border-line-strong bg-surface pr-3 pl-9 text-sm" />
           </label>
         </div>
-        <div role="group" aria-label="Show" className="flex flex-wrap gap-1.5">
-          {GROUPS.map((g) => (
-            <button key={g.id} type="button" aria-pressed={group === g.id} onClick={() => setGroup(g.id)}
-              className={`min-h-9 rounded-full border px-3 text-xs font-medium ${group === g.id ? 'border-accent bg-accent-soft text-accent' : 'border-line-strong text-ink hover:bg-subtle'}`}>
-              {g.label}
-            </button>
-          ))}
-        </div>
+        {(() => {
+          const chips = (
+            <div role="group" aria-label="Show" className="flex flex-wrap gap-1.5">
+              {GROUPS.map((g) => (
+                <button key={g.id} type="button" aria-pressed={group === g.id} onClick={() => setGroup(g.id)}
+                  className={`min-h-9 rounded-full border px-3 text-xs font-medium ${group === g.id ? 'border-accent bg-accent-soft text-accent' : 'border-line-strong text-ink hover:bg-subtle'}`}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          )
+          return staff ? chips : <MoreDetail label="Show only one kind">{chips}</MoreDetail>
+        })()}
       </div>
 
       {isPending && <Loading label="Loading your history…" />}
@@ -126,9 +132,32 @@ export function HistoryPage({ code: forCode, staff = false }: { code?: string; s
         {byDay.map((d) => (
           <li key={d.key}>
             <h2 className="sticky top-0 z-10 -mx-1 bg-canvas/95 px-1 py-1 text-sm font-semibold text-ink">{dayTitle(d.at)}</h2>
-            <ol className="mt-2 space-y-2 border-l-2 border-line pl-4">
-              {d.events.map((e) => <EventRow key={e.id} event={e} code={code} base={staff ? `/staff/astronaut/${code}` : null} />)}
-            </ol>
+            {(() => {
+              // astronauts, everything shown: the day's actions become one line; the main events stay
+              const fold = !staff && group === 'all'
+              const actions = fold ? d.events.filter((e) => e.kind === 'Recommendation' || e.kind === 'RecommendationDone') : []
+              const main = fold ? d.events.filter((e) => !actions.includes(e)) : d.events
+              const added = actions.filter((e) => e.kind === 'Recommendation').length
+              const done = actions.length - added
+              return (
+                <ol className="mt-2 space-y-2 border-l-2 border-line pl-4">
+                  {main.map((e) => <EventRow key={e.id} event={e} code={code} base={staff ? `/staff/astronaut/${code}` : null} />)}
+                  {actions.length > 0 && (
+                    <li className="rounded-lg border border-line bg-surface p-3">
+                      <p className="flex items-center gap-2 text-sm font-medium">
+                        <ListChecks className="h-4 w-4 text-accent" aria-hidden />
+                        {[added && `${added} new action${added === 1 ? '' : 's'}`, done && `${done} done`].filter(Boolean).join(' · ')}
+                      </p>
+                      <MoreDetail label="Show them">
+                        <ul className="list-disc space-y-0.5 pl-5 text-ink">
+                          {actions.map((e) => <li key={e.id}>{e.title}</li>)}
+                        </ul>
+                      </MoreDetail>
+                    </li>
+                  )}
+                </ol>
+              )
+            })()}
           </li>
         ))}
       </ol>

@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { EnvironmentPanel } from '../../components/ui/EnvironmentPanel'
 import { ErrorNote, Loading, Panel } from '../../components/ui/Panel'
+import { MoreDetail } from '../../components/ui/Simple'
 import { useAuth } from '../../lib/auth'
 import { useBodySystems } from '../../lib/queries'
 import { BodyMap2D } from './BodyMap2D'
@@ -36,7 +37,7 @@ export function BodyExplorerPage({ code: forCode, staff = false }: { code?: stri
       <div className="grid gap-5 lg:grid-cols-[minmax(0,20rem)_1fr]">
         <div className="space-y-4">
           <Panel>
-            <h2 className="mb-2 text-sm font-semibold">Body systems</h2>
+            <h2 className="mb-2 text-sm font-semibold">Choose a part of your body</h2>
             <ul className="space-y-1" aria-label="Choose a body system">
               {SYSTEM_ORDER.map((id) => {
                 const status = statusOf(data?.regions, id)
@@ -62,7 +63,7 @@ export function BodyExplorerPage({ code: forCode, staff = false }: { code?: stri
               <div className="flex rounded-lg border border-line-strong p-0.5" role="group" aria-label="Diagram type">
                 {(['2d', '3d'] as const).map((v) => (
                   <button key={v} type="button" aria-pressed={view === v} onClick={() => set('model', v)}
-                    className={`min-h-9 rounded-md px-3 text-xs font-medium ${view === v ? 'bg-accent text-white' : 'text-ink-muted hover:bg-subtle'}`}>
+                    className={`min-h-9 rounded-md px-3 text-xs font-medium ${view === v ? 'bg-accent text-on-accent' : 'text-ink-muted hover:bg-subtle'}`}>
                     {v === '2d' ? 'Flat' : '3D'}
                   </button>
                 ))}
@@ -90,9 +91,12 @@ export function BodyExplorerPage({ code: forCode, staff = false }: { code?: stri
         </div>
       </div>
       {code && (
-        <section aria-labelledby="env-heading">
-          <h2 id="env-heading" className="mb-2 text-lg font-semibold">Cabin environment and radiation</h2>
-          <EnvironmentPanel code={code} />
+        <section aria-labelledby="env-heading" className="rounded-xl border border-line bg-surface p-4 md:p-5">
+          <h2 id="env-heading" className="text-lg font-semibold">Cabin air and radiation</h2>
+          <p className="text-sm text-ink-muted">The air you breathe and the radiation you receive. A storm warning appears on Home.</p>
+          <MoreDetail label="Show the cabin readings and your radiation dose" className="mt-1">
+            <div className="text-ink"><EnvironmentPanel code={code} /></div>
+          </MoreDetail>
         </section>
       )}
     </div>

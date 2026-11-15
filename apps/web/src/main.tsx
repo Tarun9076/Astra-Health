@@ -8,6 +8,9 @@ import { registerSW } from 'virtual:pwa-register'
 import { router } from './app/router'
 import { useAuth } from './lib/auth'
 import './index.css'
+import { initTheme } from './lib/theme'
+
+initTheme()
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const CACHE_KEY = 'astra-cache'

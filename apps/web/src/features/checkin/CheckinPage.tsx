@@ -295,6 +295,7 @@ export function CheckinPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Daily check-in</h1>
           <p className="text-sm text-ink-muted">
             Step {step + 1} of {STEPS.length}: <span className="font-medium text-ink">{STEPS[step].title}</span>
+            <span className="ml-2 text-accent">· +10 points when you send it</span>
           </p>
         </div>
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm ${seconds <= TARGET_SECONDS ? 'border-line-strong text-ink' : 'border-status-yellow/50 text-status-yellow'}`}>
@@ -383,7 +384,7 @@ function DeviceOffer({ text, active, onToggle }: { text: string; active: boolean
       <Watch className="h-5 w-5 shrink-0 text-accent" aria-hidden />
       <p className="flex-1">{text} {active && 'It is already recorded, so it will not be entered again.'}</p>
       <button type="button" onClick={onToggle} aria-pressed={active}
-        className="min-h-11 rounded-lg bg-accent px-3 font-semibold text-white">
+        className="min-h-11 rounded-lg bg-accent px-3 font-semibold text-on-accent">
         {active ? 'Enter my own reading' : 'Use wearable reading'}
       </button>
     </div>
@@ -425,7 +426,7 @@ function NumberField({ field, value, vital, problem, confirmed, disabled, onChan
                 <RotateCcw className="mr-1 inline h-4 w-4" aria-hidden />Measure again
               </button>
               <button type="button" onClick={onConfirm} disabled={confirmed} aria-pressed={confirmed}
-                className="min-h-10 rounded-lg bg-accent px-3 text-sm font-semibold text-white disabled:opacity-70">
+                className="min-h-10 rounded-lg bg-accent px-3 text-sm font-semibold text-on-accent disabled:opacity-70">
                 {confirmed ? 'Kept — it will be checked by the rules' : 'Keep this value'}
               </button>
             </div>

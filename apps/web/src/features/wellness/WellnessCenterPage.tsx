@@ -2,9 +2,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Brain, Camera, CheckCircle2, Droplets, Dumbbell, HeartHandshake, Moon, Pause, Play, Trophy, Utensils, Wind } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { MeasurementCard } from '../../components/health/MeasurementCard'
 import { ProgressDetails } from '../../components/health/ProgressCard'
 import { Button, ErrorNote, LinkButton, Loading, Panel } from '../../components/ui/Panel'
+import { MoreDetail, PageHeader } from '../../components/ui/Simple'
+import { wordFor } from '../../lib/plain'
 import { api, unwrap, type Vital, type WellnessCenter } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
 import { useDashboard, useProgress, useWellnessCenter } from '../../lib/queries'
@@ -97,8 +98,8 @@ function Ring({ value, goal, label }: { value: number; goal: number; label: stri
   return (
     <div className="relative h-24 w-24 shrink-0" role="img" aria-label={`${label}: ${value} of ${goal}`}>
       <svg viewBox="0 0 80 80" className="h-full w-full -rotate-90">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
-        <circle cx="40" cy="40" r={r} fill="none" stroke="#146eb8" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${pct * c} ${c}`} />
+        <circle cx="40" cy="40" r={r} fill="none" stroke="var(--color-subtle)" strokeWidth="8" />
+        <circle cx="40" cy="40" r={r} fill="none" stroke="var(--color-accent)" strokeWidth="8" strokeLinecap="round" strokeDasharray={`${pct * c} ${c}`} />
       </svg>
       <p className="absolute inset-0 flex flex-col items-center justify-center text-lg font-semibold">{value}<span className="text-[10px] font-normal text-ink-muted">of {goal}</span></p>
     </div>
@@ -148,17 +149,25 @@ export function WellnessCenterPage() {
   })
   const card = (indicator: string, label: string) => {
     const v = vitals[indicator]
-    return v ? <MeasurementCard label={label} vitals={[v]} historyHref={`/astronaut/health/trends?indicator=${indicator}`} /> : null
+    if (!v) return null
+    const { word, tone } = wordFor([v])
+    const unit = v.unit === 'score' ? '/10' : ` ${v.unit}`
+    return (
+      <Panel title={label}>
+        <p className="text-3xl font-semibold">{v.value}<span className="ml-1 text-base font-normal text-ink-muted">{unit.trim()}</span></p>
+        <p className={`mt-1 text-sm font-semibold ${tone === 'care' ? 'text-status-yellow' : tone === 'ok' ? 'text-status-green' : 'text-ink-muted'}`}>{word}</p>
+        <Link to={`/astronaut/health/trends?indicator=${indicator}`} className="mt-1 inline-block text-sm text-accent hover:underline">
+          See the trend<span className="sr-only"> of {label}</span>
+        </Link>
+      </Panel>
+    )
   }
   const sessions = data?.exerciseSessionsWeek ?? 0
   const target = data?.exerciseTarget ?? 5
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Wellness</h1>
-        <p className="mt-1 text-sm text-ink-muted">Small daily habits that protect your muscles, sleep, mood and energy. Go at your own pace; every bit counts.</p>
-      </header>
+      <PageHeader title="Wellness" purpose="Small daily habits that keep you strong. Each one earns points." />
       <nav aria-label="Wellness sections" className="flex flex-wrap gap-2">
         {SECTIONS.map((s) => (
           <a key={s.id} href={`#${s.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-line-strong bg-surface px-4 text-sm font-medium hover:bg-subtle">
@@ -209,12 +218,15 @@ export function WellnessCenterPage() {
               </Panel>
               {card('sleep_quality', 'Sleep quality')}
             </div>
-            <Panel title="Sleep schedule tips">
-              <ul className="list-disc space-y-1 pl-5 text-sm">
-                <li>Keep fixed sleep and wake times, even on rest days.</li>
-                <li>Dim lights and screens 30 minutes before your sleep period.</li>
-                <li>No caffeine in the 6 hours before sleep; try the breathing exercise to wind down.</li>
-              </ul>
+            <Panel title="Tonight">
+              <p className="text-sm">Go to bed at your usual time, with lights and screens dimmed.</p>
+              <MoreDetail label="More sleep tips">
+                <ul className="list-disc space-y-1 pl-5 text-ink">
+                  <li>Keep fixed sleep and wake times, even on rest days.</li>
+                  <li>Dim lights and screens 30 minutes before your sleep period.</li>
+                  <li>No caffeine in the 6 hours before sleep; try the breathing exercise to wind down.</li>
+                </ul>
+              </MoreDetail>
             </Panel>
           </Section>
 
@@ -232,24 +244,26 @@ export function WellnessCenterPage() {
                   <Wind className="mr-1 inline h-3.5 w-3.5" aria-hidden />{data.breathingSessionsWeek} session(s), {data.breathingMinutesWeek} min this week
                 </p>
               </Panel>
-              <Panel title="Psychological support">
+              <Panel title="Someone to talk to">
                 <p className="flex items-start gap-2 text-sm">
                   <HeartHandshake className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden />
-                  You can ask for a private conversation with the flight surgeon or the mission psychologist at any time. Messages to
-                  Earth take several minutes each way, so a scheduled private call works best.
+                  You can ask for a private call with the flight surgeon or the mission psychologist at any time.
                 </p>
-                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                <p className="mt-3 text-sm">
+                  If you have thoughts of harming yourself, tell the crew medical officer now and open the{' '}
+                  <Link to="/astronaut/emergency" className="font-semibold text-status-red underline">emergency steps</Link>.
+                </p>
+                <MoreDetail label="Other things that help">
+                <ul className="list-disc space-y-1 pl-5 text-ink">
                   <li>Talk to a crewmate you trust.</li>
                   <li>Keep regular contact with family during scheduled calls.</li>
                   <li>
                     Ask the <Link to="/astronaut/assistant" className="font-medium text-accent underline">AI assistant</Link> about
                     stress and coping; it explains approved guidance in plain words.
                   </li>
+                  <li>Messages to Earth take several minutes each way, so a scheduled private call works best.</li>
                 </ul>
-                <p className="mt-3 text-sm">
-                  If you have thoughts of harming yourself, tell the crew medical officer now and open the{' '}
-                  <Link to="/astronaut/emergency" className="font-semibold text-status-red underline">emergency procedures</Link>.
-                </p>
+                </MoreDetail>
               </Panel>
             </div>
           </Section>
@@ -276,11 +290,8 @@ export function WellnessCenterPage() {
               </Panel>
               <div className="space-y-4">
                 {card('body_weight', 'Body weight')}
-                <Panel title="Food intake">
-                  <p className="text-sm text-ink-muted">
-                    Meal logging is not part of this prototype yet. Follow the mission menu plan; body weight and blood glucose are
-                    tracked as nutrition indicators.
-                  </p>
+                <Panel title="Food">
+                  <p className="text-sm text-ink-muted">Follow the mission menu plan. (Meal logging is not built yet.)</p>
                 </Panel>
               </div>
             </div>

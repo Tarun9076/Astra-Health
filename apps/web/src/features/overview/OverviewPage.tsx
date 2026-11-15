@@ -35,11 +35,6 @@ function greeting(now: number): string {
   return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
 }
 
-/** Astronaut home: answers "how am I, what changed, is anything concerning, why, what next". */
-export function HomePage() {
-  return <OverviewPage />
-}
-
 /** Overview for one astronaut. `readOnly` = a flight surgeon viewing someone else. */
 export function OverviewPage({ code, readOnly = false }: { code?: string; readOnly?: boolean }) {
   const user = useAuth((s) => s.user)
@@ -279,7 +274,7 @@ function TodayTasks({ tasks, code, readOnly, now }: { tasks: Task[]; code: strin
                 <p className="text-xs text-ink-muted">{t.body}</p>
                 {!readOnly && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {link && <Link to={link.href} className="inline-flex min-h-9 items-center rounded-lg bg-accent px-3 text-xs font-semibold text-white">{link.label}</Link>}
+                    {link && <Link to={link.href} className="inline-flex min-h-9 items-center rounded-lg bg-accent px-3 text-xs font-semibold text-on-accent">{link.label}</Link>}
                     {t.code !== CHECKIN_TASK && (
                       <button type="button" disabled={complete.isPending} onClick={() => complete.mutate(t.id)}
                         className="inline-flex min-h-9 items-center rounded-lg border border-line-strong px-3 text-xs font-semibold hover:bg-subtle">

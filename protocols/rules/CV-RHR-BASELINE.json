@@ -1,6 +1,6 @@
 {
   "id": "CV-RHR-BASELINE",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Resting heart rate above your personal normal",
   "category": "Cardiovascular",
   "hazard": "Gravity",
@@ -28,7 +28,7 @@
   "persistence": {
     "minTriggers": 1
   },
-  "reasonTemplate": "Resting heart rate is {resting_hr.value:.0f} bpm against your normal of {resting_hr.baseline:.0f} bpm ({resting_hr.z:+.1f}σ), and it was raised on {resting_hr_repeats.value:.0f} of your last 3 readings.",
+  "reasonTemplate": "Resting heart rate is {resting_hr.value:.0f} bpm against your normal of {resting_hr.baseline:.0f} bpm, and it was raised on {resting_hr_repeats.value:.0f} of your last 3 readings.",
   "recommendations": [
     "REC-RECHECK-RHR",
     "REC-SLEEP-ROUTINE",

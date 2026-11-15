@@ -2,19 +2,19 @@
 import type { Analytics } from '../../lib/api'
 import { dayOf } from '../../lib/mission'
 
-// Light clinical surface. series1/series2 validated with the dataviz palette checker (light mode):
+// Theme tokens (index.css), so charts follow light and dark. series1/series2 validated with the dataviz palette checker (light mode):
 // CVD ΔE 14.1, normal-vision ΔE 26.3, both ≥ 3:1 on white. Status colours are the app tokens.
 export const VIZ = {
-  series1: '#1f6fd1',
-  series2: '#c2417a',
-  band: 'rgba(20, 110, 184, 0.08)',
-  bandEdge: 'rgba(20, 110, 184, 0.35)',
-  grid: '#e2e8f0',
-  axis: '#5b6b80',
-  text: '#172033',
-  surface: '#ffffff',
-  attention: '#9a4507',
-  urgent: '#b91c1c',
+  series1: 'var(--color-viz-1)',
+  series2: 'var(--color-viz-2)',
+  band: 'var(--color-viz-band)',
+  bandEdge: 'var(--color-viz-band-edge)',
+  grid: 'var(--color-line)',
+  axis: 'var(--color-ink-muted)',
+  text: 'var(--color-ink)',
+  surface: 'var(--color-surface)',
+  attention: 'var(--color-status-yellow)',
+  urgent: 'var(--color-status-red)',
 }
 
 export interface ValueRow {

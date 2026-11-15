@@ -1,25 +1,29 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { BookOpen, Check, Satellite, Send, ShieldAlert, Sparkles, WifiOff, X } from 'lucide-react'
+import { BookOpen, Check, LifeBuoy, Satellite, Send, ShieldAlert, Sparkles, WifiOff, X } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { EmergencyProtocolCard } from '../../components/ui/EmergencyProtocolCard'
-import { ErrorNote, Loading, Panel } from '../../components/ui/Panel'
+import { ErrorNote, LinkButton, Loading, Panel } from '../../components/ui/Panel'
+import { MoreDetail, PageHeader } from '../../components/ui/Simple'
 import { api, unwrap, type ChatCitation, type ChatOut, type ChatTurn } from '../../lib/api'
 import { EMERGENCY_PROTOCOLS } from '../../lib/emergency'
 import { useAssistantHistory, useAssistantStatus } from '../../lib/queries'
 
 const SUGGESTED = [
-  'Why is my resting heart rate higher than normal?',
-  'How can I sleep better on Mars?',
-  'What should I do during a solar storm?',
-  'I have a headache. What should I check?',
-  'Why do my eyes get checked (SANS)?',
-  'What does my wellness summary mean?',
+  'Why am I so tired?',
+  'Is my heart OK?',
+  'How can I sleep better?',
+  'What should I do today?',
+  'What happens in a solar storm?',
+  'Why are my eyes checked?',
 ]
 
 interface Message {
   id: string
   role: ChatTurn['role']
   text: string
+  shortAnswer?: string
+  detail?: string
+  getHelp?: string | null
   mode?: string | null
   provider?: string | null
   citations?: ChatCitation[]
@@ -34,6 +38,9 @@ function fromChat(out: ChatOut): Message {
     id: out.messageId,
     role: 'assistant',
     text: out.answer,
+    shortAnswer: out.shortAnswer,
+    detail: out.detail,
+    getHelp: out.getHelp ?? null,
     mode: out.mode,
     provider: out.provider,
     citations: out.citations,
@@ -68,27 +75,44 @@ function Citations({ citations }: { citations: ChatCitation[] }) {
   )
 }
 
+/** One answer: the short answer first, then up to 3 steps, when to get help; everything else folded. */
 function Bubble({ m }: { m: Message }) {
   if (m.role === 'user') {
     return (
-      <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-accent/20 px-4 py-2.5 text-sm">{m.text}</div>
+      <div className="ml-auto max-w-[85%] rounded-2xl rounded-br-sm bg-accent-soft px-4 py-2.5 text-base">{m.text}</div>
     )
   }
   const fallback = m.safetyFlags?.find((f) => f.startsWith('fallback:'))
+  const [first, ...rest] = m.text.split('\n\n')
+  const short = m.shortAnswer || first
+  const detail = m.shortAnswer ? m.detail ?? '' : rest.join('\n\n')
+  const steps = (m.suggestedActions ?? []).slice(0, 3)
   return (
-    <div className="max-w-[92%] space-y-3 rounded-2xl rounded-bl-sm border border-line bg-surface px-4 py-3">
-      <div className="flex flex-wrap items-center gap-2"><ProviderBadge provider={m.provider} />
-        {fallback && <span className="text-xs text-ink-muted">Claude unavailable ({fallback.slice(10)}), answered offline</span>}
-      </div>
-      {m.text.split('\n\n').map((p, i) => <p key={i} className="text-sm leading-relaxed">{p}</p>)}
+    <div className="max-w-[92%] space-y-3 rounded-2xl rounded-bl-sm border border-line bg-surface px-5 py-4">
+      <p className="text-base font-semibold leading-relaxed">{short}</p>
       {m.emergencyProtocolId && <EmergencyProtocolCard id={m.emergencyProtocolId} reported={Boolean(m.alertId)} />}
-      {m.suggestedActions && m.suggestedActions.length > 0 && (
+      {steps.length > 0 && (
         <div>
-          <p className="text-xs font-semibold tracking-wider text-ink-muted uppercase">You could</p>
-          <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">{m.suggestedActions.map((a) => <li key={a}>{a}</li>)}</ul>
+          <p className="text-sm font-semibold text-accent">What helps</p>
+          <ol className="mt-1 list-decimal space-y-1 pl-5 text-base">{steps.map((a) => <li key={a}>{a}</li>)}</ol>
         </div>
       )}
-      <Citations citations={m.citations ?? []} />
+      {m.getHelp && (
+        <p className="flex items-start gap-2 rounded-lg bg-status-yellow/10 px-3 py-2 text-sm text-status-yellow">
+          <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0" aria-hidden /> {m.getHelp}
+        </p>
+      )}
+      {(detail || (m.citations?.length ?? 0) > 0) && (
+        <MoreDetail>
+          <div className="space-y-2 text-ink">
+            {detail.split('\n\n').filter(Boolean).map((p, i) => <p key={i} className="text-sm leading-relaxed">{p}</p>)}
+          </div>
+          <Citations citations={m.citations ?? []} />
+          <div className="mt-2 flex flex-wrap items-center gap-2"><ProviderBadge provider={m.provider} />
+            {fallback && <span className="text-xs">Claude unavailable ({fallback.slice(10)}), answered offline</span>}
+          </div>
+        </MoreDetail>
+      )}
     </div>
   )
 }
@@ -136,13 +160,7 @@ export function AssistantPage() {
   return (
     <div className="mx-auto grid max-w-6xl gap-6 xl:grid-cols-[1fr_18rem]">
       <div className="min-w-0 space-y-4">
-        <header>
-          <h1 className="text-2xl font-semibold tracking-tight">AI Assistant</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Ask about your measurements and how spaceflight affects the body, in plain words. Answers use your own records and
-            the approved onboard knowledge base, with sources. Emergencies are recognised instantly, without any AI.
-          </p>
-        </header>
+        <PageHeader title="AI Assistant" purpose="Ask anything about your health. You get a short, simple answer first." />
 
         <div className="flex flex-wrap items-center gap-3 text-sm">
           {status.data && (status.data.claudeConfigured
@@ -165,7 +183,7 @@ export function AssistantPage() {
             {shown.length === 0 && !history.isPending && (
               <div className="py-6 text-center text-sm text-ink-muted">
                 <Sparkles className="mx-auto mb-2 h-6 w-6 text-accent" aria-hidden />
-                Ask a question to start. Try one of the suggestions below.
+                Tap a question below, or type your own.
               </div>
             )}
             {shown.map((m) => <Bubble key={m.id} m={m} />)}
@@ -177,7 +195,7 @@ export function AssistantPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             {SUGGESTED.map((q) => (
               <button key={q} onClick={() => send(q)} disabled={ask.isPending}
-                className="min-h-9 rounded-full border border-line-strong px-3 text-xs text-ink-muted hover:border-accent hover:text-ink disabled:opacity-50">
+                className="min-h-10 rounded-full border border-line-strong px-4 text-sm hover:border-accent hover:bg-accent-soft disabled:opacity-50">
                 {q}
               </button>
             ))}
@@ -186,10 +204,10 @@ export function AssistantPage() {
             <label className="sr-only" htmlFor="question">Your question</label>
             <textarea id="question" value={draft} onChange={(e) => setDraft(e.target.value)} rows={2} maxLength={2000}
               onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(draft) } }}
-              placeholder="Ask about your heart rate, sleep, radiation…"
-              className="min-h-12 flex-1 resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-sm outline-none focus:border-accent" />
+              placeholder="Type your question, e.g. Why do I feel dizzy?"
+              className="min-h-12 flex-1 resize-none rounded-lg border border-line-strong bg-surface px-3 py-2 text-base outline-none focus:border-accent" />
             <button type="submit" disabled={!draft.trim() || ask.isPending} aria-label="Send"
-              className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg bg-accent text-white disabled:opacity-40">
+              className="inline-flex min-h-12 min-w-12 items-center justify-center rounded-lg bg-accent text-on-accent disabled:opacity-40">
               <Send className="h-5 w-5" aria-hidden />
             </button>
           </form>
@@ -198,40 +216,40 @@ export function AssistantPage() {
       </div>
 
       <aside className="space-y-4">
-        <Panel title="Emergency procedures">
-          <p className="mb-2 text-xs text-ink-muted">Stored on this device, so they open even without a connection.</p>
-          <ul className="space-y-1">
-            {Object.values(EMERGENCY_PROTOCOLS).sort((a, b) => a.title.localeCompare(b.title)).map((p) => (
-              <li key={p.id}>
-                <button onClick={() => setProtocol(protocol === p.id ? null : p.id)} aria-expanded={protocol === p.id}
-                  className="min-h-9 w-full rounded-md px-2 py-1 text-left text-sm hover:bg-subtle">{p.title}</button>
-                {protocol === p.id && <div className="mt-2"><EmergencyProtocolCard id={p.id} /></div>}
-              </li>
-            ))}
-          </ul>
+        <Panel title="In an emergency">
+          <p className="text-sm">Don't wait for an answer: open the emergency steps and call the crew medical officer.</p>
+          <LinkButton to="/astronaut/emergency" variant="danger" className="mt-3 w-full">
+            <ShieldAlert className="h-4 w-4" aria-hidden /> Emergency steps
+          </LinkButton>
+          <MoreDetail label="All procedures" className="mt-2">
+            <ul className="space-y-1">
+              {Object.values(EMERGENCY_PROTOCOLS).sort((a, b) => a.title.localeCompare(b.title)).map((p) => (
+                <li key={p.id}>
+                  <button onClick={() => setProtocol(protocol === p.id ? null : p.id)} aria-expanded={protocol === p.id}
+                    className="min-h-9 w-full rounded-md px-2 py-1 text-left text-sm text-ink hover:bg-subtle">{p.title}</button>
+                  {protocol === p.id && <div className="mt-2"><EmergencyProtocolCard id={p.id} /></div>}
+                </li>
+              ))}
+            </ul>
+          </MoreDetail>
         </Panel>
-        <Panel title="What the assistant can do">
+        <Panel title="About the assistant">
           <ul className="space-y-1.5 text-sm">
-            {['Explain your measurements and units', 'Explain changes from your own normal', 'Answer questions about spaceflight hazards',
-              'Explain approved health procedures', 'Help you find things in this app'].map((t) => (
+            {['Explains your readings in plain words', 'Says what helps', 'Shows its sources'].map((t) => (
               <li key={t} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-status-green" aria-hidden />{t}</li>
             ))}
-          </ul>
-          <p className="mt-3 text-xs font-semibold text-ink">It will never</p>
-          <ul className="mt-1 space-y-1.5 text-sm">
-            {['Diagnose a medical condition', 'Prescribe or dose medication', 'Override an alert or emergency rule'].map((t) => (
+            {['Never diagnoses', 'Never prescribes medicine'].map((t) => (
               <li key={t} className="flex items-start gap-2"><X className="mt-0.5 h-4 w-4 shrink-0 text-status-red" aria-hidden />{t}</li>
             ))}
           </ul>
+          {status.data && (
+            <MoreDetail label="Where answers come from" className="mt-2">
+              Your own records and {status.data.knowledgeNotes} approved notes written from NASA Human Research Program and
+              Canadian Space Agency pages. Emergencies are recognised instantly, without any AI. A broken or unsafe AI answer is
+              replaced by the offline answer.
+            </MoreDetail>
+          )}
         </Panel>
-        {status.data && (
-          <Panel title="Knowledge base">
-            <p className="text-sm text-ink-muted">
-              {status.data.knowledgeNotes} notes ({status.data.knowledgeChunks} sections) written from NASA Human Research
-              Program and Canadian Space Agency pages.
-            </p>
-          </Panel>
-        )}
       </aside>
     </div>
   )

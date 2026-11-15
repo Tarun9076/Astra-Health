@@ -505,6 +505,35 @@ Design rules:
 
 ---
 
+### Step 14 — Calm, simple screens for the crew ✅
+
+**Goal:** after testing, the astronaut screens read as "a bunch of information": every page showed all its numbers, statistics words (σ, model scores) and explanations at once, and assistant answers needed medical knowledge. In a hazard, the crew needs to know *how they are* and *what to do* in seconds. Details: LLD §15.7 (Simple screens).
+
+Design rules:
+- **One answer first.** Every page opens with the answer to its question in one or two sentences (Home: "How am I today?", My Guidance: "What should I do?"), then at most a few cards. Everything else (numbers against the usual range, sources, how a rule decided) is folded under **More detail**.
+- **Everyday words.** No σ, z-scores, "baseline" or model scores on astronaut screens; readings are "Normal", "A bit high", "Very low", "Measure again". Three levels everywhere: **OK** (green), **Take care** (amber), **Get help now** (red), always with an icon and a word.
+- **Gamified, not noisy.** Home shows **Today's quests** (check-in +10, move 30 min +5, water +5, sleep 7 h +5) with streaks, bonus quests from guidance (+5), and the level bar; the check-in and guidance buttons say what they earn.
+- **Two themes.** Calm light (default) and Mission dark (deep navy, for dim cabins), switched from the header and remembered on the device; until chosen, the app follows the device setting. One teal accent for actions; status colours only for status. Both themes pass the WCAG AA contrast scan.
+- **The flight surgeon keeps the detail.** Staff pages (crew, astronaut summary, alerts review) still show every number and rule.
+
+- [x] Theme tokens for light and dark (`index.css`), header switch (`ThemeToggle`, `lib/theme.ts`, applied before the first paint), charts, body map and sparklines on tokens.
+- [x] Plain-language helpers (`lib/plain.ts`): a word per reading, the one-sentence summary of how you are. Shared blocks (`components/ui/Simple.tsx`): page header with its purpose, answer card, More detail.
+- [x] Home (`features/overview/SimpleHome.tsx`): answer card with one action, Today's quests, Your body today (6 tiles, numbers folded), level and streak, the environment in one line.
+- [x] AI assistant: answers are a **short answer** (1–2 sentences, ≤ 35 words), up to **3 steps** ("What helps"), a **get help** line when the app flagged it, and the explanation and sources under More detail. Claude prompt and JSON schema changed (`short_answer`, `detail`); the offline template answers the same way; stored as "short answer, blank line, detail", so old databases keep working. Six everyday starter questions.
+- [x] My Health (one sentence per body part; readings with a word; What helps; Watch for; the textbook explanation folded; cabin air and radiation folded), My Guidance (one summary, short action cards with Why / When / Mark as done +5, How and why folded), Health alerts (what happened, what to do, medical help; numbers and machine-learning notes folded for astronauts), Wellness (readings as a value and a word, tips folded), Health History (last 7 days; each day's actions grouped into one line), check-in shows the points it earns. Menu items say what is inside ("How am I today?").
+- [x] Alert wording: the machine-learning rule and the resting-heart-rate rule no longer print σ or model scores (rules v1.1.0); this also removes the "n/aσ" text when a value was missing.
+
+**Done when:** a crew member can tell from Home in a few seconds whether they are OK and what to do next, no astronaut screen shows statistics jargon, the assistant's first sentence answers the question, and the checks pass in both themes. **Done 2026-11-15:**
+- **Checks:** new browser test T-UI-10 (Home words, quests, 6 body tiles, no σ; theme switch remembered; assistant short answer ≤ 40 words with steps and folded details); the accessibility scan now also runs 6 pages in the dark theme; backend assistant tests check the short answer and that no σ is used; the existing browser tests were updated to the new wording. Full backend and browser suites pass; `tsc`, `oxlint`, `ruff`, `mypy` clean.
+- A light-theme green failed contrast on its own tint (4.38:1); darkened to `#166534`.
+
+**Not covered:**
+- Messages saved before this change still show the old long answer (with σ) in the assistant history.
+- Alerts raised before the rule change keep their old technical reason text; new alerts use the plain wording.
+- The check-in, trends charts and reports pages keep their previous layout (they were already step-by-step or are mainly used by the flight surgeon).
+
+---
+
 ## 4. Team split (3–4 people)
 
 With one backend language, the split is by area rather than by runtime:

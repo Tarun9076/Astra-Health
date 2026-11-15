@@ -29,7 +29,7 @@ test('tabs, filters and old links work', async ({ page }) => {
   await page.goto('/astronaut/health')
   await page.getByRole('button', { name: /Lungs and breathing/ }).click()
   await expect(page.getByRole('heading', { level: 2, name: 'Lungs and breathing' })).toBeVisible()
-  await expect(page.getByText('Symptoms to watch for')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Watch for' })).toBeVisible()
 
   await page.getByRole('link', { name: 'Trends and charts' }).click()
   await page.getByRole('button', { name: 'Mood and stress' }).click()
@@ -37,6 +37,7 @@ test('tabs, filters and old links work', async ({ page }) => {
   await expect(page.getByText('What changed · Stress')).toBeVisible()
 
   await page.goto('/astronaut/history')
+  await page.getByText('Show only one kind').click()
   await page.getByRole('button', { name: 'Alerts' }).click()
   await expect(page.getByText(/event(s)? since/)).toBeVisible()
 

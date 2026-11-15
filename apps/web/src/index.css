@@ -1,30 +1,66 @@
 @import "tailwindcss";
 
 /*
- * Clinical design tokens (UI redesign). Light, readable, restrained.
- * Every text/background pair below meets WCAG AA (4.5:1) on both canvas and surface:
- * ink 15:1, ink-muted 5.1:1, accent 5.0:1, status colours ≥ 4.6:1 (amber ≥ 4.8:1 even on its own 15 % tint).
- * Status is never colour alone: always paired with an icon and a word (Status.tsx).
+ * Design tokens (Step 14: calm, simple screens). Two themes from the same names:
+ *   Calm light (default)  and  Mission dark  (:root[data-theme="dark"], set by lib/theme.ts).
+ * One accent (teal) for actions; green / amber / red are kept for health status only, always
+ * with an icon and a word (Status.tsx). Text pairs meet WCAG AA (4.5:1) in both themes.
  */
 @theme {
-  --color-canvas: #f5f7fa;       /* page background */
-  --color-surface: #ffffff;      /* panels, header, fields */
-  --color-subtle: #eef2f6;       /* hover, tracks, selected rows */
+  --color-canvas: #f4f7fb;       /* page background */
+  --color-surface: #ffffff;      /* cards, header, fields */
+  --color-subtle: #edf2f7;       /* hover, tracks, selected rows */
   --color-line: #e2e8f0;         /* borders, dividers */
   --color-line-strong: #cbd5e1;  /* field borders, disabled */
 
-  --color-ink: #172033;          /* primary text (dark navy) */
-  --color-ink-muted: #5b6b80;    /* secondary text */
-  --color-accent: #146eb8;       /* primary actions, links, focus */
-  --color-accent-soft: #e8f1fa;  /* selected nav item, info backgrounds */
-  --color-cyan: #22a6c7;         /* secondary accent: decoration and chart marks only, never text */
+  --color-ink: #13203a;          /* primary text (deep navy) */
+  --color-ink-muted: #55657a;    /* secondary text */
+  --color-accent: #0f766e;       /* teal: primary actions, links, focus */
+  --color-accent-soft: #e3f4f1;  /* selected nav item, quest cards */
+  --color-on-accent: #ffffff;    /* text on a teal fill */
+  --color-cyan: #0e9fb8;         /* decoration and chart marks only, never text */
 
-  --color-status-green: #15803d; /* Normal */
-  --color-status-yellow: #9a4507;/* Attention (amber; darker than #b45309 so it also passes AA on its own tints) */
-  --color-status-red: #b91c1c;   /* Urgent */
+  --color-status-green: #166534; /* OK (darker than #15803d so it passes AA on its own 10 % tint) */
+  --color-status-yellow: #9a4507;/* Take care (amber) */
+  --color-status-red: #b91c1c;   /* Get help */
+  --color-on-status: #ffffff;    /* text on a status fill */
+
+  --color-viz-1: #1f6fd1;        /* chart series (validated pair, see analytics/viz.ts) */
+  --color-viz-2: #c2417a;
+  --color-viz-band: rgba(15, 118, 110, 0.09);
+  --color-viz-band-edge: rgba(15, 118, 110, 0.4);
+  --color-grey: #94a3b8;         /* no data */
 
   --font-sans: "Inter", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+/* Mission dark: deep navy, for dim cabins. Same names, so every screen follows. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-canvas: #0a1120;
+  --color-surface: #111a2c;
+  --color-subtle: #1a2640;
+  --color-line: #233150;
+  --color-line-strong: #34446a;
+
+  --color-ink: #e7edf6;
+  --color-ink-muted: #a3b2c8;
+  --color-accent: #2dd4bf;
+  --color-accent-soft: #123b3b;
+  --color-on-accent: #04211e;
+  --color-cyan: #38bdf8;
+
+  --color-status-green: #4ade80;
+  --color-status-yellow: #fbbf24;
+  --color-status-red: #f87171;
+  --color-on-status: #0a1120;
+
+  --color-viz-1: #60a5fa;
+  --color-viz-2: #f472b6;
+  --color-viz-band: rgba(45, 212, 191, 0.12);
+  --color-viz-band-edge: rgba(45, 212, 191, 0.45);
+  --color-grey: #64748b;
 }
 
 html,

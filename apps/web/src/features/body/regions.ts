@@ -5,10 +5,10 @@ export type RegionStatus = BodyRegion['status']
 
 // Status colours are the app's status tokens (never used for anything but status); GREY = no data.
 export const STATUS_FILL: Record<RegionStatus, string> = {
-  GREEN: '#15803d',
-  YELLOW: '#9a4507',
-  RED: '#b91c1c',
-  GREY: '#94a3b8',
+  GREEN: 'var(--color-status-green)',
+  YELLOW: 'var(--color-status-yellow)',
+  RED: 'var(--color-status-red)',
+  GREY: 'var(--color-grey)',
 }
 
 export const STATUS_ICON: Record<RegionStatus, typeof CheckCircle2> = {
@@ -19,9 +19,9 @@ export const STATUS_ICON: Record<RegionStatus, typeof CheckCircle2> = {
 }
 
 export const STATUS_LABEL: Record<RegionStatus, string> = {
-  GREEN: 'Within your normal',
-  YELLOW: 'Needs attention',
-  RED: 'Urgent',
+  GREEN: 'Normal',
+  YELLOW: 'Take care',
+  RED: 'Get help now',
   GREY: 'No data yet',
 }
 

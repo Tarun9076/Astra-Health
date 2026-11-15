@@ -65,6 +65,11 @@ def test_same_question_answers_via_template_then_claude(seeded_client: TestClien
     offline = seeded_client.post("/api/assistant/chat", json={"question": QUESTION}, headers=ast1).json()
     assert (offline["mode"], offline["provider"]) == ("template", "template")
     assert "Your resting heart rate is 70 bpm" in offline["answer"] and offline["citations"]
+    # Step 14: the short answer stands alone; the rest is under "More detail"; history splits the same way
+    assert offline["shortAnswer"].startswith("Your resting heart rate is") and "σ" not in offline["answer"]
+    assert offline["detail"] and offline["shortAnswer"] not in offline["detail"]
+    last = seeded_client.get("/api/assistant/history", headers=ast1).json()[-1]
+    assert (last["shortAnswer"], last["detail"]) == (offline["shortAnswer"], offline["detail"])
 
     assistant = seeded_client.app.state.assistant  # type: ignore[attr-defined]
     chunk = offline["citations"][0]["chunkId"]

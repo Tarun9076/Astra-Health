@@ -1242,6 +1242,18 @@ export interface components {
             questionId: string;
             /** Answer */
             answer: string;
+            /**
+             * Shortanswer
+             * @default
+             */
+            shortAnswer: string;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Gethelp */
+            getHelp?: string | null;
             /** Citations */
             citations: components["schemas"]["CitationOut"][];
             /** Suggestedactions */
@@ -1690,6 +1702,18 @@ export interface components {
             role: "user" | "assistant";
             /** Text */
             text: string;
+            /**
+             * Shortanswer
+             * @default
+             */
+            shortAnswer: string;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Gethelp */
+            getHelp?: string | null;
             /** Mode */
             mode: string | null;
             /** Provider */

@@ -5,6 +5,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { EarthCopyBanner } from '../components/ui/EarthCopyBanner'
 import { NodeStatusPill } from '../components/ui/NodeStatusPill'
 import { OfflineBanner } from '../components/ui/OfflineBanner'
+import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { Toaster } from '../components/ui/Toaster'
 import { useAuth } from '../lib/auth'
 import { missionDay, missionSol } from '../lib/mission'
@@ -99,13 +100,13 @@ function useOutboxSync() {
 }
 
 const navCls = ({ isActive }: { isActive: boolean }) =>
-  `flex min-h-12 items-center gap-3 rounded-lg px-3 text-[15px] transition-colors ${
+  `flex min-h-12 items-center gap-3 rounded-lg px-3 py-1.5 text-[15px] transition-colors ${
     isActive ? 'bg-accent-soft font-semibold text-accent' : 'text-ink hover:bg-subtle'
   }`
 
 /** Count chip with a word, so meaning never depends on colour alone. */
 function NavBadge({ tone, children }: { tone: 'red' | 'amber' | 'blue'; children: ReactNode }) {
-  const cls = { red: 'bg-status-red text-white', amber: 'bg-status-yellow text-white', blue: 'bg-accent text-white' }[tone]
+  const cls = { red: 'bg-status-red text-on-status', amber: 'bg-status-yellow text-on-status', blue: 'bg-accent text-on-accent' }[tone]
   return <span className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{children}</span>
 }
 
@@ -121,9 +122,12 @@ function AstronautNav({ onNavigate }: { onNavigate: () => void }) {
         const Icon = s.icon
         return (
           <li key={s.path}>
-            <NavLink to={`/astronaut/${s.path}`} className={navCls} onClick={onNavigate} title={s.hint}>
+            <NavLink to={`/astronaut/${s.path}`} className={navCls} onClick={onNavigate}>
               <Icon className="h-5 w-5 shrink-0" aria-hidden />
-              <span>{s.label}</span>
+              <span className="min-w-0 leading-tight">
+                <span className="block">{s.label}</span>
+                <span className="block text-xs font-normal text-ink-muted" aria-hidden>{s.hint}</span>
+              </span>
               {s.path === 'checkin' && checkinDue && <NavBadge tone="blue">Due</NavBadge>}
               {s.path === 'guidance' && urgent > 0 && <NavBadge tone="red">{urgent} urgent</NavBadge>}
               {s.path === 'guidance' && urgent === 0 && attention > 0 && <NavBadge tone="amber">{attention} to review</NavBadge>}
@@ -207,7 +211,7 @@ export function AppLayout() {
       <NavLink to={isAstronaut ? '/astronaut/emergency' : '/staff/emergency'} onClick={close}
         className={({ isActive }) =>
           `mt-auto flex min-h-12 items-center gap-3 rounded-lg border px-3 text-sm font-semibold ${
-            isActive ? 'border-status-red bg-status-red text-white' : 'border-status-red/50 text-status-red hover:bg-status-red/5'
+            isActive ? 'border-status-red bg-status-red text-on-status' : 'border-status-red/50 text-status-red hover:bg-status-red/5'
           }`
         }>
         <ShieldAlert className="h-5 w-5 shrink-0" aria-hidden /> Emergency procedures
@@ -252,6 +256,7 @@ export function AppLayout() {
             SIMULATED DATA
           </span>
           <NodeStatusPill />
+          <ThemeToggle />
           {user && (
             <span className="hidden text-right text-xs leading-tight lg:block">
               <span className="block font-semibold text-ink">{user.displayName}</span>

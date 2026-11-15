@@ -75,7 +75,7 @@ export function ProgressSummary({ progress: p }: { progress: Progress }) {
 function BadgeTile({ b }: { b: Badge }) {
   return (
     <li className={`flex gap-3 rounded-lg border p-3 ${b.earned ? 'border-accent/40 bg-accent-soft' : 'border-line bg-surface'}`}>
-      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${b.earned ? 'bg-accent text-white' : 'bg-subtle text-ink-muted'}`}>
+      <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${b.earned ? 'bg-accent text-on-accent' : 'bg-subtle text-ink-muted'}`}>
         {b.earned ? <Award className="h-5 w-5" aria-hidden /> : <Lock className="h-4 w-4" aria-hidden />}
       </span>
       <div className="min-w-0 flex-1">

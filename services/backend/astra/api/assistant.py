@@ -16,6 +16,7 @@ from sqlmodel import Session, col, select
 from astra.api.alerts import publish_alert_changes
 from astra.api.base import ApiModel
 from astra.api.dashboard import get_dashboard
+from astra.assistant.guard import ESCALATION_LINE
 from astra.assistant.models import (
     AssistantRequest,
     AssistantResponse,
@@ -56,10 +57,22 @@ class CitationOut(ApiModel):
     source: str
 
 
+def split_answer(text: str) -> tuple[str, str, str | None]:
+    """Step 14: answers are stored as "short answer, blank line, details"; the "contact the CMO" line
+    (when present) is shown on its own. Returns (short answer, details, when to get help)."""
+    help_line = ESCALATION_LINE if ESCALATION_LINE in text else None
+    body = text.replace(ESCALATION_LINE, "").strip()
+    short, _, detail = body.partition("\n\n")
+    return short.strip(), detail.strip(), help_line
+
+
 class ChatOut(ApiModel):
     message_id: str
     question_id: str
-    answer: str
+    answer: str  # the full text (short answer + details), kept for older clients
+    short_answer: str = ""  # 1–2 sentences in everyday words
+    detail: str = ""  # shown under "More detail"
+    get_help: str | None = None  # "contact the CMO or flight surgeon" when the app flagged it
     citations: list[CitationOut]
     suggested_actions: list[str]
     safety_flags: list[str]
@@ -75,6 +88,9 @@ class HistoryItem(ApiModel):
     id: str
     role: Literal["user", "assistant"]
     text: str
+    short_answer: str = ""
+    detail: str = ""
+    get_help: str | None = None
     mode: str | None
     provider: str | None
     citations: list[CitationOut]
@@ -267,10 +283,14 @@ def chat(body: ChatIn, request: Request, session: SessionDep, user: CurrentUser)
         )
     )
     session.commit()
+    short, detail, get_help = split_answer(reply.answer)
     return ChatOut(
         message_id=answer.id,
         question_id=question.id,
         answer=reply.answer,
+        short_answer=short,
+        detail=detail,
+        get_help=get_help,
         citations=[CitationOut(chunk_id=c.chunk_id, title=c.title, source=c.source) for c in reply.citations],
         suggested_actions=reply.suggested_actions,
         safety_flags=reply.safety_flags,
@@ -298,21 +318,29 @@ def history(
         .order_by(col(ChatMessage.created_at).desc())
         .limit(limit)
     ).all()
-    return [
-        HistoryItem(
-            id=r.id,
-            role="user" if r.role == "user" else "assistant",
-            text=r.text,
-            mode=r.mode,
-            provider=r.provider,
-            citations=[CitationOut.model_validate(c) for c in json.loads(r.citations_json)],
-            suggested_actions=json.loads(r.suggested_actions_json),
-            emergency_protocol_id=r.emergency_protocol_id,
-            alert_id=r.alert_id,
-            created_at=r.created_at,
-        )
-        for r in reversed(rows)
-    ]
+    items = []
+    for r in reversed(rows):
+        short, detail, get_help = split_answer(r.text) if r.role != "user" else ("", "", None)
+        items.append(_history_item(r, short, detail, get_help))
+    return items
+
+
+def _history_item(r: ChatMessage, short: str, detail: str, get_help: str | None) -> HistoryItem:
+    return HistoryItem(
+        id=r.id,
+        role="user" if r.role == "user" else "assistant",
+        text=r.text,
+        short_answer=short,
+        detail=detail,
+        get_help=get_help,
+        mode=r.mode,
+        provider=r.provider,
+        citations=[CitationOut.model_validate(c) for c in json.loads(r.citations_json)],
+        suggested_actions=json.loads(r.suggested_actions_json),
+        emergency_protocol_id=r.emergency_protocol_id,
+        alert_id=r.alert_id,
+        created_at=r.created_at,
+    )
 
 
 @router.get("/status", response_model=AssistantStatus)

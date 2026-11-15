@@ -3344,6 +3344,27 @@
       "type": "string",
       "title": "Answer"
      },
+     "shortAnswer": {
+      "type": "string",
+      "title": "Shortanswer",
+      "default": ""
+     },
+     "detail": {
+      "type": "string",
+      "title": "Detail",
+      "default": ""
+     },
+     "getHelp": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gethelp"
+     },
      "citations": {
       "items": {
        "$ref": "#/components/schemas/CitationOut"
@@ -4678,6 +4699,27 @@
      "text": {
       "type": "string",
       "title": "Text"
+     },
+     "shortAnswer": {
+      "type": "string",
+      "title": "Shortanswer",
+      "default": ""
+     },
+     "detail": {
+      "type": "string",
+      "title": "Detail",
+      "default": ""
+     },
+     "getHelp": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Gethelp"
      },
      "mode": {
       "anyOf": [

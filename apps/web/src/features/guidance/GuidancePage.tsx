@@ -3,6 +3,7 @@ import { BookOpen, CheckCircle2, CircleDashed, Search, Stethoscope } from 'lucid
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ErrorNote, LinkButton, Loading } from '../../components/ui/Panel'
+import { AnswerCard, MoreDetail } from '../../components/ui/Simple'
 import { SeverityBadge } from '../../components/ui/Status'
 import { api, unwrap, type GuidanceItem, type LibraryItem } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -48,17 +49,21 @@ export function GuidancePage() {
 
   return (
     <div className="space-y-5">
-      <section className="grid gap-3 sm:grid-cols-3" aria-label="Summary">
-        <Stat label="Actions to do" value={pending.length} />
-        <Stat label="Need medical review" value={review.length} tone={review.length ? 'warn' : undefined} />
-        <Stat label="Done in the last 7 days" value={data.items.length - pending.length} />
-      </section>
+      <AnswerCard level={pending.some((i) => i.alert?.severity === 'Urgent') ? 'help' : pending.length ? 'care' : 'ok'}
+        headline={pending.length ? `${pending.length} thing${pending.length === 1 ? '' : 's'} to do` : 'All done for now'}>
+        <p>
+          {pending.length
+            ? `Start at the top. ${review.length ? `${review.length} ${review.length === 1 ? 'is' : 'are'} also being checked by the flight surgeon.` : 'Each one you finish earns 5 points.'}`
+            : 'New actions appear here when a measurement needs care.'}
+          {' '}You finished {data.items.length - pending.length} in the last 7 days.
+        </p>
+      </AnswerCard>
 
       <div className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-3 lg:flex-row lg:items-center">
         <div role="group" aria-label="Show" className="flex gap-1">
           {(['todo', 'done', 'all'] as const).map((f) => (
             <button key={f} type="button" aria-pressed={filter === f} onClick={() => setFilter(f)}
-              className={`min-h-10 rounded-lg px-3 text-sm font-medium ${filter === f ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+              className={`min-h-10 rounded-lg px-3 text-sm font-medium ${filter === f ? 'bg-accent text-on-accent' : 'text-ink hover:bg-subtle'}`}>
               {{ todo: 'To do', done: 'Done', all: 'All' }[f]}
             </button>
           ))}
@@ -103,15 +108,6 @@ export function GuidancePage() {
   )
 }
 
-function Stat({ label, value, tone }: { label: string; value: number; tone?: 'warn' }) {
-  return (
-    <div className={`rounded-xl border bg-surface p-4 ${tone ? 'border-status-yellow/60' : 'border-line'}`}>
-      <p className="text-sm text-ink-muted">{label}</p>
-      <p className={`mt-1 text-2xl font-semibold ${tone ? 'text-status-yellow' : ''}`}>{value}</p>
-    </div>
-  )
-}
-
 const STATUS_LABEL: Record<string, string> = { Pending: 'To do', Done: 'Done', Skipped: 'Skipped', Closed: 'Closed — alert resolved' }
 
 function GuidanceCard({ item, code, now }: { item: GuidanceItem; code: string; now: number }) {
@@ -126,60 +122,47 @@ function GuidanceCard({ item, code, now }: { item: GuidanceItem; code: string; n
   const pending = item.status === 'Pending'
   const due = item.dueAt ? new Date(item.dueAt) : null
   const overdue = pending && due != null && due.getTime() < now
+  const when = !pending
+    ? `${STATUS_LABEL[item.status] ?? item.status}${item.completedAt ? ` · ${new Date(item.completedAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}`
+    : due ? `${overdue ? 'Overdue' : due.toDateString() === new Date(now).toDateString() ? 'Today' : 'By'} ${due.toLocaleString([], { weekday: due.toDateString() === new Date(now).toDateString() ? undefined : 'short', hour: '2-digit', minute: '2-digit' })}`
+      : 'When you can'
   return (
     <li className={`rounded-xl border bg-surface p-4 ${pending ? 'border-line' : 'border-line opacity-80'}`}>
       <div className="flex flex-wrap items-start gap-3">
-        {pending ? <CircleDashed className="mt-0.5 h-5 w-5 shrink-0 text-accent" aria-hidden /> : <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-status-green" aria-hidden />}
+        {pending ? <CircleDashed className="mt-0.5 h-6 w-6 shrink-0 text-accent" aria-hidden /> : <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-status-green" aria-hidden />}
         <div className="min-w-0 flex-1">
-          <h3 className="font-semibold">{item.title}</h3>
-          <p className="text-xs text-ink-muted">{STATUS_LABEL[item.status] ?? item.status}{item.completedAt && ` · ${new Date(item.completedAt).toLocaleString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`}</p>
+          <h3 className="text-base font-semibold">{item.title}</h3>
+          <p className={`text-sm ${overdue ? 'font-semibold text-status-yellow' : 'text-ink-muted'}`}>
+            {when}{item.priority === 1 && pending ? ' · do this first' : ''}
+          </p>
+          {item.alert && (
+            <p className="mt-1 text-sm">
+              Why: <Link to={`/astronaut/guidance/alerts?id=${item.alert.id}`} className="font-medium text-accent hover:underline">{item.alert.title}</Link>
+            </p>
+          )}
+          {item.medicalReview && (
+            <p className="mt-1 inline-flex items-center gap-1.5 text-sm text-status-yellow">
+              <Stethoscope className="h-4 w-4" aria-hidden /> The flight surgeon is also checking this
+            </p>
+          )}
         </div>
         {item.alert && <SeverityBadge severity={item.alert.severity} />}
-      </div>
-      <dl className="mt-3 grid gap-3 text-sm md:grid-cols-2">
-        <div>
-          <dt className="text-xs font-semibold tracking-wide text-ink-muted uppercase">What needs attention</dt>
-          <dd className="mt-0.5">
-            {item.alert ? (
-              <>
-                <Link to={`/astronaut/guidance/alerts?id=${item.alert.id}`} className="font-medium text-accent hover:underline">{item.alert.title}</Link>
-                <span className="block text-ink-muted">{item.alert.reason}</span>
-              </>
-            ) : 'Routine care from your daily plan.'}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold tracking-wide text-ink-muted uppercase">Recommended action</dt>
-          <dd className="mt-0.5">{item.body}</dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold tracking-wide text-ink-muted uppercase">When</dt>
-          <dd className="mt-0.5">
-            {due ? `${overdue ? 'Overdue — was due' : 'By'} ${due.toLocaleString([], { weekday: 'long', hour: '2-digit', minute: '2-digit' })}` : 'When convenient'}
-            {item.priority === 1 && ' · do this first'}
-            {item.alert && pending && <span className="block text-ink-muted">Then repeat the measurement in your next daily check-in to see if it has improved.</span>}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-xs font-semibold tracking-wide text-ink-muted uppercase">Medical review</dt>
-          <dd className="mt-0.5 flex items-start gap-1.5">
-            <Stethoscope className={`mt-0.5 h-4 w-4 shrink-0 ${item.medicalReview ? 'text-status-yellow' : 'text-ink-muted'}`} aria-hidden />
-            {item.medicalReview
-              ? 'Needed — the flight surgeon has been notified and will review.'
-              : 'Not needed unless it gets worse or you feel unwell.'}
-          </dd>
-        </div>
-      </dl>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-3">
-        <p className="text-xs text-ink-muted">Source: {item.source}</p>
         {pending && item.code === CHECKIN_TASK && <LinkButton to="/astronaut/checkin">Start check-in</LinkButton>}
         {pending && item.code !== CHECKIN_TASK && (
           <button type="button" onClick={() => complete.mutate()} disabled={complete.isPending}
-            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-white hover:bg-accent/90 disabled:opacity-60">
-            <CheckCircle2 className="h-4 w-4" aria-hidden /> Mark as done
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-on-accent hover:bg-accent/90 disabled:opacity-60">
+            <CheckCircle2 className="h-4 w-4" aria-hidden /> Mark as done <span className="font-normal">· +5</span>
           </button>
         )}
       </div>
+      <MoreDetail label="How and why" className="mt-2 pl-9">
+        <div className="space-y-2 text-ink">
+          <p>{item.body}</p>
+          {item.alert && <p className="text-ink-muted">{item.alert.reason}</p>}
+          {item.alert && pending && <p className="text-ink-muted">Then repeat the measurement in your next daily check-in to see if it has improved.</p>}
+          <p className="text-xs text-ink-muted">Source: {item.source}</p>
+        </div>
+      </MoreDetail>
       {complete.isError && <ErrorNote error={complete.error} />}
     </li>
   )

@@ -2,7 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LoginPage } from '../features/auth/LoginPage'
 import { CheckinPage } from '../features/checkin/CheckinPage'
 import { EmergencyPage } from '../features/emergency/EmergencyPage'
-import { HomePage } from '../features/overview/OverviewPage'
+import { HomePage } from '../features/overview/SimpleHome'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
 import {
@@ -28,7 +28,7 @@ export const router = createBrowserRouter([
       {
         path: 'health',
         element: (
-          <TabbedSection title="My Health" intro="Your body systems and how your measurements compare with your own normal."
+          <TabbedSection title="My Health" intro="Tap a part of your body to see how it is and what helps."
             tabs={[{ to: '', label: 'Body systems' }, { to: 'trends', label: 'Trends and charts' }]} />
         ),
         children: [
@@ -40,7 +40,7 @@ export const router = createBrowserRouter([
       {
         path: 'guidance',
         element: (
-          <TabbedSection title="My Guidance" intro="What needs attention, why it matters and what to do — from approved procedures."
+          <TabbedSection title="My Guidance" intro="What to do now, and why. Tick things off to earn points."
             tabs={[{ to: '', label: 'Recommended actions' }, { to: 'alerts', label: 'Health alerts' }]} />
         ),
         children: [
@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
       {
         path: 'history',
         element: (
-          <TabbedSection title="Health History" intro="Everything recorded about your health during the mission, newest first."
+          <TabbedSection title="Health History" intro="What happened so far, newest first."
             tabs={[{ to: '', label: 'Timeline' }, { to: 'reports', label: 'Medical reports' }]} />
         ),
         children: [

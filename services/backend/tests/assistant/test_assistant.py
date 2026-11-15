@@ -183,7 +183,12 @@ def fake_claude(*replies: Any) -> Any:
 
 def reply(answer: str, citations: list[str], stop_reason: str = "end_turn") -> Any:
     body = json.dumps(
-        {"answer": answer, "citation_ids": citations, "suggested_actions": ["Recheck at wake-up"]}
+        {
+            "short_answer": answer,
+            "detail": "",
+            "citation_ids": citations,
+            "suggested_actions": ["Recheck at wake-up"],
+        }
     )
     return SimpleNamespace(
         stop_reason=stop_reason,
@@ -203,10 +208,14 @@ def test_template_answers_from_findings_and_knowledge(assistant: Assistant) -> N
     # T-AI-03: no API key → template answer with citations
     out = assistant.answer(AssistantRequest(question=QUESTION, findings=FINDINGS))
     assert (out.mode, out.provider) == ("template", "template")
+    # Step 14: a short answer in everyday words first, then the details; no statistics words
+    short, _, detail = out.answer.partition("\n\n")
+    assert short == "Your resting heart rate is much higher than usual: 92 bpm instead of about 64 bpm."
     assert (
-        "Your resting heart rate is 92 bpm; your personal normal is 64 bpm, so this is 9.3σ above"
-        in out.answer
+        "Your resting heart rate is 92 bpm; your usual is about 64 bpm, so this is well above your usual."
+        in detail
     )
+    assert "σ" not in out.answer
     assert "Fatigue and recovery pattern needs review" in out.answer
     assert out.citations and all(c.source in SOURCES for c in out.citations)
     assert out.suggested_actions == ["Recheck resting heart rate at wake-up"]

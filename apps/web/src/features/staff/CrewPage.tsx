@@ -45,7 +45,7 @@ export function CrewPage() {
         <div className="flex rounded-lg border border-line-strong p-0.5" role="group" aria-label="Layout">
           {(['table', 'cards'] as const).map((l) => (
             <button key={l} type="button" aria-pressed={layout === l} onClick={() => setLayout(l)}
-              className={`min-h-9 rounded-md px-3 text-sm ${layout === l ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+              className={`min-h-9 rounded-md px-3 text-sm ${layout === l ? 'bg-accent text-on-accent' : 'text-ink hover:bg-subtle'}`}>
               {l === 'table' ? 'Table' : 'Cards'}
             </button>
           ))}

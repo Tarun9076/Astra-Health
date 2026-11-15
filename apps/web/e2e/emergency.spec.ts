@@ -43,6 +43,6 @@ test('a red-flag symptom in the check-in raises an Urgent alert with the procedu
   await expect(page.getByText(/Check-in saved in \d+ s/)).toBeVisible()
   await expect(page.getByText('Fainting reported').first()).toBeVisible()
   await page.getByRole('link', { name: 'Home', exact: true }).first().click()
-  await expect(page.getByText('Urgent: act now')).toBeVisible()
-  await expect(page.getByRole('link', { name: /Open emergency procedure/ })).toBeVisible()
+  await expect(page.getByText('Get help now')).toBeVisible()
+  await expect(page.getByRole('link', { name: /Open emergency steps/ })).toBeVisible()
 })

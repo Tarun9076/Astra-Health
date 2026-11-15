@@ -4,6 +4,7 @@ import { AlertOctagon, CheckCircle2, CheckSquare, ChevronDown, ChevronRight, Shi
 import { useSearchParams } from 'react-router-dom'
 import { INSIGHT_NOTE, InsightList } from '../../components/ui/InsightList'
 import { Button, ErrorNote, Loading, Panel, ProtocolSteps } from '../../components/ui/Panel'
+import { MoreDetail } from '../../components/ui/Simple'
 import { AlertStatusChip, SeverityBadge } from '../../components/ui/Status'
 import { api, unwrap, type AlertDetail, type AlertSummary, type Indicator } from '../../lib/api'
 import { useAuth } from '../../lib/auth'
@@ -34,7 +35,7 @@ export function AlertsPage({ code: forCode, staff = false }: { code?: string; st
       <div className="flex gap-1" role="group" aria-label="Show">
         {(['active', 'all'] as const).map((t) => (
           <button key={t} type="button" aria-pressed={tab === t} onClick={() => setTab(t)}
-            className={`min-h-10 rounded-lg px-4 text-sm font-medium ${tab === t ? 'bg-accent text-white' : 'text-ink hover:bg-subtle'}`}>
+            className={`min-h-10 rounded-lg px-4 text-sm font-medium ${tab === t ? 'bg-accent text-on-accent' : 'text-ink hover:bg-subtle'}`}>
             {t === 'active' ? 'Open alerts' : 'All alerts, including closed'}
           </button>
         ))}
@@ -120,20 +121,27 @@ function AlertBody({ id, staff }: { id: string; staff: boolean }) {
         </div>
       )}
 
-      <Explanation detail={data} catalog={catalog} />
+      <Explanation detail={data} catalog={catalog} staff={staff} />
 
-      <details open={staff} className="rounded-lg border border-line p-3">
-        <summary className="cursor-pointer text-sm font-medium text-accent">Technical details (rule {data.ruleId} v{data.ruleVersion}, exact values)</summary>
-        <div className="mt-3"><EvidenceTable detail={data} catalog={catalog} /></div>
-      </details>
-
-      {data.insights && data.insights.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-xs font-semibold tracking-wider text-ink-muted uppercase">Supporting pattern from machine learning (never decides on its own)</h3>
-          <InsightList insights={data.insights} missionStart={missionStart} />
-          <p className="mt-2 text-xs text-ink-muted">{INSIGHT_NOTE}</p>
-        </div>
-      )}
+      {(() => {
+        const technical = (
+          <>
+            <details open={staff} className="rounded-lg border border-line p-3">
+              <summary className="cursor-pointer text-sm font-medium text-accent">Technical details (rule {data.ruleId} v{data.ruleVersion}, exact values)</summary>
+              <div className="mt-3"><EvidenceTable detail={data} catalog={catalog} /></div>
+            </details>
+            {data.insights && data.insights.length > 0 && (
+              <div className="mt-3">
+                <h3 className="mb-2 text-xs font-semibold tracking-wider text-ink-muted uppercase">Supporting pattern from machine learning (never decides on its own)</h3>
+                <InsightList insights={data.insights} missionStart={missionStart} />
+                <p className="mt-2 text-xs text-ink-muted">{INSIGHT_NOTE}</p>
+              </div>
+            )}
+          </>
+        )
+        // astronauts: the numbers and the machine-learning notes are one tap away; staff see them at once
+        return staff ? technical : <MoreDetail label="More detail: the numbers and how it was decided"><div className="text-ink">{technical}</div></MoreDetail>
+      })()}
 
       {data.recommendations.length > 0 && (
         <div>
@@ -292,9 +300,9 @@ function SurgeonActions({ alert, onDone }: { alert: AlertDetail; onDone: () => v
 /** NORMAL / ATTENTION / URGENT explained once, with icon + word + colour. */
 function LevelsLegend() {
   const levels = [
-    { icon: CheckCircle2, cls: 'text-status-green', name: 'Normal', text: 'Readings are within your own normal range.' },
-    { icon: TriangleAlert, cls: 'text-status-yellow', name: 'Attention', text: 'A rule noticed a change. Follow the recommended actions; no emergency.' },
-    { icon: AlertOctagon, cls: 'text-status-red', name: 'Urgent', text: 'A safety limit or emergency symptom. Follow the emergency procedure now.' },
+    { icon: CheckCircle2, cls: 'text-status-green', name: 'Normal', text: 'All good.' },
+    { icon: TriangleAlert, cls: 'text-status-yellow', name: 'Attention', text: 'Take care: do the steps, no emergency.' },
+    { icon: AlertOctagon, cls: 'text-status-red', name: 'Urgent', text: 'Get help now: emergency steps.' },
   ]
   return (
     <ul className="grid gap-2 sm:grid-cols-3" aria-label="Alert levels">
@@ -309,7 +317,7 @@ function LevelsLegend() {
 }
 
 /** Every alert in plain words: what happened, the measurement vs normal, why it matters, what to do, medical help. */
-function Explanation({ detail, catalog }: { detail: AlertDetail; catalog: Record<string, Indicator> }) {
+function Explanation({ detail, catalog, staff }: { detail: AlertDetail; catalog: Record<string, Indicator>; staff: boolean }) {
   const lines = evidenceLines(detail, catalog)
   const main = mainIndicator(detail)
   const info = main ? infoFor(main) : undefined
@@ -324,14 +332,26 @@ function Explanation({ detail, catalog }: { detail: AlertDetail; catalog: Record
     ['What to do', urgent ? 'Follow the emergency procedure above, then the steps below.' : detail.recommendations.some((t) => t.status === 'Pending') ? 'Do the recommended actions below, then repeat the measurement in your next check-in.' : 'Keep doing your daily check-in so any change is noticed early.'],
     ['Medical help', urgent ? 'Needed now: call the crew medical officer. The flight surgeon has been alerted.' : detail.escalationRequired ? 'The flight surgeon has been notified because this keeps happening and will review it.' : (info?.help ?? 'Not needed unless it gets worse or you feel unwell.')],
   ]
+  // astronauts see three things first: what happened, what to do, medical help; the rest is folded
+  const shown = staff ? rows : rows.filter(([k]) => k !== 'Measurement' && k !== 'Why it matters')
+  const folded = staff ? [] : rows.filter(([k]) => k === 'Measurement' || k === 'Why it matters')
   return (
+    <>
     <dl className="grid gap-3 sm:grid-cols-[9rem_1fr]">
-      {rows.map(([k, v]) => (
+      {shown.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-xs font-semibold tracking-wide text-ink-muted uppercase sm:pt-0.5">{k}</dt>
           <dd className="text-sm">{v}</dd>
         </div>
       ))}
     </dl>
+    {folded.length > 0 && (
+      <MoreDetail label="The measurement and why it matters">
+        <dl className="space-y-2 text-ink">
+          {folded.map(([k, v]) => <div key={k}><dt className="font-semibold">{k}</dt><dd>{v}</dd></div>)}
+        </dl>
+      </MoreDetail>
+    )}
+    </>
   )
 }

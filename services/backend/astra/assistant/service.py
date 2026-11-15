@@ -141,7 +141,7 @@ class Assistant:
                             with_escalation(reply.answer, escalate), request.question
                         ),
                         citations=[Citation(chunk_id=c.id, title=c.title, source=c.source) for c in cited],
-                        suggested_actions=reply.suggested_actions[:4],
+                        suggested_actions=reply.suggested_actions[:3],
                         safety_flags=flags + ([f"dropped {dropped} unknown citation(s)"] if dropped else []),
                         mode="llm",
                         provider="claude",

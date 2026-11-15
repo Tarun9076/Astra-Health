@@ -19,7 +19,7 @@ and sends reports to flight surgeons on Earth when the link allows.
 > **This is not a medical device.** ASTRA HEALTH is a hackathon research prototype for clinical *decision support*. It does not diagnose or prescribe. All thresholds are **illustrative** and all crew health data is **simulated**.
 
 <p align="center">
-  <img src="docs/screenshots/01-home.png" alt="Astronaut Home: how you are right now, readings to watch, today's tasks and progress" width="900">
+  <img src="docs/screenshots/01-home.png" alt="Astronaut Home: one sentence on how you are, today's quests with points, the body at a glance and your level" width="900">
 </p>
 
 | Daily check-in | My Health: 3D body |
@@ -245,13 +245,13 @@ The menu is organised by **what you want to do**:
 
 | Section | What it is for |
 |---|---|
-| **Home** | How you are right now, what changed, what to pay attention to and why, key measurements, today's tasks |
+| **Home** | *How am I today?* One sentence (OK, Take care, or Get help now) with the one thing to do, today's quests with points, your body at a glance in words, your level and streak |
 | **My Health** | A human body figure (flat or 3D: turn it, zoom, click an organ) and body systems (what each does, how spaceflight affects it, your readings, symptoms to watch for), plus trends and charts |
 | **Daily Check-in** | Guided measurements in about 2 minutes: heart rate, blood pressure, temperature, oxygen, blood sugar, body mass, sleep, mood, stress and symptoms, with how-to steps, units and validation. You can add photos (skin, eye, wound, a device display) for the flight surgeon |
-| **My Guidance** | Recommended actions grouped by area, plus every health alert, explained |
+| **My Guidance** | *What should I do?* Short action cards (why, when, Mark as done +5 points), plus every health alert in plain words |
 | **Wellness** | Physical activity with the **exercise coach**, sleep, mental wellness (breathing, support), nutrition and hydration, plus **progress and badges** |
 | **Health History** | Timeline of everything recorded, plus medical reports |
-| **AI Assistant** | Plain-language answers with sources. It never diagnoses or prescribes. |
+| **AI Assistant** | A short answer first (one or two sentences), up to 3 steps that help, and when to get help; the explanation and sources are one tap away. It never diagnoses or prescribes. |
 | **Emergency procedures** | Always at the bottom of the menu, and stored in the app so it works offline |
 
 Home also shows **My progress** (points, check-in streak, this week's goals) and **Your environment** (gravity, delay to Earth, what matters most for your health there).
@@ -262,7 +262,13 @@ Points reward what you *do* (check in, exercise, sleep and drink enough, finish 
 
 <img src="docs/screenshots/04-progress.png" alt="Wellness, progress and badges: level and points, how points are earned, streaks and this week's goals" width="800">
 
-Design principles: status is never shown by colour alone (there is always an icon and a word), missing data is never shown as normal, and every number says what it means.
+Design principles: every page answers its own question first, in everyday words (no statistics jargon); the numbers, sources and how a rule decided are one tap away under **More detail**. Three levels everywhere: **OK**, **Take care**, **Get help now**, never shown by colour alone (always an icon and a word). Missing data is never shown as normal.
+
+**Light and dark themes:** *Calm light* by default and *Mission dark* for dim cabins. Switch with the sun/moon button in the header; the choice is remembered on that device (until then the app follows the device setting).
+
+<img src="docs/screenshots/07-home-dark.png" alt="Home in the Mission dark theme: Take it easy today, today's quests and the body at a glance" width="800">
+
+<img src="docs/screenshots/08-assistant.png" alt="AI assistant: a short answer first, three steps that help, details folded" width="800">
 
 ### Flight surgeon side
 

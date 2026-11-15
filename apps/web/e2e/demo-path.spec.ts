@@ -63,9 +63,9 @@ test('astronaut completes the guided check-in and sees the result', async ({ pag
   await expect(page.getByText(firstFinding).first()).toBeVisible()
 
   await page.getByRole('link', { name: 'Home', exact: true }).first().click()
-  await expect(page.getByText('Something to pay attention to')).toBeVisible()
+  // Home answers in one sentence and points to what to do (Step 14); the details are on the guidance page
+  await expect(page.getByText('Take it easy today')).toBeVisible()
+  await page.getByRole('link', { name: 'What should I do?' }).click()
+  await expect(page).toHaveURL(/\/astronaut\/guidance$/)
   await expect(page.getByText(firstFinding).first()).toBeVisible()
-  // the first observation is open and explains itself
-  await expect(page.getByText('Why it matters').first()).toBeVisible()
-  await expect(page.getByText('When to get medical help').first()).toBeVisible()
 })

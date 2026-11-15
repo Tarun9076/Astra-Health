@@ -66,7 +66,9 @@ def test_two_of_last_three_raised_triggers_alert(bundle: ProtocolBundle) -> None
     # T-R-02
     outcome = _run(bundle, "CV-RHR-BASELINE", MemoryContext({"resting_hr": [64, 71, 72]}, RHR))
     assert outcome.matched
-    assert outcome.reason.startswith("Resting heart rate is 72 bpm against your normal of 64 bpm (+2.7σ)")
+    assert outcome.reason.startswith(
+        "Resting heart rate is 72 bpm against your normal of 64 bpm, and it was raised on 2"
+    )
 
 
 def test_same_heart_rate_means_different_things_for_different_people(bundle: ProtocolBundle) -> None:
@@ -240,7 +242,7 @@ def test_ml_anomaly_needs_trend_and_a_confirming_reading(
     outcome = _run(bundle, "ML-ANOMALY-CORROBORATED", MemoryContext(data, FATIGUE_BASE, insights=insights))
     assert outcome.matched is expected
     if expected:
-        assert outcome.evidence["anomaly"].value == 0.63 and "0.63" in outcome.reason
+        assert outcome.evidence["anomaly"].value == 0.63 and "unusual for you" in outcome.reason
         assert outcome.rule.severity == "Attention"
 
 
