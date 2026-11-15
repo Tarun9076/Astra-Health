@@ -272,6 +272,8 @@ Design principles: every page answers its own question first, in everyday words 
 
 Only heart rate is read from the watch: blood oxygen, sleep and steps on most budget watches use the maker's private format.
 
+**Install it like an app:** click **Install app** (in the top bar, or on the sign-in page) and confirm. ASTRA HEALTH then opens in its own window from your desktop or home screen and works offline. The button appears only when your browser can install the app (Chrome or Edge on a computer, Chrome on Android). On iPhone and iPad it shows how to use Safari's **Share → Add to Home Screen** instead.
+
 **Light and dark themes:** *Calm light* by default and *Mission dark* for dim cabins. Switch with the sun/moon button in the header; the choice is remembered on that device (until then the app follows the device setting).
 
 <img src="docs/screenshots/07-home-dark.png" alt="Home in the Mission dark theme: Take it easy today, today's quests and the body at a glance" width="800">

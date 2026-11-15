@@ -571,6 +571,20 @@ Design rules:
 
 ---
 
+### Step 18 — "Install app" button ✅
+
+**Goal:** the app was installable (PWA) only through the browser's own menu, which most people never find. Add a clear button.
+
+- [x] `lib/install.ts`: the browser's `beforeinstallprompt` offer is caught at startup (before React renders; it can arrive early) and kept; `installApp()` shows the browser's install dialog; `appinstalled` and `display-mode: standalone` mark the app as installed. Safari on iPhone and iPad has no such offer, so it is detected separately.
+- [x] `InstallButton`: in the header (all roles) and on the sign-in page, shown only when the browser can install and the app isn't installed yet; on iPhone and iPad it opens short Share → Add to Home Screen steps.
+- [x] Proper install icons: 192 and 512 px PNGs, a maskable 512 px icon (logo inside the safe zone) and an Apple touch icon, generated from the logo; manifest, `theme-color` and Apple title in `index.html`.
+
+**Done 2026-11-15:** browser test T-UI-12 (4 tests: offer → dialog → hidden once accepted; declined → hidden until offered again; already installed → no button; iPhone Safari → instructions). The sign-in and Home pages still pass the accessibility scan. `tsc`, `oxlint`, `vite build` clean.
+
+**Not covered:** the real Chrome install dialog and the iPhone home-screen icon were not tried on a device (test browsers never offer installation; the event is simulated).
+
+---
+
 ## 4. Team split (3–4 people)
 
 With one backend language, the split is by area rather than by runtime:
