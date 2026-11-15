@@ -454,6 +454,7 @@ Today is mission day 121; the history covers days −29…120.
 **Done when:** both views look like a human body, every system can be chosen by mouse and keyboard, and the existing checks pass. **Done 2026-11-15:**
 - **Checks:** new browser test T-UI-07 (flat clicks and keyboard, 3D build and controls); the full browser suite passes (26 tests); `tsc`, `oxlint` and `vite build` are clean. The worker is a 7 kB chunk; the 3D chunk is unchanged (≈ 0.94 MB, lazy).
 - To change the anatomy, edit `anatomy.ts`, then run `node scripts/gen-body-map.ts` (Node 23.6+) to redraw the flat view.
+- **Layout fix:** screen-reader-only text was positioned against the page instead of the scrolling content area, so the page grew taller than the window and scrolling left a blank band below the app. The content area and sidebar are now `relative`; the navigation test checks that every page is exactly the window height.
 
 **Not covered:**
 - Shapes are educational, not a medical atlas: no skin texture, face detail, fingers or individual ribs.
