@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { AlertOctagon, AlertTriangle, LogOut, Menu, ShieldAlert, SlidersHorizontal, Users, X } from 'lucide-react'
+import { AlertOctagon, AlertTriangle, LogOut, Menu, ShieldAlert, SlidersHorizontal, Siren, Users, X } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { EarthCopyBanner } from '../components/ui/EarthCopyBanner'
 import { NodeStatusPill } from '../components/ui/NodeStatusPill'
 import { OfflineBanner } from '../components/ui/OfflineBanner'
@@ -9,6 +9,8 @@ import { InstallButton } from '../components/ui/InstallButton'
 import { ThemeToggle } from '../components/ui/ThemeToggle'
 import { WatchButton } from '../components/ui/WatchButton'
 import { Toaster } from '../components/ui/Toaster'
+import { CrewAlarm, KeepTreatmentDataReady } from '../features/treatment/CrewAlarm'
+import { useCrewAlarm } from '../features/treatment/alarmStore'
 import { useAuth } from '../lib/auth'
 import { missionDay, missionSol } from '../lib/mission'
 import { startOutboxSync } from '../lib/outbox'
@@ -61,6 +63,17 @@ function useLiveUpdates() {
         }
         if (event.type === 'MedicationWorse' && role === 'FlightSurgeon') {
           push({ tone: 'urgent', title: `${p.astronautCode}: worse after a medicine`, href: `/staff/astronaut/${p.astronautCode}?view=medicines` })
+        }
+      }
+      if (['TreatmentStarted', 'TreatmentUpdated'].includes(event.type)) {
+        for (const key of ['treatment-episodes', 'treatment-episode', 'medication-doses', 'formulary']) void queryClient.invalidateQueries({ queryKey: [key] })
+        const p = event.payload as { episodeId?: string; astronautCode?: string; astronautName?: string; title?: string; tier?: number }
+        const me = useAuth.getState().user?.astronautCode
+        if (event.type === 'TreatmentStarted' && (p.tier ?? 0) >= 3 && role === 'Astronaut' && p.astronautCode !== me && p.episodeId) {
+          useCrewAlarm.getState().raise({ episodeId: p.episodeId, astronautCode: p.astronautCode ?? '', astronautName: p.astronautName ?? p.astronautCode ?? 'A crewmate', title: p.title ?? 'Emergency' })
+        }
+        if (event.type === 'TreatmentStarted' && role === 'FlightSurgeon') {
+          push({ tone: 'urgent', title: `${p.astronautCode}: Act Now treatment — ${p.title}`, href: `/staff/astronaut/${p.astronautCode}?view=treatments` })
         }
       }
       if (event.type === 'PhotoAdded') {
@@ -272,6 +285,11 @@ export function AppLayout() {
             SIMULATED DATA
           </span>
           <NodeStatusPill />
+          {isAstronaut && (
+            <Link to="/astronaut/act" className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-status-red px-3 text-sm font-bold text-on-status hover:bg-status-red/90">
+              <Siren className="h-4 w-4" aria-hidden /> Help now
+            </Link>
+          )}
           {isAstronaut && <WatchButton />}
           <InstallButton compact />
           <ThemeToggle />
@@ -288,6 +306,8 @@ export function AppLayout() {
         </div>
       </header>
 
+      {isAstronaut && <CrewAlarm />}
+      {isAstronaut && user?.astronautCode && <KeepTreatmentDataReady code={user.astronautCode} />}
       <OfflineBanner />
       {!isAstronaut && <EarthCopyBanner />}
       <div className="relative flex min-h-0 flex-1">

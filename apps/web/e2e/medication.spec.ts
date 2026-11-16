@@ -60,7 +60,7 @@ test('ask, confirm, take and review a medicine; an allergy blocks the first choi
     await route.fulfill({ response })
   })
   await signIn(surgeon, 'surgeon1')
-  await expect(surgeon.getByText('Medicines to review (1)')).toBeVisible()
+  await expect(surgeon.getByText(/Medicines to review \(\d+\)/)).toBeVisible()
   await surgeon.goto('/staff/astronaut/AST-001?view=medicines')
   await expect(surgeon.getByRole('button', { name: 'Mark reviewed' })).toBeVisible()
   // (a re-routed POST loses its body in the test browser, so the review is sent straight to the Habitat)

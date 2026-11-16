@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LoginPage } from '../features/auth/LoginPage'
 import { CheckinPage } from '../features/checkin/CheckinPage'
 import { EmergencyPage } from '../features/emergency/EmergencyPage'
+import { ActNowPage } from '../features/treatment/ActNowPage'
 import { HomePage } from '../features/overview/SimpleHome'
 import { AppLayout } from './AppLayout'
 import { Guard, Home } from './Guards'
@@ -64,6 +65,7 @@ export const router = createBrowserRouter([
       },
       { path: 'assistant', element: <AssistantRoute /> },
       { path: 'emergency', element: <EmergencyPage /> },
+      { path: 'act', element: <ActNowPage /> },
       // pre-redesign paths
       { path: 'overview', element: <Moved to="/astronaut/home" /> },
       { path: 'body', element: <Moved to="/astronaut/health" /> },

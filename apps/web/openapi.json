@@ -2916,6 +2916,418 @@
     }
    }
   },
+  "/api/treatment/protocols": {
+   "get": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Get Protocols",
+    "operationId": "get_protocols_api_treatment_protocols_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProtocolsOut"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   },
+   "post": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Upload Protocol",
+    "operationId": "upload_protocol_api_treatment_protocols_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ProtocolUploadIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ProtocolUploadOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    },
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ]
+   }
+  },
+  "/api/astronauts/{astronaut}/treatment/assess": {
+   "post": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Post Assess",
+    "operationId": "post_assess_api_astronauts__astronaut__treatment_assess_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "astronaut",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Astronaut"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AssessIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AssessmentOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/treatment/episodes": {
+   "post": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Post Episode",
+    "operationId": "post_episode_api_treatment_episodes_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EpisodeIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EpisodeOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "get": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Get Episodes",
+    "operationId": "get_episodes_api_treatment_episodes_get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "active",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Active"
+      }
+     },
+     {
+      "name": "astronaut",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Astronaut"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 100,
+       "minimum": 1,
+       "default": 30,
+       "title": "Limit"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/EpisodeOut"
+         },
+         "title": "Response Get Episodes Api Treatment Episodes Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/treatment/episodes/{episode_id}/events": {
+   "post": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Post Event",
+    "operationId": "post_event_api_treatment_episodes__episode_id__events_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "episode_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Episode Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EventIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EpisodeOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/treatment/episodes/{episode_id}": {
+   "get": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Get Episode",
+    "operationId": "get_episode_api_treatment_episodes__episode_id__get",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "episode_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Episode Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EpisodeOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/treatment/episodes/{episode_id}/review": {
+   "post": {
+    "tags": [
+     "treatment"
+    ],
+    "summary": "Review Episode",
+    "operationId": "review_episode_api_treatment_episodes__episode_id__review_post",
+    "security": [
+     {
+      "HTTPBearer": []
+     }
+    ],
+    "parameters": [
+     {
+      "name": "episode_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Episode Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EpisodeReviewIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/EpisodeOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/measurements/batch": {
    "post": {
     "tags": [
@@ -3738,6 +4150,69 @@
     ],
     "title": "AnalyticsOut"
    },
+   "AssessIn": {
+    "properties": {
+     "protocolId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocolid",
+      "description": "Help now: the protocol the crew opened"
+     }
+    },
+    "type": "object",
+    "title": "AssessIn"
+   },
+   "AssessmentOut": {
+    "properties": {
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "tier": {
+      "type": "integer",
+      "title": "Tier"
+     },
+     "tierWord": {
+      "type": "string",
+      "title": "Tierword"
+     },
+     "critical": {
+      "items": {
+       "$ref": "#/components/schemas/ProtocolPlanOut"
+      },
+      "type": "array",
+      "title": "Critical"
+     },
+     "routine": {
+      "items": {
+       "$ref": "#/components/schemas/RoutineOut"
+      },
+      "type": "array",
+      "title": "Routine"
+     },
+     "generatedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Generatedat"
+     }
+    },
+    "type": "object",
+    "required": [
+     "astronautCode",
+     "tier",
+     "tierWord",
+     "critical",
+     "routine",
+     "generatedAt"
+    ],
+    "title": "AssessmentOut"
+   },
    "AssistantStatus": {
     "properties": {
      "defaultProvider": {
@@ -4315,6 +4790,16 @@
       },
       "type": "array",
       "title": "Updatedalerts"
+     },
+     "treatment": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AssessmentOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
      }
     },
     "type": "object",
@@ -4450,6 +4935,24 @@
      "value"
     ],
     "title": "Contributor"
+   },
+   "CrewMember": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "title": "Code"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code",
+     "name"
+    ],
+    "title": "CrewMember"
    },
    "CrewStatus": {
     "properties": {
@@ -5273,6 +5776,392 @@
      "measuredAt"
     ],
     "title": "EnvItem"
+   },
+   "EpisodeIn": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "maxLength": 64,
+      "minLength": 8,
+      "pattern": "^[A-Za-z0-9-]+$",
+      "title": "Id",
+      "description": "Device id (idempotent)"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "protocolIds": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "minItems": 1,
+      "title": "Protocolids"
+     },
+     "tier": {
+      "type": "integer",
+      "maximum": 3.0,
+      "minimum": 1.0,
+      "title": "Tier"
+     },
+     "source": {
+      "type": "string",
+      "enum": [
+       "checkin",
+       "help-now",
+       "device"
+      ],
+      "title": "Source"
+     },
+     "plan": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Plan",
+      "description": "The plan exactly as shown to the crew"
+     },
+     "startedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Startedat"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "protocolIds",
+     "tier",
+     "source",
+     "plan"
+    ],
+    "title": "EpisodeIn"
+   },
+   "EpisodeOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "astronautCode": {
+      "type": "string",
+      "title": "Astronautcode"
+     },
+     "astronautName": {
+      "type": "string",
+      "title": "Astronautname"
+     },
+     "protocolIds": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Protocolids"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "tier": {
+      "type": "integer",
+      "title": "Tier"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "Active",
+       "Resolved",
+       "Escalated",
+       "Cancelled"
+      ],
+      "title": "Status"
+     },
+     "startedAt": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Startedat"
+     },
+     "startedBy": {
+      "type": "string",
+      "title": "Startedby"
+     },
+     "endedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Endedat"
+     },
+     "outcomeNote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Outcomenote"
+     },
+     "reviewedAt": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewedat"
+     },
+     "reviewedBy": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewedby"
+     },
+     "reviewNote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reviewnote"
+     },
+     "plan": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Plan"
+     },
+     "events": {
+      "items": {
+       "$ref": "#/components/schemas/EventOut"
+      },
+      "type": "array",
+      "title": "Events"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "astronautCode",
+     "astronautName",
+     "protocolIds",
+     "title",
+     "tier",
+     "source",
+     "status",
+     "startedAt",
+     "startedBy",
+     "endedAt",
+     "outcomeNote",
+     "reviewedAt",
+     "reviewedBy",
+     "reviewNote",
+     "plan",
+     "events"
+    ],
+    "title": "EpisodeOut"
+   },
+   "EpisodeReviewIn": {
+    "properties": {
+     "note": {
+      "type": "string",
+      "maxLength": 1000,
+      "title": "Note",
+      "default": ""
+     }
+    },
+    "type": "object",
+    "title": "EpisodeReviewIn"
+   },
+   "EventIn": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "maxLength": 64,
+      "minLength": 8,
+      "pattern": "^[A-Za-z0-9-]+$",
+      "title": "Id",
+      "description": "Device id (idempotent)"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "step_done",
+       "step_skipped",
+       "answer",
+       "recheck",
+       "dose_given",
+       "note",
+       "resolved",
+       "escalated",
+       "cancelled"
+      ],
+      "title": "Kind"
+     },
+     "protocolId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocolid"
+     },
+     "stepId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stepid"
+     },
+     "at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "At"
+     },
+     "deviceTime": {
+      "type": "boolean",
+      "title": "Devicetime",
+      "default": false
+     },
+     "byName": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 80
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Byname",
+      "description": "Who did it (default: the signed-in user)"
+     },
+     "data": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Data"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "kind"
+    ],
+    "title": "EventIn"
+   },
+   "EventOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "At"
+     },
+     "deviceTime": {
+      "type": "boolean",
+      "title": "Devicetime"
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind"
+     },
+     "protocolId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Protocolid"
+     },
+     "stepId": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stepid"
+     },
+     "data": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Data"
+     },
+     "byName": {
+      "type": "string",
+      "title": "Byname"
+     },
+     "flags": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Flags"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "at",
+     "deviceTime",
+     "kind",
+     "protocolId",
+     "stepId",
+     "data",
+     "byName",
+     "flags"
+    ],
+    "title": "EventOut"
    },
    "ExerciseIn": {
     "properties": {
@@ -7317,6 +8206,88 @@
     ],
     "title": "PhotoOut"
    },
+   "PickOut": {
+    "properties": {
+     "medicineId": {
+      "type": "string",
+      "title": "Medicineid"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "strength": {
+      "type": "string",
+      "title": "Strength"
+     },
+     "units": {
+      "type": "integer",
+      "title": "Units"
+     },
+     "doseText": {
+      "type": "string",
+      "title": "Dosetext"
+     },
+     "route": {
+      "type": "string",
+      "title": "Route"
+     },
+     "appearance": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Appearance"
+     },
+     "how": {
+      "type": "string",
+      "title": "How"
+     },
+     "kitLocation": {
+      "type": "string",
+      "title": "Kitlocation"
+     },
+     "rxOnly": {
+      "type": "boolean",
+      "title": "Rxonly"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ok",
+       "caution"
+      ],
+      "title": "Status"
+     },
+     "checks": {
+      "items": {
+       "$ref": "#/components/schemas/CheckOut"
+      },
+      "type": "array",
+      "title": "Checks"
+     }
+    },
+    "type": "object",
+    "required": [
+     "medicineId",
+     "name",
+     "strength",
+     "units",
+     "doseText",
+     "route",
+     "appearance",
+     "how",
+     "kitLocation",
+     "rxOnly",
+     "status",
+     "checks"
+    ],
+    "title": "PickOut"
+   },
    "PlannedOut": {
     "properties": {
      "exercise": {
@@ -7630,6 +8601,235 @@
     ],
     "title": "ProtocolOut"
    },
+   "ProtocolPlanOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "version": {
+      "type": "string",
+      "title": "Version"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "plain": {
+      "type": "string",
+      "title": "Plain"
+     },
+     "priority": {
+      "type": "integer",
+      "title": "Priority"
+     },
+     "matchedBy": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Matchedby"
+     },
+     "remeasure": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Remeasure"
+     },
+     "actFirst": {
+      "type": "boolean",
+      "title": "Actfirst"
+     },
+     "emergencyProtocol": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Emergencyprotocol"
+     },
+     "escalation": {
+      "type": "string",
+      "title": "Escalation"
+     },
+     "followUpHours": {
+      "type": "number",
+      "title": "Followuphours"
+     },
+     "doNotGive": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Donotgive"
+     },
+     "approvalStatus": {
+      "type": "string",
+      "enum": [
+       "demo",
+       "approved"
+      ],
+      "title": "Approvalstatus"
+     },
+     "steps": {
+      "items": {
+       "$ref": "#/components/schemas/StepOut"
+      },
+      "type": "array",
+      "title": "Steps"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "version",
+     "title",
+     "plain",
+     "priority",
+     "matchedBy",
+     "remeasure",
+     "actFirst",
+     "emergencyProtocol",
+     "escalation",
+     "followUpHours",
+     "doNotGive",
+     "approvalStatus",
+     "steps"
+    ],
+    "title": "ProtocolPlanOut"
+   },
+   "ProtocolSummary": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "plain": {
+      "type": "string",
+      "title": "Plain"
+     },
+     "priority": {
+      "type": "integer",
+      "title": "Priority"
+     },
+     "version": {
+      "type": "string",
+      "title": "Version"
+     },
+     "approvalStatus": {
+      "type": "string",
+      "enum": [
+       "demo",
+       "approved"
+      ],
+      "title": "Approvalstatus"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title",
+     "plain",
+     "priority",
+     "version",
+     "approvalStatus"
+    ],
+    "title": "ProtocolSummary"
+   },
+   "ProtocolUploadIn": {
+    "properties": {
+     "protocol": {
+      "additionalProperties": true,
+      "type": "object",
+      "title": "Protocol",
+      "description": "A complete treatment protocol (the TX-*.json format)"
+     }
+    },
+    "type": "object",
+    "required": [
+     "protocol"
+    ],
+    "title": "ProtocolUploadIn"
+   },
+   "ProtocolUploadOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "version": {
+      "type": "string",
+      "title": "Version"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "signed": {
+      "type": "boolean",
+      "title": "Signed"
+     },
+     "sentBy": {
+      "type": "string",
+      "title": "Sentby"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "version",
+     "title",
+     "signed",
+     "sentBy"
+    ],
+    "title": "ProtocolUploadOut"
+   },
+   "ProtocolsOut": {
+    "properties": {
+     "protocols": {
+      "items": {
+       "$ref": "#/components/schemas/ProtocolSummary"
+      },
+      "type": "array",
+      "title": "Protocols"
+     },
+     "crew": {
+      "items": {
+       "$ref": "#/components/schemas/CrewMember"
+      },
+      "type": "array",
+      "title": "Crew"
+     },
+     "disclaimer": {
+      "type": "string",
+      "title": "Disclaimer"
+     },
+     "files": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Files",
+      "default": []
+     }
+    },
+    "type": "object",
+    "required": [
+     "protocols",
+     "crew",
+     "disclaimer"
+    ],
+    "title": "ProtocolsOut"
+   },
    "RadiationOut": {
     "properties": {
      "astronautCode": {
@@ -7899,6 +9099,40 @@
     ],
     "title": "Reference"
    },
+   "RejectedOut": {
+    "properties": {
+     "medicineId": {
+      "type": "string",
+      "title": "Medicineid"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "codes": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Codes"
+     },
+     "reasons": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Reasons"
+     }
+    },
+    "type": "object",
+    "required": [
+     "medicineId",
+     "name",
+     "codes",
+     "reasons"
+    ],
+    "title": "RejectedOut"
+   },
    "ReportIn": {
     "properties": {
      "start": {
@@ -8114,6 +9348,41 @@
      "Admin"
     ],
     "title": "Role"
+   },
+   "RoutineOut": {
+    "properties": {
+     "condition": {
+      "type": "string",
+      "title": "Condition"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "tier": {
+      "type": "integer",
+      "enum": [
+       1,
+       2
+      ],
+      "title": "Tier"
+     },
+     "matchedBy": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Matchedby"
+     }
+    },
+    "type": "object",
+    "required": [
+     "condition",
+     "title",
+     "tier",
+     "matchedBy"
+    ],
+    "title": "RoutineOut"
    },
    "ScenarioIn": {
     "properties": {
@@ -8508,6 +9777,250 @@
     ],
     "title": "SpaceWeatherNow"
    },
+   "StepOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "action",
+       "medicine",
+       "question",
+       "recheck",
+       "measure"
+      ],
+      "title": "Kind"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "detail": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Detail"
+     },
+     "givenBy": {
+      "type": "string",
+      "enum": [
+       "self",
+       "crewmate",
+       "any"
+      ],
+      "title": "Givenby"
+     },
+     "emergency": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Emergency"
+     },
+     "question": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Question"
+     },
+     "yes": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Yes"
+     },
+     "no": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "No"
+     },
+     "afterMinutes": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Afterminutes"
+     },
+     "indicator": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Indicator"
+     },
+     "op": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Op"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "passed": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Passed"
+     },
+     "failed": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Failed"
+     },
+     "maxRepeats": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Maxrepeats"
+     },
+     "failedAfterMax": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Failedaftermax"
+     },
+     "ifNone": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ifnone"
+     },
+     "next": {
+      "type": "string",
+      "title": "Next"
+     },
+     "pick": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/PickOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "rejected": {
+      "items": {
+       "$ref": "#/components/schemas/RejectedOut"
+      },
+      "type": "array",
+      "title": "Rejected"
+     },
+     "withheld": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Withheld"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "kind",
+     "text",
+     "detail",
+     "givenBy",
+     "emergency",
+     "question",
+     "yes",
+     "no",
+     "afterMinutes",
+     "indicator",
+     "op",
+     "value",
+     "passed",
+     "failed",
+     "maxRepeats",
+     "failedAfterMax",
+     "ifNone",
+     "next",
+     "pick",
+     "rejected",
+     "withheld"
+    ],
+    "title": "StepOut"
+   },
    "StopOut": {
     "properties": {
      "action": {
@@ -8600,7 +10113,8 @@
        "breathing_difficulty",
        "fainting",
        "neuro_deficit",
-       "severe_bleeding"
+       "severe_bleeding",
+       "allergic_reaction"
       ],
       "title": "Code"
      },

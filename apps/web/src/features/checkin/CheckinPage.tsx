@@ -13,6 +13,8 @@ import { infoFor } from '../../lib/indicators'
 import { formatValue } from '../../lib/mission'
 import { sendOrQueue } from '../../lib/outbox'
 import { useDashboard, useProgress, useSymptomCatalog } from '../../lib/queries'
+import { deviceAssess } from '../../lib/treatment/bundled'
+import { TreatmentResult } from '../treatment/TreatmentResult'
 import { useNow } from '../../lib/useNow'
 
 const TARGET_SECONDS = 120
@@ -177,7 +179,7 @@ export function CheckinPage() {
   }))
   const body: CheckinIn = { ...scores, vitals: vitalList, symptoms: symptomList, privateNote: note.trim() || null, completedInSeconds: seconds, id: null }
 
-  if (submit.isSuccess && submit.data.queued) return <SavedOffline />
+  if (submit.isSuccess && submit.data.queued) return <SavedOffline body={body} code={user?.astronautCode} />
   if (submit.isSuccess && !submit.data.queued) {
     const missing = (Object.keys(GROUPS) as GroupKey[]).filter((g) => skipped.has(g)).map((g) => GROUPS[g].label)
     return <Result result={submit.data.data} seconds={seconds} missing={missing} photos={photos.length} code={user?.astronautCode} />
@@ -656,6 +658,7 @@ function Result({ result, seconds, missing, photos, code }: { result: CheckinOut
   const protocols = result.newAlerts.filter((a) => a.severity === 'Urgent' && a.protocol).map((a) => a.protocol as string)
   return (
     <div className="mx-auto max-w-2xl space-y-4">
+      <TreatmentResult plan={result.treatment} source="checkin" />
       {protocols.map((p) => <EmergencyProtocolCard key={p} id={p} reported />)}
       <Panel>
         <p className="flex items-center gap-2 text-lg font-semibold text-status-green">
@@ -714,9 +717,17 @@ function Result({ result, seconds, missing, photos, code }: { result: CheckinOut
   )
 }
 
-function SavedOffline() {
+/** Server unreachable: the check-in waits on this device, but the treatment decision is made here now
+ * (the same protocols, bundled), so a critical result still opens Act Now at once (Step 21e). */
+function SavedOffline({ body, code }: { body: CheckinIn; code?: string | null }) {
+  const queryClient = useQueryClient()
+  const [device] = useState(() => code ? deviceAssess(queryClient, code, {
+    symptoms: Object.fromEntries((body.symptoms ?? []).map((x) => [x.code, x.severity])),
+    vitals: Object.fromEntries((body.vitals ?? []).map((v) => [v.indicator, v.value])),
+  }) : null)
   return (
     <div className="mx-auto max-w-xl space-y-4">
+      {device && <TreatmentResult plan={device.plan} source="device" profileKnown={device.profileKnown} />}
       <Panel>
         <p className="text-lg font-semibold">Check-in saved on this device</p>
         <p className="mt-2 text-sm text-ink-muted">

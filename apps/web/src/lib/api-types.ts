@@ -1045,6 +1045,110 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/treatment/protocols": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Protocols */
+        get: operations["get_protocols_api_treatment_protocols_get"];
+        put?: never;
+        /** Upload Protocol */
+        post: operations["upload_protocol_api_treatment_protocols_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/astronauts/{astronaut}/treatment/assess": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Assess */
+        post: operations["post_assess_api_astronauts__astronaut__treatment_assess_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/treatment/episodes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Episodes */
+        get: operations["get_episodes_api_treatment_episodes_get"];
+        put?: never;
+        /** Post Episode */
+        post: operations["post_episode_api_treatment_episodes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/treatment/episodes/{episode_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Event */
+        post: operations["post_event_api_treatment_episodes__episode_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/treatment/episodes/{episode_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Episode */
+        get: operations["get_episode_api_treatment_episodes__episode_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/treatment/episodes/{episode_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Episode */
+        post: operations["review_episode_api_treatment_episodes__episode_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/measurements/batch": {
         parameters: {
             query?: never;
@@ -1343,6 +1447,32 @@ export interface components {
             /** Alerts */
             alerts: components["schemas"]["AlertMarker"][];
         };
+        /** AssessIn */
+        AssessIn: {
+            /**
+             * Protocolid
+             * @description Help now: the protocol the crew opened
+             */
+            protocolId?: string | null;
+        };
+        /** AssessmentOut */
+        AssessmentOut: {
+            /** Astronautcode */
+            astronautCode: string;
+            /** Tier */
+            tier: number;
+            /** Tierword */
+            tierWord: string;
+            /** Critical */
+            critical: components["schemas"]["ProtocolPlanOut"][];
+            /** Routine */
+            routine: components["schemas"]["RoutineOut"][];
+            /**
+             * Generatedat
+             * Format: date-time
+             */
+            generatedAt: string;
+        };
         /** AssistantStatus */
         AssistantStatus: {
             /**
@@ -1557,6 +1687,7 @@ export interface components {
             newAlerts: components["schemas"]["AlertSummary"][];
             /** Updatedalerts */
             updatedAlerts: components["schemas"]["AlertSummary"][];
+            treatment?: components["schemas"]["AssessmentOut"] | null;
         };
         /** CitationOut */
         CitationOut: {
@@ -1599,6 +1730,13 @@ export interface components {
             name: string;
             /** Value */
             value: number;
+        };
+        /** CrewMember */
+        CrewMember: {
+            /** Code */
+            code: string;
+            /** Name */
+            name: string;
         };
         /** CrewStatus */
         CrewStatus: {
@@ -1847,6 +1985,146 @@ export interface components {
              * @default HAB
              */
             module: string;
+        };
+        /** EpisodeIn */
+        EpisodeIn: {
+            /**
+             * Id
+             * @description Device id (idempotent)
+             */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /** Protocolids */
+            protocolIds: string[];
+            /** Tier */
+            tier: number;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "checkin" | "help-now" | "device";
+            /**
+             * Plan
+             * @description The plan exactly as shown to the crew
+             */
+            plan: {
+                [key: string]: unknown;
+            };
+            /** Startedat */
+            startedAt?: string | null;
+        };
+        /** EpisodeOut */
+        EpisodeOut: {
+            /** Id */
+            id: string;
+            /** Astronautcode */
+            astronautCode: string;
+            /** Astronautname */
+            astronautName: string;
+            /** Protocolids */
+            protocolIds: string[];
+            /** Title */
+            title: string;
+            /** Tier */
+            tier: number;
+            /** Source */
+            source: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "Active" | "Resolved" | "Escalated" | "Cancelled";
+            /**
+             * Startedat
+             * Format: date-time
+             */
+            startedAt: string;
+            /** Startedby */
+            startedBy: string;
+            /** Endedat */
+            endedAt: string | null;
+            /** Outcomenote */
+            outcomeNote: string | null;
+            /** Reviewedat */
+            reviewedAt: string | null;
+            /** Reviewedby */
+            reviewedBy: string | null;
+            /** Reviewnote */
+            reviewNote: string | null;
+            /** Plan */
+            plan: {
+                [key: string]: unknown;
+            };
+            /** Events */
+            events: components["schemas"]["EventOut"][];
+        };
+        /** EpisodeReviewIn */
+        EpisodeReviewIn: {
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+        };
+        /** EventIn */
+        EventIn: {
+            /**
+             * Id
+             * @description Device id (idempotent)
+             */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "step_done" | "step_skipped" | "answer" | "recheck" | "dose_given" | "note" | "resolved" | "escalated" | "cancelled";
+            /** Protocolid */
+            protocolId?: string | null;
+            /** Stepid */
+            stepId?: string | null;
+            /** At */
+            at?: string | null;
+            /**
+             * Devicetime
+             * @default false
+             */
+            deviceTime: boolean;
+            /**
+             * Byname
+             * @description Who did it (default: the signed-in user)
+             */
+            byName?: string | null;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            };
+        };
+        /** EventOut */
+        EventOut: {
+            /** Id */
+            id: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Devicetime */
+            deviceTime: boolean;
+            /** Kind */
+            kind: string;
+            /** Protocolid */
+            protocolId: string | null;
+            /** Stepid */
+            stepId: string | null;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            };
+            /** Byname */
+            byName: string;
+            /** Flags */
+            flags: string[];
         };
         /** ExerciseIn */
         ExerciseIn: {
@@ -2563,6 +2841,36 @@ export interface components {
              */
             takenAt: string;
         };
+        /** PickOut */
+        PickOut: {
+            /** Medicineid */
+            medicineId: string;
+            /** Name */
+            name: string;
+            /** Strength */
+            strength: string;
+            /** Units */
+            units: number;
+            /** Dosetext */
+            doseText: string;
+            /** Route */
+            route: string;
+            /** Appearance */
+            appearance: string | null;
+            /** How */
+            how: string;
+            /** Kitlocation */
+            kitLocation: string;
+            /** Rxonly */
+            rxOnly: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "caution";
+            /** Checks */
+            checks: components["schemas"]["CheckOut"][];
+        };
         /** PlannedOut */
         PlannedOut: {
             /** Exercise */
@@ -2681,6 +2989,97 @@ export interface components {
             /** Disclaimer */
             disclaimer: string;
         };
+        /** ProtocolPlanOut */
+        ProtocolPlanOut: {
+            /** Id */
+            id: string;
+            /** Version */
+            version: string;
+            /** Title */
+            title: string;
+            /** Plain */
+            plain: string;
+            /** Priority */
+            priority: number;
+            /** Matchedby */
+            matchedBy: string[];
+            /** Remeasure */
+            remeasure: string[];
+            /** Actfirst */
+            actFirst: boolean;
+            /** Emergencyprotocol */
+            emergencyProtocol: string | null;
+            /** Escalation */
+            escalation: string;
+            /** Followuphours */
+            followUpHours: number;
+            /** Donotgive */
+            doNotGive: string[];
+            /**
+             * Approvalstatus
+             * @enum {string}
+             */
+            approvalStatus: "demo" | "approved";
+            /** Steps */
+            steps: components["schemas"]["StepOut"][];
+        };
+        /** ProtocolSummary */
+        ProtocolSummary: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Plain */
+            plain: string;
+            /** Priority */
+            priority: number;
+            /** Version */
+            version: string;
+            /**
+             * Approvalstatus
+             * @enum {string}
+             */
+            approvalStatus: "demo" | "approved";
+        };
+        /** ProtocolUploadIn */
+        ProtocolUploadIn: {
+            /**
+             * Protocol
+             * @description A complete treatment protocol (the TX-*.json format)
+             */
+            protocol: {
+                [key: string]: unknown;
+            };
+        };
+        /** ProtocolUploadOut */
+        ProtocolUploadOut: {
+            /** Id */
+            id: string;
+            /** Version */
+            version: string;
+            /** Title */
+            title: string;
+            /** Signed */
+            signed: boolean;
+            /** Sentby */
+            sentBy: string;
+        };
+        /** ProtocolsOut */
+        ProtocolsOut: {
+            /** Protocols */
+            protocols: components["schemas"]["ProtocolSummary"][];
+            /** Crew */
+            crew: components["schemas"]["CrewMember"][];
+            /** Disclaimer */
+            disclaimer: string;
+            /**
+             * Files
+             * @default []
+             */
+            files: {
+                [key: string]: unknown;
+            }[];
+        };
         /** RadiationOut */
         RadiationOut: {
             /** Astronautcode */
@@ -2775,6 +3174,17 @@ export interface components {
             median: number;
             /** Sigma */
             sigma: number;
+        };
+        /** RejectedOut */
+        RejectedOut: {
+            /** Medicineid */
+            medicineId: string;
+            /** Name */
+            name: string;
+            /** Codes */
+            codes: string[];
+            /** Reasons */
+            reasons: string[];
         };
         /** ReportIn */
         ReportIn: {
@@ -2889,6 +3299,20 @@ export interface components {
          * @enum {string}
          */
         Role: "Astronaut" | "FlightSurgeon" | "MissionControl" | "Admin";
+        /** RoutineOut */
+        RoutineOut: {
+            /** Condition */
+            condition: string;
+            /** Title */
+            title: string;
+            /**
+             * Tier
+             * @enum {integer}
+             */
+            tier: 1 | 2;
+            /** Matchedby */
+            matchedBy: string[];
+        };
         /** ScenarioIn */
         ScenarioIn: {
             /**
@@ -3032,6 +3456,58 @@ export interface components {
             /** Lighttimeminutes */
             lightTimeMinutes: number | null;
         };
+        /** StepOut */
+        StepOut: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "action" | "medicine" | "question" | "recheck" | "measure";
+            /** Text */
+            text: string;
+            /** Detail */
+            detail: string | null;
+            /**
+             * Givenby
+             * @enum {string}
+             */
+            givenBy: "self" | "crewmate" | "any";
+            /** Emergency */
+            emergency: string | null;
+            /** Question */
+            question: string | null;
+            /** Yes */
+            yes: string | null;
+            /** No */
+            no: string | null;
+            /** Afterminutes */
+            afterMinutes: number | null;
+            /** Indicator */
+            indicator: string | null;
+            /** Op */
+            op: string | null;
+            /** Value */
+            value: number | null;
+            /** Passed */
+            passed: string | null;
+            /** Failed */
+            failed: string | null;
+            /** Maxrepeats */
+            maxRepeats: number | null;
+            /** Failedaftermax */
+            failedAfterMax: string | null;
+            /** Ifnone */
+            ifNone: string | null;
+            /** Next */
+            next: string;
+            pick: components["schemas"]["PickOut"] | null;
+            /** Rejected */
+            rejected: components["schemas"]["RejectedOut"][];
+            /** Withheld */
+            withheld: string | null;
+        };
         /** StopOut */
         StopOut: {
             /**
@@ -3066,7 +3542,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "headache" | "congestion" | "nausea" | "dizziness" | "back_pain" | "muscle_joint_pain" | "vision_change" | "sleep_trouble" | "skin_irritation" | "low_mood" | "chest_pain" | "breathing_difficulty" | "fainting" | "neuro_deficit" | "severe_bleeding";
+            code: "headache" | "congestion" | "nausea" | "dizziness" | "back_pain" | "muscle_joint_pain" | "vision_change" | "sleep_trouble" | "skin_irritation" | "low_mood" | "chest_pain" | "breathing_difficulty" | "fainting" | "neuro_deficit" | "severe_bleeding" | "allergic_reaction";
             /**
              * Severity
              * @description 1 = barely noticeable, 10 = worst imaginable
@@ -5215,6 +5691,261 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DoseOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_protocols_api_treatment_protocols_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProtocolsOut"];
+                };
+            };
+        };
+    };
+    upload_protocol_api_treatment_protocols_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProtocolUploadIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProtocolUploadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_assess_api_astronauts__astronaut__treatment_assess_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                astronaut: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssessIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssessmentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_episodes_api_treatment_episodes_get: {
+        parameters: {
+            query?: {
+                active?: boolean;
+                astronaut?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpisodeOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_episode_api_treatment_episodes_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpisodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpisodeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_event_api_treatment_episodes__episode_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpisodeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_episode_api_treatment_episodes__episode_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpisodeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_episode_api_treatment_episodes__episode_id__review_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                episode_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EpisodeReviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EpisodeOut"];
                 };
             };
             /** @description Validation Error */

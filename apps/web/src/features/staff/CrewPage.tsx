@@ -13,6 +13,7 @@ import { AlertsPage } from '../alerts/AlertsPage'
 import { OverviewPage } from '../overview/OverviewPage'
 import { ExerciseSessionsPanel } from '../exercise/SessionList'
 import { MedicinesToReview, StaffMedicinePanel } from '../medication/StaffMedication'
+import { StaffTreatmentPanel, TreatmentsToReview } from '../treatment/StaffTreatments'
 import { ReportsPage } from '../reports/ReportsPage'
 import { SpaceWeatherCard } from '../../components/ui/SpaceWeatherCard'
 
@@ -41,6 +42,7 @@ export function CrewPage() {
       {isPending && <Loading />}
       {error && <ErrorNote error={error} />}
       {medical && data && <FollowUps crew={data} now={now} />}
+      {medical && <TreatmentsToReview />}
       {medical && <MedicinesToReview />}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="text-lg font-semibold">Astronauts</h2>
@@ -221,6 +223,7 @@ const VIEWS = [
   { id: 'reports', label: 'Reports' },
   { id: 'exercise', label: 'Exercise' },
   { id: 'medicines', label: 'Medicines' },
+  { id: 'treatments', label: 'Treatments' },
   { id: 'instructions', label: 'Instructions' },
 ] as const
 type View = (typeof VIEWS)[number]['id']
@@ -260,6 +263,7 @@ export function StaffAstronautPage() {
       {view === 'reports' && <ReportsPage code={code} embedded />}
       {view === 'exercise' && <ExerciseSessionsPanel code={code} />}
       {view === 'medicines' && <StaffMedicinePanel code={code} />}
+      {view === 'treatments' && <StaffTreatmentPanel code={code} />}
       {view === 'instructions' && <InstructionsPanel code={code} />}
     </div>
   )
