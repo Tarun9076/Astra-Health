@@ -1,0 +1,72 @@
+{
+  "id": "TX-SEVERE-BLEEDING",
+  "version": "1.0.0",
+  "title": "Severe bleeding",
+  "plain": "Heavy bleeding that does not stop. Firm pressure stops most bleeding: press and keep pressing.",
+  "tier": 3,
+  "priority": 1,
+  "triggers": {
+    "symptoms": [
+      {
+        "code": "severe_bleeding",
+        "minSeverity": 1
+      }
+    ]
+  },
+  "emergencyProtocol": "EMG-SEVERE-BLEEDING",
+  "doNotGive": [
+    {
+      "target": "NSAID",
+      "reason": "Aspirin and ibuprofen make bleeding worse"
+    }
+  ],
+  "steps": [
+    {
+      "id": "press",
+      "kind": "action",
+      "text": "Press hard on the wound with a clean dressing. Don't lift it to look."
+    },
+    {
+      "id": "call",
+      "kind": "action",
+      "text": "Call the crew medical officer."
+    },
+    {
+      "id": "raise",
+      "kind": "action",
+      "text": "Lie the person down and raise the injured part above the heart if you can."
+    },
+    {
+      "id": "check",
+      "kind": "recheck",
+      "text": "Check the bleeding",
+      "afterMinutes": 10,
+      "passed": "dress",
+      "failed": "more",
+      "question": "Has the bleeding stopped or slowed a lot?",
+      "maxRepeats": 2,
+      "failedAfterMax": "escalate"
+    },
+    {
+      "id": "more",
+      "kind": "action",
+      "text": "Add more dressings on top and keep pressing. On an arm or leg, use the tourniquet from the kit as the checklist shows.",
+      "emergency": "EMG-SEVERE-BLEEDING",
+      "next": "check"
+    },
+    {
+      "id": "dress",
+      "kind": "action",
+      "text": "Bandage it firmly. Check that fingers or toes stay warm and pink.",
+      "next": "done"
+    }
+  ],
+  "escalation": "Bleeding not controlled after 30 minutes, or the person is pale, cold or confused: follow EMG-SEVERE-BLEEDING with the CMO. Earth is informed.",
+  "followUpHours": 12,
+  "approval": {
+    "status": "demo",
+    "author": "ASTRA HEALTH team (demo)",
+    "approvedBy": null,
+    "date": "2026-11-16"
+  }
+}

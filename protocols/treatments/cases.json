@@ -1,0 +1,146 @@
+{
+  "version": "1.0.0",
+  "note": "Clinical test cases for the treatment engine (Step 21). Each case: a situation and what must come out. Run by the backend tests (Python engine) and the web unit tests (the on-device engine), so the two can never disagree. A flight surgeon can read and extend this file without code. Stock is full unless 'stock' says otherwise; history uses minutesAgo. Picks are 'medicineId dose text'; null means no medicine may be given at that step.",
+  "cases": [
+    { "id": "C01", "why": "Nothing reported: nothing to treat",
+      "situation": {}, "expect": { "tier": 0, "critical": [], "routine": [] } },
+
+    { "id": "C02", "why": "Mild headache → Medication Guide, tier 1",
+      "situation": { "symptoms": { "headache": 3 } },
+      "expect": { "tier": 1, "critical": [], "routine": [["headache", 1]] } },
+
+    { "id": "C03", "why": "Severe headache (8/10) → needs treatment, tier 2",
+      "situation": { "symptoms": { "headache": 8 } },
+      "expect": { "tier": 2, "routine": [["headache", 2]] } },
+
+    { "id": "C04", "why": "A fever alert is tier 2 (Medication Guide)",
+      "situation": { "rules": ["TH-FEVER"] },
+      "expect": { "tier": 2, "critical": [], "routine": [["fever", 2]] } },
+
+    { "id": "C05", "why": "High fever: the critical protocol replaces the routine fever link",
+      "situation": { "rules": ["TH-FEVER", "TH-FEVER-HIGH"] },
+      "expect": { "tier": 3, "critical": ["TX-HIGH-FEVER"], "routine": [],
+                  "picks": { "TX-HIGH-FEVER/medicine": "acetaminophen 2 tablets (1000 mg)" } } },
+
+    { "id": "C06", "why": "High fever with liver disease → acetaminophen ruled out, ibuprofen instead",
+      "situation": { "vitals": { "body_temp": 39.8 }, "profile": { "conditions": ["liver"] } },
+      "expect": { "tier": 3, "picks": { "TX-HIGH-FEVER/medicine": "ibuprofen 1 tablet (200 mg)" },
+                  "rejected": { "TX-HIGH-FEVER/medicine": ["acetaminophen:condition"] } } },
+
+    { "id": "C07", "why": "High fever, liver disease and an NSAID allergy → no safe fever medicine",
+      "situation": { "vitals": { "body_temp": 39.8 }, "profile": { "conditions": ["liver"], "allergies": ["NSAID"] } },
+      "expect": { "picks": { "TX-HIGH-FEVER/medicine": null },
+                  "rejected": { "TX-HIGH-FEVER/medicine": ["acetaminophen:condition", "ibuprofen:allergy"] } } },
+
+    { "id": "C08", "why": "High fever 2 h after acetaminophen → too soon, ibuprofen instead",
+      "situation": { "rules": ["TH-FEVER-HIGH"], "history": [{ "medicine": "acetaminophen", "units": 2, "minutesAgo": 120 }] },
+      "expect": { "picks": { "TX-HIGH-FEVER/medicine": "ibuprofen 1 tablet (200 mg)" },
+                  "rejected": { "TX-HIGH-FEVER/medicine": ["acetaminophen:interval"] } } },
+
+    { "id": "C09", "why": "High fever with acetaminophen at its 24-hour limit → ibuprofen",
+      "situation": { "rules": ["TH-FEVER-HIGH"], "history": [
+        { "medicine": "acetaminophen", "units": 2, "minutesAgo": 420 },
+        { "medicine": "acetaminophen", "units": 2, "minutesAgo": 800 },
+        { "medicine": "acetaminophen", "units": 2, "minutesAgo": 1200 } ] },
+      "expect": { "picks": { "TX-HIGH-FEVER/medicine": "ibuprofen 1 tablet (200 mg)" },
+                  "rejected": { "TX-HIGH-FEVER/medicine": ["acetaminophen:limit24h"] } } },
+
+    { "id": "C10", "why": "Low blood sugar alert → fast sugar 16 g; glucagon ready if they can't swallow",
+      "situation": { "rules": ["MET-GLUCOSE-LOW"] },
+      "expect": { "tier": 3, "critical": ["TX-LOW-GLUCOSE"],
+                  "picks": { "TX-LOW-GLUCOSE/glucose": "glucosetabs 4 tablets (16 g)", "TX-LOW-GLUCOSE/glucagon": "glucagon 1 injection (1 mg)" } } },
+
+    { "id": "C11", "why": "A doubtful low reading: treat now and re-measure at the same time (act first)",
+      "situation": { "vitals": { "glucose": 48 }, "questionable": ["glucose"] },
+      "expect": { "tier": 3, "critical": ["TX-LOW-GLUCOSE"], "remeasure": { "TX-LOW-GLUCOSE": ["glucose"] } } },
+
+    { "id": "C12", "why": "Glucose 60 mg/dL without the alert is not critical",
+      "situation": { "vitals": { "glucose": 60 } }, "expect": { "tier": 0, "critical": [] } },
+
+    { "id": "C13", "why": "Chest pain → chew aspirin 324 mg",
+      "situation": { "symptoms": { "chest_pain": 7 } },
+      "expect": { "tier": 3, "critical": ["TX-CHEST-PAIN"], "picks": { "TX-CHEST-PAIN/aspirin": "aspirin81 4 tablets (324 mg)" } } },
+
+    { "id": "C14", "why": "Chest pain with an NSAID (aspirin) allergy → no aspirin",
+      "situation": { "symptoms": { "chest_pain": 7 }, "profile": { "allergies": ["NSAID"] } },
+      "expect": { "picks": { "TX-CHEST-PAIN/aspirin": null }, "rejected": { "TX-CHEST-PAIN/aspirin": ["aspirin81:allergy"] } } },
+
+    { "id": "C15", "why": "Chest pain on a blood thinner → no aspirin",
+      "situation": { "symptoms": { "chest_pain": 7 }, "profile": { "regularMedicines": ["anticoagulant"] } },
+      "expect": { "picks": { "TX-CHEST-PAIN/aspirin": null }, "rejected": { "TX-CHEST-PAIN/aspirin": ["aspirin81:interaction"] } } },
+
+    { "id": "C16", "why": "Chest pain with a stomach ulcer → no aspirin",
+      "situation": { "symptoms": { "chest_pain": 7 }, "profile": { "conditions": ["ulcer"] } },
+      "expect": { "picks": { "TX-CHEST-PAIN/aspirin": null }, "rejected": { "TX-CHEST-PAIN/aspirin": ["aspirin81:condition"] } } },
+
+    { "id": "C17", "why": "Chest pain 3 h after ibuprofen → aspirin still given, with a caution",
+      "situation": { "symptoms": { "chest_pain": 7 }, "history": [{ "medicine": "ibuprofen", "units": 1, "minutesAgo": 180 }] },
+      "expect": { "picks": { "TX-CHEST-PAIN/aspirin": "aspirin81 4 tablets (324 mg)" }, "cautions": { "TX-CHEST-PAIN/aspirin": ["interaction"] } } },
+
+    { "id": "C18", "why": "Chest pain with stroke signs → never aspirin (do-not-give from the stroke protocol)",
+      "situation": { "symptoms": { "chest_pain": 7, "neuro_deficit": 6 } },
+      "expect": { "tier": 3, "critical": ["TX-CHEST-PAIN", "TX-STROKE-SIGNS"], "picks": { "TX-CHEST-PAIN/aspirin": null },
+                  "rejected": { "TX-CHEST-PAIN/aspirin": ["aspirin81:do-not-give"] } } },
+
+    { "id": "C19", "why": "Severe allergy → epinephrine 0.3 mg (expired box pre-approved), then 2 diphenhydramine",
+      "situation": { "symptoms": { "allergic_reaction": 9 } },
+      "expect": { "tier": 3, "critical": ["TX-SEVERE-ALLERGY"],
+                  "picks": { "TX-SEVERE-ALLERGY/epi": "epinephrine 1 auto-injector (0.3 mg)", "TX-SEVERE-ALLERGY/antihistamine": "diphenhydramine 2 capsules (50 mg)" },
+                  "cautions": { "TX-SEVERE-ALLERGY/epi": ["expired"] } } },
+
+    { "id": "C20", "why": "Severe allergy with no epinephrine left → the step says so (escalate with the CMO)",
+      "situation": { "symptoms": { "allergic_reaction": 9 }, "stock": { "epinephrine": 0 } },
+      "expect": { "picks": { "TX-SEVERE-ALLERGY/epi": null }, "rejected": { "TX-SEVERE-ALLERGY/epi": ["epinephrine:stock"] } } },
+
+    { "id": "C21", "why": "A rash during a severe allergy is covered by the allergy protocol",
+      "situation": { "symptoms": { "allergic_reaction": 8, "skin_irritation": 5 } },
+      "expect": { "critical": ["TX-SEVERE-ALLERGY"], "routine": [] } },
+
+    { "id": "C22", "why": "Low oxygen alert → oxygen steps, no medicine",
+      "situation": { "rules": ["RS-SPO2-CRITICAL"] },
+      "expect": { "tier": 3, "critical": ["TX-LOW-OXYGEN"], "picks": {} } },
+
+    { "id": "C23", "why": "Low oxygen + severe allergy → no drowsy antihistamine (it can slow breathing)",
+      "situation": { "rules": ["RS-SPO2-CRITICAL"], "symptoms": { "allergic_reaction": 8 } },
+      "expect": { "critical": ["TX-LOW-OXYGEN", "TX-SEVERE-ALLERGY"],
+                  "picks": { "TX-SEVERE-ALLERGY/epi": "epinephrine 1 auto-injector (0.3 mg)", "TX-SEVERE-ALLERGY/antihistamine": null },
+                  "rejected": { "TX-SEVERE-ALLERGY/antihistamine": ["diphenhydramine:do-not-give"] } } },
+
+    { "id": "C24", "why": "Severe bleeding + chest pain → bleeding first, and no aspirin",
+      "situation": { "symptoms": { "severe_bleeding": 9, "chest_pain": 5 } },
+      "expect": { "critical": ["TX-SEVERE-BLEEDING", "TX-CHEST-PAIN"], "picks": { "TX-CHEST-PAIN/aspirin": null },
+                  "rejected": { "TX-CHEST-PAIN/aspirin": ["aspirin81:do-not-give"] } } },
+
+    { "id": "C25", "why": "Help now: the crew opens the allergy protocol without a check-in",
+      "chosen": "TX-SEVERE-ALLERGY", "situation": {},
+      "expect": { "tier": 3, "critical": ["TX-SEVERE-ALLERGY"] } },
+
+    { "id": "C26", "why": "Help now for chest pain while stroke signs are on record → the stroke rules still apply",
+      "chosen": "TX-CHEST-PAIN", "situation": { "symptoms": { "neuro_deficit": 4 } },
+      "expect": { "critical": ["TX-CHEST-PAIN", "TX-STROKE-SIGNS"], "picks": { "TX-CHEST-PAIN/aspirin": null } } },
+
+    { "id": "C27", "why": "Low blood sugar + high fever → sugar first; the fever medicine is still planned",
+      "situation": { "rules": ["MET-GLUCOSE-LOW", "TH-FEVER-HIGH"] },
+      "expect": { "critical": ["TX-LOW-GLUCOSE", "TX-HIGH-FEVER"],
+                  "picks": { "TX-LOW-GLUCOSE/glucose": "glucosetabs 4 tablets (16 g)", "TX-HIGH-FEVER/medicine": "acetaminophen 2 tablets (1000 mg)" } } },
+
+    { "id": "C28", "why": "Low blood sugar + stroke signs → nothing by mouth: glucagon, no tablets",
+      "situation": { "rules": ["MET-GLUCOSE-LOW"], "symptoms": { "neuro_deficit": 6 } },
+      "expect": { "picks": { "TX-LOW-GLUCOSE/glucose": null, "TX-LOW-GLUCOSE/glucagon": "glucagon 1 injection (1 mg)" },
+                  "rejected": { "TX-LOW-GLUCOSE/glucose": ["glucosetabs:do-not-give"] } } },
+
+    { "id": "C29", "why": "Chest pain with aspirin taken 2 h ago → no second aspirin",
+      "situation": { "symptoms": { "chest_pain": 6 }, "history": [{ "medicine": "aspirin81", "units": 4, "minutesAgo": 120 }] },
+      "expect": { "picks": { "TX-CHEST-PAIN/aspirin": null }, "rejected": { "TX-CHEST-PAIN/aspirin": ["aspirin81:interval"] } } },
+
+    { "id": "C30", "why": "A symptom with no protocol (dizziness) is not treated by the app",
+      "situation": { "symptoms": { "dizziness": 9 } }, "expect": { "tier": 0, "critical": [], "routine": [] } },
+
+    { "id": "C31", "why": "Several mild problems → the most severe first",
+      "situation": { "symptoms": { "congestion": 3, "back_pain": 8, "sleep_trouble": 2 } },
+      "expect": { "tier": 2, "routine": [["back-pain", 2], ["stuffy-nose", 1], ["sleep", 1]] } },
+
+    { "id": "C32", "why": "Chest pain where the symptom is mild still counts (any chest pain is critical)",
+      "situation": { "symptoms": { "chest_pain": 1 } }, "expect": { "tier": 3, "critical": ["TX-CHEST-PAIN"] } }
+  ]
+}

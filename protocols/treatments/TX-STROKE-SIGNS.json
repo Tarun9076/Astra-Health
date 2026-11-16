@@ -1,0 +1,87 @@
+{
+  "id": "TX-STROKE-SIGNS",
+  "version": "1.0.0",
+  "title": "Stroke signs",
+  "plain": "Sudden weakness, numbness, confusion or slurred speech can be a stroke. Note the time, protect the person and give nothing by mouth.",
+  "tier": 3,
+  "priority": 2,
+  "triggers": {
+    "symptoms": [
+      {
+        "code": "neuro_deficit",
+        "minSeverity": 1
+      }
+    ]
+  },
+  "emergencyProtocol": "EMG-NEURO-SYMPTOMS",
+  "doNotGive": [
+    {
+      "target": "NSAID",
+      "reason": "No aspirin or ibuprofen with stroke signs: they can make a bleed in the brain worse"
+    },
+    {
+      "target": "swallow",
+      "reason": "Nothing by mouth: swallowing may not be safe"
+    },
+    {
+      "target": "chew",
+      "reason": "Nothing by mouth: swallowing may not be safe"
+    }
+  ],
+  "steps": [
+    {
+      "id": "time",
+      "kind": "action",
+      "text": "Note the time the signs started (or when the person was last seen well)."
+    },
+    {
+      "id": "call",
+      "kind": "action",
+      "text": "Call the crew medical officer now."
+    },
+    {
+      "id": "glucose",
+      "kind": "measure",
+      "text": "Measure blood sugar: very low sugar can look like a stroke.",
+      "indicator": "glucose",
+      "detail": "Below 54 mg/dL: also open Low blood sugar (glucagon, nothing by mouth)."
+    },
+    {
+      "id": "oxygen",
+      "kind": "measure",
+      "text": "Measure oxygen. Below 94%: give oxygen by the checklist.",
+      "indicator": "spo2"
+    },
+    {
+      "id": "position",
+      "kind": "action",
+      "text": "Lie down with the head slightly raised. Nothing to eat or drink.",
+      "emergency": "EMG-NEURO-SYMPTOMS"
+    },
+    {
+      "id": "monitor",
+      "kind": "recheck",
+      "text": "Check again",
+      "afterMinutes": 10,
+      "passed": "watch",
+      "failed": "monitor",
+      "question": "Are the signs getting better?",
+      "maxRepeats": 3,
+      "failedAfterMax": "escalate"
+    },
+    {
+      "id": "watch",
+      "kind": "action",
+      "text": "Stay with the person. Check speech, face and arms every 15 minutes.",
+      "next": "done"
+    }
+  ],
+  "escalation": "Signs not improving or getting worse: follow EMG-NEURO-SYMPTOMS with the CMO and keep the time of onset. Earth is informed.",
+  "followUpHours": 24,
+  "approval": {
+    "status": "demo",
+    "author": "ASTRA HEALTH team (demo)",
+    "approvedBy": null,
+    "date": "2026-11-16"
+  }
+}

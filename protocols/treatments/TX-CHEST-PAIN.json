@@ -1,0 +1,95 @@
+{
+  "id": "TX-CHEST-PAIN",
+  "version": "1.0.0",
+  "title": "Chest pain",
+  "plain": "Chest pain or pressure can be the heart. Rest, call for help and give aspirin unless something rules it out.",
+  "tier": 3,
+  "priority": 2,
+  "triggers": {
+    "symptoms": [
+      {
+        "code": "chest_pain",
+        "minSeverity": 1
+      }
+    ]
+  },
+  "emergencyProtocol": "EMG-CHEST-PAIN",
+  "doNotGive": [
+    {
+      "target": "ibuprofen",
+      "reason": "Ibuprofen can make heart damage worse"
+    }
+  ],
+  "steps": [
+    {
+      "id": "rest",
+      "kind": "action",
+      "text": "Stop all activity. Sit down and loosen tight clothing."
+    },
+    {
+      "id": "call",
+      "kind": "action",
+      "text": "Call the crew medical officer now."
+    },
+    {
+      "id": "stroke",
+      "kind": "question",
+      "text": "Rule out a stroke first",
+      "question": "Any face drooping, arm weakness, slurred speech or sudden confusion?",
+      "yes": "no-aspirin",
+      "no": "aspirin"
+    },
+    {
+      "id": "no-aspirin",
+      "kind": "action",
+      "text": "Do not give aspirin: with stroke signs it can make a bleed in the brain worse. Start the stroke steps.",
+      "emergency": "EMG-NEURO-SYMPTOMS",
+      "next": "oxygen"
+    },
+    {
+      "id": "aspirin",
+      "kind": "medicine",
+      "text": "Give aspirin to chew",
+      "medicines": [
+        {
+          "medicine": "aspirin81"
+        }
+      ],
+      "next": "oxygen",
+      "detail": "Aspirin thins the blood and can limit damage if this is the heart."
+    },
+    {
+      "id": "oxygen",
+      "kind": "measure",
+      "text": "Measure oxygen saturation. Below 94%: give oxygen by the onboard checklist.",
+      "indicator": "spo2"
+    },
+    {
+      "id": "monitor",
+      "kind": "recheck",
+      "text": "Check again",
+      "afterMinutes": 5,
+      "passed": "watch",
+      "failed": "monitor",
+      "question": "Is the pain gone and is breathing normal?",
+      "maxRepeats": 4,
+      "failedAfterMax": "escalate",
+      "detail": "Measure heart rate and blood pressure each time.",
+      "emergency": "EMG-CHEST-PAIN"
+    },
+    {
+      "id": "watch",
+      "kind": "action",
+      "text": "Rest for the rest of the day with a crewmate close by. Report any new pain at once.",
+      "next": "done"
+    }
+  ],
+  "escalation": "Pain lasting more than 20 minutes, fainting or trouble breathing: follow EMG-CHEST-PAIN with the CMO (oxygen, monitoring, the cardiac checklist). Earth is informed.",
+  "followUpHours": 24,
+  "approval": {
+    "status": "demo",
+    "author": "ASTRA HEALTH team (demo)",
+    "approvedBy": null,
+    "date": "2026-11-16"
+  }
+}

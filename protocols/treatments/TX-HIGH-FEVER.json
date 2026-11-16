@@ -1,0 +1,77 @@
+{
+  "id": "TX-HIGH-FEVER",
+  "version": "1.0.0",
+  "title": "High fever",
+  "plain": "A temperature of 39.5 °C or more. Bring it down, drink, rest apart from the crew, and check it is falling.",
+  "tier": 3,
+  "priority": 5,
+  "triggers": {
+    "rules": [
+      "TH-FEVER-HIGH"
+    ],
+    "vitals": [
+      {
+        "indicator": "body_temp",
+        "op": "gte",
+        "value": 39.5
+      }
+    ]
+  },
+  "emergencyProtocol": "EMG-FEVER",
+  "doNotGive": [],
+  "steps": [
+    {
+      "id": "call",
+      "kind": "action",
+      "text": "Tell the crew medical officer."
+    },
+    {
+      "id": "medicine",
+      "kind": "medicine",
+      "text": "Give a fever medicine",
+      "medicines": [
+        {
+          "medicine": "acetaminophen"
+        },
+        {
+          "medicine": "ibuprofen"
+        }
+      ]
+    },
+    {
+      "id": "cool",
+      "kind": "action",
+      "text": "Take off extra layers, cool the skin with a damp cloth and drink at least 250 mL of water now."
+    },
+    {
+      "id": "isolate",
+      "kind": "action",
+      "text": "Rest away from the crew and wash hands often: it may be an infection."
+    },
+    {
+      "id": "recheck",
+      "kind": "recheck",
+      "text": "Measure the temperature again",
+      "afterMinutes": 60,
+      "passed": "watch",
+      "failed": "escalate",
+      "indicator": "body_temp",
+      "op": "lt",
+      "value": 39.0
+    },
+    {
+      "id": "watch",
+      "kind": "action",
+      "text": "Measure the temperature every 4 hours and keep drinking.",
+      "next": "done"
+    }
+  ],
+  "escalation": "Still 39.0 °C or higher after an hour, or confusion, a stiff neck, a rash or trouble breathing: follow EMG-FEVER with the CMO. Earth is informed.",
+  "followUpHours": 24,
+  "approval": {
+    "status": "demo",
+    "author": "ASTRA HEALTH team (demo)",
+    "approvedBy": null,
+    "date": "2026-11-16"
+  }
+}

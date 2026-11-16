@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "links": [
+    {
+      "condition": "headache",
+      "symptoms": [
+        "headache"
+      ],
+      "coveredBy": [
+        "TX-STROKE-SIGNS"
+      ]
+    },
+    {
+      "condition": "back-pain",
+      "symptoms": [
+        "back_pain"
+      ]
+    },
+    {
+      "condition": "fever",
+      "rules": [
+        "TH-FEVER"
+      ],
+      "coveredBy": [
+        "TX-HIGH-FEVER"
+      ]
+    },
+    {
+      "condition": "motion-sickness",
+      "symptoms": [
+        "nausea"
+      ]
+    },
+    {
+      "condition": "stuffy-nose",
+      "symptoms": [
+        "congestion"
+      ]
+    },
+    {
+      "condition": "sleep",
+      "symptoms": [
+        "sleep_trouble"
+      ]
+    },
+    {
+      "condition": "rash",
+      "symptoms": [
+        "skin_irritation"
+      ],
+      "coveredBy": [
+        "TX-SEVERE-ALLERGY"
+      ]
+    }
+  ]
+}
