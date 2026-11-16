@@ -7,6 +7,8 @@
     protocols/rules/*.json             → Rule (checked against all of the above)
     protocols/exercise-plans.json      → ExerciseProgramme (optional; its rules must exist)
     protocols/medications.json         → Formulary (optional; Medication Guide, Step 20)
+    protocols/treatments/TX-*.json     → TreatmentProtocol (optional; Act Now, Step 21)
+    protocols/treatments/routine.json  → RoutineMap (check-in symptoms → Medication Guide)
 
 `load_protocol_bundle` collects every problem and raises one ProtocolError, so the app
 refuses to start with a clear list of what to fix.
@@ -27,6 +29,8 @@ from astra.core.indicators import IndicatorCatalog, load_catalog
 from astra.core.medication import Formulary
 from astra.core.rules.loader import load_rules
 from astra.core.rules.models import SEMVER_PATTERN, Rule
+from astra.core.symptoms import CHECKIN_SYMPTOMS
+from astra.core.treatment import RoutineMap, TreatmentProtocol, Treatments
 
 
 class Recommendation(CoreModel):
@@ -107,6 +111,7 @@ class ProtocolBundle:
     mission_profiles: dict[str, MissionProfile] = field(default_factory=dict)
     exercise: ExerciseProgramme | None = None  # protocols/exercise-plans.json (Step 13)
     formulary: Formulary | None = None  # protocols/medications.json (Step 20)
+    treatments: Treatments | None = None  # protocols/treatments/ (Step 21)
 
     def counts(self) -> ProtocolCounts:
         return ProtocolCounts(
@@ -196,6 +201,44 @@ def _load_formulary(path: Path, emergency_ids: set[str], problems: list[str]) ->
     return formulary
 
 
+def load_treatments(
+    directory: Path,
+    formulary: Formulary | None,
+    rule_ids: set[str],
+    emergency_ids: set[str],
+    indicators: set[str],
+    problems: list[str],
+) -> Treatments | None:
+    """protocols/treatments/: every TX-*.json protocol and routine.json, fully cross-checked."""
+    if not directory.is_dir():
+        return None
+    protocols: dict[str, TreatmentProtocol] = {}
+    for file in sorted(directory.glob("TX-*.json")):
+        label = f"treatments/{file.name}"
+        try:
+            protocol = TreatmentProtocol.model_validate_json(file.read_text(encoding="utf-8"))
+        except ValidationError as exc:
+            problems.append(f"{label}: {describe_validation_error(exc)}")
+            continue
+        if file.stem != protocol.id:
+            problems.append(f"{label}: file name must match the protocol id '{protocol.id}'")
+        problems += [
+            f"{label}: {p}"
+            for p in protocol.problems(formulary, rule_ids, emergency_ids, indicators, set(CHECKIN_SYMPTOMS))
+        ]
+        protocols[protocol.id] = protocol
+    try:
+        routine = RoutineMap.model_validate_json((directory / "routine.json").read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        routine = RoutineMap(version="0.0.0", links=[])
+    except ValidationError as exc:
+        problems.append(f"treatments/routine.json: {describe_validation_error(exc)}")
+        return None
+    treatments = Treatments(protocols, routine)
+    problems += treatments.problems(formulary, rule_ids)
+    return treatments
+
+
 def load_protocol_bundle(root: Path) -> ProtocolBundle:
     if not root.is_dir():
         raise ProtocolError([f"protocols folder not found: {root}"])
@@ -214,6 +257,12 @@ def load_protocol_bundle(root: Path) -> ProtocolBundle:
     problems += rule_problems
     exercise = _load_exercise(root / "exercise-plans.json", {r.id for r in rules}, problems)
     formulary = _load_formulary(root / "medications.json", set(emergency), problems)
+    treatments = load_treatments(
+        root / "treatments", formulary, {r.id for r in rules}, set(emergency),
+        {i.code for i in catalog.indicators}, problems,
+    )  # fmt: skip
     if problems:
         raise ProtocolError(problems)
-    return ProtocolBundle(catalog, tuple(rules), recommendations, emergency, missions, exercise, formulary)
+    return ProtocolBundle(
+        catalog, tuple(rules), recommendations, emergency, missions, exercise, formulary, treatments
+    )

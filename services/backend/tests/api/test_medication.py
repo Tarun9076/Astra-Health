@@ -21,7 +21,7 @@ def test_formulary_and_profiles(seeded_client: TestClient) -> None:
     c = seeded_client
     ast1, ast2, ast3, surgeon = (auth(c, u) for u in ("ast1", "ast2", "ast3", "surgeon1"))
     f = c.get("/api/medication/formulary", headers=ast1).json()
-    assert f["status"] == "demo" and len(f["conditions"]) == 10 and len(f["medicines"]) == 9
+    assert f["status"] == "demo" and len(f["conditions"]) == 10 and len(f["medicines"]) == 13
     diph = next(m for m in f["medicines"] if m["id"] == "diphenhydramine")
     assert diph["expired"] is True and diph["stockLeft"] == 48 and diph["drowsy"] is True
 

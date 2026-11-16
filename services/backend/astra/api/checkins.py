@@ -15,9 +15,11 @@ from astra.api.alerts import AlertSummary, TaskOut, publish_alert_changes, summa
 from astra.api.base import ApiModel
 from astra.api.measurements import ItemProblem
 from astra.api.reports import publish_report
+from astra.api.treatment import AssessmentOut, assess_astronaut
 from astra.core.enums import MeasurementSource, NodeRole, Role
 from astra.core.ids import new_id
 from astra.core.protocols import ProtocolBundle
+from astra.core.symptoms import CHECKIN_SYMPTOMS
 from astra.db.models import Astronaut, RecommendationTask, Symptom, WellnessCheckin
 from astra.db.session import SessionDep
 from astra.realtime.hub import hub
@@ -39,29 +41,10 @@ class VitalIn(ApiModel):
     unit: str = Field(examples=["bpm"])
 
 
-# Symptoms offered in the daily check-in. The red-flag ones (protocols/redflags.yaml, matched by symptom
-# code) raise an Urgent alert with the emergency protocol, exactly as when reported to the assistant.
-CHECKIN_SYMPTOMS: dict[str, str] = {
-    "headache": "Headache",
-    "congestion": "Blocked nose or head fullness",
-    "nausea": "Nausea or space motion sickness",
-    "dizziness": "Dizziness or light-headedness",
-    "back_pain": "Back pain",
-    "muscle_joint_pain": "Muscle or joint pain",
-    "vision_change": "Change in vision",
-    "sleep_trouble": "Trouble sleeping",
-    "skin_irritation": "Skin rash or irritation",
-    "low_mood": "Feeling low, anxious or irritable",
-    "chest_pain": "Chest pain or pressure",
-    "breathing_difficulty": "Severe difficulty breathing",
-    "fainting": "Fainting or nearly fainting",
-    "neuro_deficit": "Sudden weakness, numbness, confusion or slurred speech",
-    "severe_bleeding": "Severe bleeding",
-}
 SymptomCode = Literal[
     "headache", "congestion", "nausea", "dizziness", "back_pain", "muscle_joint_pain", "vision_change",
     "sleep_trouble", "skin_irritation", "low_mood", "chest_pain", "breathing_difficulty", "fainting",
-    "neuro_deficit", "severe_bleeding",
+    "neuro_deficit", "severe_bleeding", "allergic_reaction",
 ]  # fmt: skip
 
 
@@ -100,6 +83,8 @@ class CheckinOut(ApiModel):
     rejected: list[ItemProblem]
     new_alerts: list[AlertSummary]
     updated_alerts: list[AlertSummary]
+    # Step 21: what to do now, from the treatment protocols (no AI); None when there is nothing to treat
+    treatment: AssessmentOut | None = None
 
 
 def _own_astronaut(session: Session, user: TokenClaims) -> Astronaut:
@@ -252,7 +237,11 @@ def post_checkin(body: CheckinIn, request: Request, session: SessionDep, user: C
     )
     if report is not None:
         publish_report(report)
+    treatment = (
+        assess_astronaut(session, request, astronaut, checkin_id=checkin_id) if bundle.treatments else None
+    )
     return CheckinOut(
+        treatment=treatment if treatment and treatment.tier > 0 else None,
         checkin_id=checkin_id,
         accepted=len(outcome.accepted),
         questionable=[ItemProblem(id=i, reason=r) for i, r in outcome.questionable],

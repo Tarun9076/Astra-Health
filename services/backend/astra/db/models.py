@@ -461,3 +461,63 @@ class MedicationDose(SQLModel, table=True):
     review_note: str | None = None
     node_id: str
     updated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+# --- Treatment at check-in (Step 21) ------------------------------------------------------------------
+
+
+class TreatmentEpisode(SQLModel, table=True):
+    """One Act Now treatment: the plan the crew saw (a snapshot, so a protocol update never changes a
+    treatment in progress) and its outcome. The id comes from the device, so an episode started with
+    the server down is stored once when it is sent. Synced both ways (Earth adds the review)."""
+
+    id: str = Field(primary_key=True)
+    astronaut_id: str = Field(foreign_key="astronaut.id", index=True)
+    protocol_ids_json: str  # ["TX-CHEST-PAIN", ...] in plan order
+    title: str
+    tier: int
+    source: str  # checkin | help-now | device (planned on the device while the server was down)
+    plan_json: str  # the plan exactly as shown
+    status: str = "Active"  # Active | Resolved | Escalated | Cancelled
+    started_at: datetime = Field(sa_type=UTCDateTime, index=True)
+    started_by: str
+    ended_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    outcome_note: str | None = None
+    reviewed_at: datetime | None = Field(default=None, sa_type=UTCDateTime)
+    reviewed_by: str | None = None
+    review_note: str | None = None
+    node_id: str
+    updated_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+
+
+class TreatmentEvent(SQLModel, table=True):
+    """Append-only log of what was done in an episode: steps, answers, rechecks, doses (who gave
+    them, who read the dose back), notes, the end. Ids come from the device; synced insert-if-absent."""
+
+    id: str = Field(primary_key=True)
+    episode_id: str = Field(foreign_key="treatmentepisode.id", index=True)
+    at: datetime = Field(sa_type=UTCDateTime, index=True)
+    device_time: bool = False  # the time came from the device (server unreachable at that moment)
+    # step_done | step_skipped | answer | recheck | dose_given | note | resolved | escalated | cancelled
+    kind: str
+    protocol_id: str | None = None
+    step_id: str | None = None
+    data_json: str = "{}"
+    by_name: str
+    flags_json: str = "[]"  # server checks that disagreed (e.g. a dose recorded although too soon)
+    node_id: str
+
+
+class ProtocolUpdate(SQLModel, table=True):
+    """A treatment protocol sent up from Earth by the flight surgeon (Step 21f). Signed with the shared
+    sync key; the Habitat checks the signature and the protocol before using it, and only for new
+    treatments (a treatment in progress keeps its snapshot). Synced insert-if-absent."""
+
+    id: str = Field(primary_key=True)  # "<protocol id>@<version>"
+    protocol_id: str = Field(index=True)
+    version: str
+    protocol_json: str
+    signature: str  # HMAC-SHA256 over the canonical JSON, base64
+    uploaded_by: str
+    uploaded_at: datetime = Field(default_factory=utcnow, sa_type=UTCDateTime)
+    node_id: str

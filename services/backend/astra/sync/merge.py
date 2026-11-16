@@ -15,6 +15,10 @@
 | MedicationDose      | state-order merge: Requested < Confirmed < Taken < Declined/Cancelled;    |
 |                     | confirmation, intake, outcome and review fields: first non-null wins      |
 | MedicalProfile      | last writer wins (newest `updated_at`)                                    |
+| TreatmentEpisode    | state-order merge: Active < Resolved/Escalated/Cancelled; end, outcome    |
+|                     | and review fields: first non-null wins                                    |
+| TreatmentEvent      | insert-if-absent (append-only log)                                        |
+| ProtocolUpdate      | insert-if-absent; the signature is checked before each use                |
 """
 
 from collections.abc import Callable
@@ -38,8 +42,11 @@ from astra.db.models import (
     MedicalReport,
     MedicationDose,
     Mission,
+    ProtocolUpdate,
     SpaceWeatherEvent,
     SyncOutbox,
+    TreatmentEpisode,
+    TreatmentEvent,
 )
 
 STATE_RANK = {"Open": 0, "Acknowledged": 1, "InReview": 2, "Resolved": 3, "Dismissed": 3}
@@ -61,6 +68,9 @@ DOSE_FILL_FIELDS = (
     "confirmed_at", "confirmed_by", "decline_reason", "self_confirm_reason", "taken_at", "follow_up_at",
     "outcome", "outcome_at", "reviewed_at", "reviewed_by", "review_note",
 )  # fmt: skip
+
+EPISODE_RANK = {"Active": 0, "Resolved": 1, "Escalated": 1, "Cancelled": 1}
+EPISODE_FILL_FIELDS = ("ended_at", "outcome_note", "reviewed_at", "reviewed_by", "review_note")
 
 Event = tuple[str, str, dict[str, Any]]  # (kind, astronaut_id, payload)
 
@@ -174,6 +184,20 @@ def apply_items(
             row = _merge_profile(session, MedicalProfile.model_validate(payload))
             if row is not None:
                 result.events.append(("MedicalProfileUpdated", row.astronaut_id, {}))
+        elif kind == "TreatmentEpisode":
+            row = _merge_episode(session, TreatmentEpisode.model_validate(payload), now)
+            if row is not None:
+                who = session.get(Astronaut, row.astronaut_id)
+                result.events.append(("TreatmentUpdated", row.astronaut_id, {
+                    "episodeId": row.id, "status": row.status, "astronautCode": who.code if who else None,
+                    "title": row.title, "tier": row.tier,
+                }))  # fmt: skip
+        elif kind == "TreatmentEvent":
+            row = _insert_if_absent(session, TreatmentEvent, payload, payload["id"])
+        elif kind == "ProtocolUpdate":
+            row = _insert_if_absent(session, ProtocolUpdate, payload, payload["id"])
+            if isinstance(row, ProtocolUpdate):
+                result.events.append(("ProtocolUpdated", "", {"id": row.protocol_id, "version": row.version}))
         elif kind == "Mission":
             mission = session.exec(select(Mission).where(Mission.code == payload["code"])).first()
             if mission is not None and mission.profile_code != payload["profile_code"]:
@@ -232,6 +256,25 @@ def _merge_dose(session: Session, incoming: MedicationDose, now: datetime) -> Me
         current.self_confirmed = current.self_confirmed or incoming.self_confirmed
         changed = True
     for f in DOSE_FILL_FIELDS:
+        if getattr(current, f) is None and getattr(incoming, f) is not None:
+            setattr(current, f, getattr(incoming, f))
+            changed = True
+    if not changed:
+        return None
+    current.updated_at = now
+    session.add(current)
+    return current
+
+
+def _merge_episode(session: Session, incoming: TreatmentEpisode, now: datetime) -> TreatmentEpisode | None:
+    current = session.get(TreatmentEpisode, incoming.id)
+    if current is None:
+        session.add(incoming)
+        return incoming
+    changed = False
+    if EPISODE_RANK[incoming.status] > EPISODE_RANK[current.status]:
+        current.status, changed = incoming.status, True
+    for f in EPISODE_FILL_FIELDS:
         if getattr(current, f) is None and getattr(incoming, f) is not None:
             setattr(current, f, getattr(incoming, f))
             changed = True

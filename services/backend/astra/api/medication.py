@@ -355,7 +355,7 @@ class AdviceIn(ApiModel):
     answers: dict[str, bool] = Field(description="Every safety question of the condition: true = yes")
 
 
-def _history(session: Session, astronaut_id: str, now: datetime) -> list[TakenDose]:
+def taken_history(session: Session, astronaut_id: str, now: datetime) -> list[TakenDose]:
     rows = session.exec(
         select(MedicationDose).where(
             MedicationDose.astronaut_id == astronaut_id,
@@ -366,7 +366,7 @@ def _history(session: Session, astronaut_id: str, now: datetime) -> list[TakenDo
     return [TakenDose(r.medicine_id, r.units, r.taken_at) for r in rows if r.taken_at]
 
 
-def _pending(session: Session, astronaut_id: str, *, except_id: str | None = None) -> list[str]:
+def open_medicines(session: Session, astronaut_id: str, *, except_id: str | None = None) -> list[str]:
     rows = session.exec(
         select(MedicationDose).where(
             MedicationDose.astronaut_id == astronaut_id, col(MedicationDose.status).in_(OPEN_STATUSES)
@@ -388,10 +388,10 @@ def advice_for(
     missing = [f.id for f in condition.red_flags if f.id not in body.answers]
     if missing:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Answer every safety question first")
-    profile, history = load_profile(session, astronaut), _history(session, astronaut.id, now)
+    profile, history = load_profile(session, astronaut), taken_history(session, astronaut.id, now)
     result = advise(
         formulary, condition, body.answers, profile, history,
-        stock=stock_left(session, formulary), pending=_pending(session, astronaut.id), now=now,
+        stock=stock_left(session, formulary), pending=open_medicines(session, astronaut.id), now=now,
     )  # fmt: skip
     return AdviceOut(
         condition_id=condition.id,
@@ -475,14 +475,24 @@ def _follow_up_due(row: MedicationDose, now: datetime) -> bool:
     return row.status == "Taken" and row.outcome is None and due
 
 
-def _dose_out(session: Session, formulary: Formulary | None, row: MedicationDose) -> DoseOut:
+def treatment_titles(request: Request) -> dict[str, str]:
+    """Doses given in an Act Now treatment (Step 21) name the protocol instead of a guide condition."""
+    treatments = request.app.state.protocols.treatments
+    return {p.id: p.title for p in treatments.protocols.values()} if treatments else {}
+
+
+def _dose_out(
+    session: Session, formulary: Formulary | None, row: MedicationDose, titles: dict[str, str] | None = None
+) -> DoseOut:
     who = session.get(Astronaut, row.astronaut_id)
     med = formulary.medicine(row.medicine_id) if formulary else None
     condition = formulary.condition(row.condition_id) if formulary else None
+    title = condition.title if condition else (titles or {}).get(row.condition_id, row.condition_id)
     now = datetime.now(UTC)
     return DoseOut(
         id=row.id, astronaut_code=who.code if who else "?", astronaut_name=who.display_name if who else "?",
-        condition_id=row.condition_id, condition_title=condition.title if condition else row.condition_id,
+        condition_id=row.condition_id,
+        condition_title=title,
         medicine_id=row.medicine_id, medicine_name=med.name if med else row.medicine_id, units=row.units,
         dose_text=row.dose_text, when_text=row.when_text, how=med.how if med else "",
         kit_location=med.kit_location if med else "", status=row.status,  # type: ignore[arg-type]
@@ -520,7 +530,9 @@ def get_astronaut_doses(
         .order_by(col(MedicationDose.requested_at).desc())
         .limit(50)
     ).all()
-    return [_dose_out(session, request.app.state.protocols.formulary, r) for r in rows]
+    return [
+        _dose_out(session, request.app.state.protocols.formulary, r, treatment_titles(request)) for r in rows
+    ]
 
 
 @router.get("/medication/doses", response_model=list[DoseOut])
@@ -532,7 +544,9 @@ def get_crew_doses(request: Request, session: SessionDep, user: CurrentUser) -> 
     rows = session.exec(
         select(MedicationDose).order_by(col(MedicationDose.requested_at).desc()).limit(100)
     ).all()
-    return [_dose_out(session, request.app.state.protocols.formulary, r) for r in rows]
+    return [
+        _dose_out(session, request.app.state.protocols.formulary, r, treatment_titles(request)) for r in rows
+    ]
 
 
 class DoseIn(ApiModel):
@@ -565,9 +579,9 @@ def _checks_now(
         medicine,
         units,
         load_profile(session, astronaut),
-        _history(session, astronaut.id, now),
+        taken_history(session, astronaut.id, now),
         stock_left=stock_left(session, formulary)[medicine.id],
-        pending=_pending(session, astronaut.id, except_id=except_id),
+        pending=open_medicines(session, astronaut.id, except_id=except_id),
         now=now,
     )
     return checks

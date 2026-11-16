@@ -12,11 +12,11 @@ from fastapi import APIRouter, Query, Request
 from sqlmodel import col, or_, select
 
 from astra.api.base import ApiModel
-from astra.api.checkins import CHECKIN_SYMPTOMS
 from astra.api.photos import KIND_LABEL
 from astra.core.alerts import ACTIVE_STATUSES
 from astra.core.enums import MeasurementQuality
 from astra.core.protocols import ProtocolBundle
+from astra.core.symptoms import CHECKIN_SYMPTOMS
 from astra.db.models import (
     HealthAlert,
     HealthMeasurement,

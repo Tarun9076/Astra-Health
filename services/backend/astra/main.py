@@ -40,6 +40,7 @@ from astra.api import (
     reports,
     sync,
     system,
+    treatment,
 )
 from astra.api import (
     insights as insights_api,
@@ -230,6 +231,7 @@ def create_app(cfg: Settings | None = None) -> FastAPI:
     app.include_router(photos.router)
     app.include_router(exercise.router)
     app.include_router(medication.router)
+    app.include_router(treatment.router)
     app.include_router(measurements.router)
     app.include_router(realtime.router)
 

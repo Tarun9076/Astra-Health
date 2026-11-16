@@ -29,13 +29,15 @@ def full_stock(f: Formulary) -> dict[str, int]:
 
 def test_formulary_loads_and_references_are_checked(formulary: Formulary) -> None:
     # T-MED-01: every medicine, group, condition and emergency procedure it names exists
-    assert len(formulary.medicines) == 9 and len(formulary.conditions) == 10
+    routine = [m for m in formulary.medicines if m.kit == "routine"]
+    assert len(routine) == 9 and len(formulary.medicines) == 13 and len(formulary.conditions) == 10
     assert (
         formulary.status == "demo"
         and formulary.approved_by is None
         and "NOT been approved" in formulary.disclaimer
     )
-    assert all(m.source_url.startswith("https://dailymed.nlm.nih.gov/") for m in formulary.medicines)
+    assert all(m.source_url.startswith("https://dailymed.nlm.nih.gov/") for m in routine)
+    assert all(m.source_url.startswith("https://") for m in formulary.medicines)
     broken = formulary.model_copy(
         update={"conditions": [formulary.conditions[0].model_copy(update={"options": [
             formulary.conditions[0].options[0].model_copy(update={"medicine": "aspirin"})]})]}

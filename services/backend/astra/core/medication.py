@@ -57,12 +57,12 @@ class Medicine(CoreModel):
     stock_units: int = Field(ge=0)
     expires: str = Field(pattern=r"^\d{4}-\d{2}$")  # YYYY-MM
     groups: list[str] = Field(min_length=1)
-    allergy_groups: list[str] = Field(min_length=1)
+    allergy_groups: list[str] = []  # empty for emergency medicines that no allergy rules out
     first_dose_units: int | None = Field(default=None, ge=1, le=10)
     dose_units: int = Field(ge=1, le=10)
     dose_units_max: int | None = Field(default=None, ge=1, le=10)
     min_interval_hours: float = Field(ge=0, le=48)
-    max_units_per_24h: int = Field(alias="maxUnitsPer24h", ge=1, le=24)
+    max_units_per_24h: int = Field(alias="maxUnitsPer24h", ge=1, le=40)
     max_days: int | None = Field(default=None, ge=1, le=60)
     drowsy: bool
     avoid_if: list[AvoidIf]
@@ -70,6 +70,13 @@ class Medicine(CoreModel):
     cautions: list[str]
     source: str
     source_url: str
+    # Step 21: the emergency kit, and what makes a dose unmistakable under stress
+    kit: Literal["routine", "emergency"] = "routine"
+    route: Literal["swallow", "chew", "injection", "spray", "skin", "drink"] = "swallow"
+    appearance: str | None = None  # "white round chewable tablet"
+    amount_per_unit: float | None = None  # when the strength is not in mg (e.g. 4 g of glucose)
+    amount_unit: str | None = None  # "g"
+    rx_only: bool = False  # prescription medicine (emergency kit), given by the crew as the protocol says
 
     @property
     def max_per_dose(self) -> int:
@@ -79,6 +86,8 @@ class Medicine(CoreModel):
         text = f"{units} {self.unit if units == 1 else self.unit_plural}"
         if self.strength_mg:
             text += f" ({units * self.strength_mg:g} mg)"
+        elif self.amount_per_unit and self.amount_unit:
+            text += f" ({units * self.amount_per_unit:g} {self.amount_unit})"
         if self.per_unit:
             text += f": {self.per_unit}"
         return text

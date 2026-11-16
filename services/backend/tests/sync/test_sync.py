@@ -376,3 +376,93 @@ def test_medication_dose_reaches_the_surgeon_and_the_review_comes_back(nodes: di
         "NSAID",
         "PEG",
     ]
+
+
+def test_treatment_episode_reaches_earth_and_the_review_comes_back(nodes: dict[str, Any]) -> None:
+    """Step 21 (T-TX-09): an Act Now treatment given onboard reaches Earth with its log and dose; it
+    can't be started on the Ground node; the flight surgeon's review returns to the Habitat."""
+    n = nodes
+    now = datetime.now(UTC).replace(microsecond=0)
+    ast1 = _auth(n["hab"], "ast1")
+    plan = n["hab"].post("/api/astronauts/AST-001/treatment/assess", json={"protocolId": "TX-LOW-GLUCOSE"},
+                         headers=ast1).json()  # fmt: skip
+    body = {"id": "episode-sync-1", "astronautCode": "AST-001", "protocolIds": ["TX-LOW-GLUCOSE"], "tier": 3,
+            "source": "help-now", "plan": plan}  # fmt: skip
+    assert (
+        n["gnd"].post("/api/treatment/episodes", json=body, headers=_auth(n["gnd"], "ast1")).status_code
+        == 409
+    )
+    assert n["hab"].post("/api/treatment/episodes", json=body, headers=ast1).status_code == 201
+    dose = {"id": "event-sync-1", "kind": "dose_given", "protocolId": "TX-LOW-GLUCOSE", "stepId": "glucose",
+            "data": {"medicineId": "glucosetabs", "units": 4}}  # fmt: skip
+    n["hab"].post("/api/treatment/episodes/episode-sync-1/events", json=dose, headers=ast1)
+    end = {"id": "event-sync-2", "kind": "resolved"}
+    n["hab"].post("/api/treatment/episodes/episode-sync-1/events", json=end,
+                  headers=ast1)  # fmt: skip
+    n["hab_sync"].run_once(n["gnd"], now=now)
+    n["gnd_sync"].run_once(n["hab"], now=now + timedelta(seconds=DELAY + 1))
+    surgeon = _auth(n["gnd"], "surgeon1")
+    episodes = n["gnd"].get("/api/treatment/episodes", headers=surgeon).json()
+    assert [(e["id"], e["status"], [x["kind"] for x in e["events"]]) for e in episodes] == [
+        ("episode-sync-1", "Resolved", ["dose_given", "resolved"])
+    ]
+    doses = n["gnd"].get("/api/astronauts/AST-001/medication/doses", headers=surgeon).json()
+    assert [(d["medicineName"], d["doseText"], d["conditionTitle"]) for d in doses] == [
+        ("Glucose tablets", "4 tablets (16 g)", "Low blood sugar")
+    ]
+    note = {"note": "Check insulin-free cause."}
+    review = n["gnd"].post("/api/treatment/episodes/episode-sync-1/review", json=note,
+                           headers=surgeon)  # fmt: skip
+    assert review.status_code == 200
+    later = now + timedelta(seconds=2 * DELAY + 5)
+    n["gnd_sync"].run_once(n["hab"], now=later)
+    n["hab_sync"].run_once(n["gnd"], now=later + timedelta(seconds=DELAY + 1))
+    back = n["hab"].get("/api/treatment/episodes/episode-sync-1", headers=ast1).json()
+    assert (back["status"], back["reviewNote"]) == ("Resolved", "Check insulin-free cause.")
+
+
+def test_protocol_update_from_earth_is_checked_and_used_onboard(nodes: dict[str, Any]) -> None:
+    """Step 21f (T-TX-10): the flight surgeon sends a corrected protocol; it is validated on Earth,
+    signed, synced, checked on board and used for new decisions. A tampered copy is ignored."""
+    from astra.db.models import ProtocolUpdate
+    from tests.conftest import PROTOCOLS_DIR
+
+    n = nodes
+    surgeon, ast1 = _auth(n["gnd"], "surgeon1"), _auth(n["hab"], "ast1")
+    original = json.loads((PROTOCOLS_DIR / "treatments" / "TX-HIGH-FEVER.json").read_text(encoding="utf-8"))
+    url = "/api/treatment/protocols"
+    assert n["gnd"].post(url, json={"protocol": original}, headers=surgeon).status_code == 409  # not newer
+    morphine = [{"medicine": "morphine"}]
+    steps = [s | {"medicines": morphine} if s["kind"] == "medicine" else s for s in original["steps"]]
+    bad = original | {"version": "1.1.0", "steps": steps}
+    r = n["gnd"].post(url, json={"protocol": bad}, headers=surgeon)
+    assert r.status_code == 422 and "unknown medicine 'morphine'" in r.json()["detail"]
+    assert n["gnd"].post(url, json={"protocol": original}, headers=_auth(n["gnd"], "ast1")).status_code == 403
+    better = original | {
+        "version": "1.1.0",
+        "escalation": "Updated from Earth: call the CMO at 38.5 °C or more after an hour.",
+    }
+    r = n["gnd"].post(url, json={"protocol": better}, headers=surgeon)
+    assert r.status_code == 201 and r.json()["signed"] is True
+
+    # the Habitat stamps what it receives with its own clock: take the times now, with a margin
+    n["gnd_sync"].run_once(n["hab"], now=datetime.now(UTC))
+    n["hab_sync"].run_once(n["gnd"], now=datetime.now(UTC) + timedelta(seconds=DELAY + 5))
+    plan = n["hab"].post("/api/astronauts/AST-001/treatment/assess", json={"protocolId": "TX-HIGH-FEVER"},
+                         headers=ast1).json()["critical"][0]  # fmt: skip
+    assert (plan["version"], plan["escalation"]) == ("1.1.0", better["escalation"])
+    files = n["hab"].get("/api/treatment/protocols", headers=ast1).json()["files"]
+    assert next(f for f in files if f["id"] == "TX-HIGH-FEVER")["version"] == "1.1.0"
+
+    # a copy whose content was changed after signing is never used
+    with Session(n["hab"].app.state.engine) as session:  # type: ignore[attr-defined]
+        row = session.get(ProtocolUpdate, "TX-HIGH-FEVER@1.1.0")
+        assert row is not None
+        forged = json.loads(row.protocol_json) | {"version": "1.2.0", "escalation": "Forged."}
+        session.add(ProtocolUpdate(id="TX-HIGH-FEVER@1.2.0", protocol_id="TX-HIGH-FEVER", version="1.2.0",
+                                   protocol_json=json.dumps(forged), signature=row.signature,
+                                   uploaded_by="?", node_id="X"))  # fmt: skip
+        session.commit()
+    plan = n["hab"].post("/api/astronauts/AST-001/treatment/assess", json={"protocolId": "TX-HIGH-FEVER"},
+                         headers=ast1).json()["critical"][0]  # fmt: skip
+    assert plan["version"] == "1.1.0"
