@@ -38,21 +38,20 @@ test('very low blood sugar at check-in → Act Now, exact dose, no early repeat,
   const t0 = Date.now()
   await page.getByRole('button', { name: 'Submit check-in' }).click()
 
-  // the first action is on screen within seconds, with nothing to tap in between
+  // the first action is on screen within seconds, with nothing to tap in between, and help is already told
   await expect(page.getByRole('heading', { name: 'Low blood sugar', level: 1 })).toBeVisible()
-  await expect(step(page)).toContainText('Call the crew medical officer')
+  await expect(step(page)).toContainText('Can you chew and swallow safely right now?')
   expect(Date.now() - t0).toBeLessThan(5_000)
   await expect(page).toHaveURL(/\/astronaut\/act$/)
+  await expect(page.getByText('The crew and Earth have been told automatically.')).toBeVisible()
 
-  await step(page).getByRole('button', { name: 'Done' }).click()
-  await expect(step(page)).toContainText('Is the person fully awake and able to swallow safely?')
+  // three taps to the sugar: yes → (dose card) Done
   await step(page).getByRole('button', { name: 'Yes' }).click()
   await expect(step(page)).toContainText('Chew 4 tablets (16 g)')
   await expect(step(page)).toContainText('Emergency kit, pocket E1')
-  await step(page).getByRole('button', { name: 'Given' }).click()
-  await step(page).getByRole('button', { name: 'No one else is here' }).click()
+  await step(page).getByRole('button', { name: 'Done' }).click()
 
-  // recheck: the timer runs; "Check now" for a person getting worse; still low → back to the question
+  // recheck: the timer runs; "Check now" if getting worse; still low → back to the swallow question
   await expect(step(page).getByRole('timer')).toBeVisible()
   await step(page).getByRole('button', { name: /Check now/ }).click()
   await expect(step(page)).toContainText('Target: at least 70 mg/dL')
@@ -60,31 +59,28 @@ test('very low blood sugar at check-in → Act Now, exact dose, no early repeat,
   await step(page).getByRole('button', { name: 'Save' }).click()
   await step(page).getByRole('button', { name: 'Yes' }).click()
   // the same medicine again only after its minimum interval (15 min): blocked on the screen
-  await expect(step(page).getByRole('note')).toContainText('Another dose only after')
-  await expect(step(page).getByRole('button', { name: 'Given' })).toBeDisabled()
-  await step(page).getByRole('button', { name: "Couldn't give it" }).click()
+  await expect(step(page).getByRole('note')).toContainText('the next dose is safe from')
+  await expect(step(page).getByRole('button', { name: 'Done' })).toBeDisabled()
+  await step(page).getByRole('button', { name: "I can't take it: next step" }).click()
 
-  // no safe sugar now → glucagon by a crewmate, with a second person checking the dose
-  await expect(step(page)).toContainText('A crewmate gives glucagon')
+  // no safe sugar now → glucagon, on your own
+  await expect(step(page)).toContainText('Inject glucagon into your outer thigh')
   await expect(step(page)).toContainText('Inject 1 injection (1 mg)')
-  await step(page).getByRole('button', { name: 'Given' }).click()
-  await step(page).getByRole('button', { name: /Okafor.*checked it/ }).click()
-  await step(page).getByRole('button', { name: 'Done' }).click() // recovery position
+  await step(page).getByRole('button', { name: 'Done' }).click()
+  await step(page).getByRole('button', { name: 'Done' }).click() // lie on your side
   await step(page).getByRole('button', { name: /Check now/ }).click()
   await step(page).getByLabel(/Blood sugar now/).fill('84')
   await step(page).getByRole('button', { name: 'Save' }).click()
   await step(page).getByRole('button', { name: 'Done' }).click() // awake: sugar and a snack
-  await expect(page.getByText('Low blood sugar: all steps done')).toBeVisible()
-  await page.getByRole('button', { name: 'Continue' }).click()
-  await page.getByLabel(/How is the person now/).fill('Awake, 84 mg/dL')
-  await page.getByRole('button', { name: 'Finish and send to Earth' }).click()
+  await expect(page.getByRole('heading', { name: 'All steps done' })).toBeVisible()
+  await page.getByLabel(/How do you feel now/).fill('Awake, 84 mg/dL')
+  await page.getByRole('button', { name: 'Finish' }).click()
   await expect(page.getByRole('heading', { name: /Treatment finished/ })).toBeVisible()
 
-  await expect.poll(async () => (await episodes(page, 'AST-003'))[0]?.status).toBe('Resolved')
+  await expect.poll(async () => (await episodes(page, 'AST-003'))[0]?.status).toBe('Resolved') // 'resolved' is sent last
   const [e] = await episodes(page, 'AST-003')
   expect(e.source).toBe('checkin')
-  const doses = e.events.filter((x) => x.kind === 'dose_given').map((x) => [x.data.medicineId, x.data.readBackBy ?? null])
-  expect(doses).toEqual([['glucosetabs', null], ['glucagon', expect.stringContaining('Okafor')]])
+  expect(e.events.filter((x) => x.kind === 'dose_given').map((x) => x.data.medicineId)).toEqual(['glucosetabs', 'glucagon'])
   expect(e.events.filter((x) => x.kind === 'recheck').map((x) => x.data.result)).toEqual(['failed', 'passed'])
 })
 
@@ -102,7 +98,7 @@ test('Help now rings the crew alarm; another crew device continues the treatment
   await alarm.getByRole('link', { name: 'Open the treatment' }).click()
   await expect(page.getByRole('heading', { name: /Cmdr\. A\. Rao.*Severe allergic reaction/ })).toBeVisible()
   await page.getByRole('button', { name: 'Continue this treatment on this device' }).click()
-  await expect(step(page)).toContainText('Inject epinephrine now')
+  await expect(step(page)).toContainText('Inject epinephrine into your outer thigh now')
 })
 
 test('server down: the plan is made on the device, the log waits and is sent once', async ({ page }) => {
@@ -113,16 +109,13 @@ test('server down: the plan is made on the device, the log waits and is sent onc
 
   await page.getByRole('button', { name: /^Chest pain/ }).click()
   await expect(page.getByText('planned on this device (server not reachable)')).toBeVisible()
-  await step(page).getByRole('button', { name: 'Done' }).click() // rest
-  await step(page).getByRole('button', { name: 'Done' }).click() // call
   await step(page).getByRole('button', { name: 'No' }).click() // no stroke signs
   await expect(step(page)).toContainText('Chew 4 tablets (324 mg)')
-  await step(page).getByRole('button', { name: 'Given' }).click()
-  await step(page).getByRole('button', { name: 'No one else is here' }).click()
+  await step(page).getByRole('button', { name: 'Done' }).click()
 
   // a reload (or a crash) resumes at the same step
   await page.reload()
-  await expect(step(page)).toContainText('Measure oxygen saturation')
+  await expect(step(page)).toContainText('Stop everything. Sit or lie down')
 
   // the server is back: everything logged on the device is sent, once
   await page.unroute('**/api/**')
@@ -130,6 +123,6 @@ test('server down: the plan is made on the device, the log waits and is sent onc
   await expect(page.getByText(/Sent \d+ saved item\(s\)/)).toBeVisible({ timeout: 20_000 })
   const [e] = await episodes(page, 'AST-003')
   expect(e.source).toBe('device')
-  expect(e.events.map((x) => x.kind)).toEqual(['step_done', 'step_done', 'answer', 'dose_given'])
-  expect(e.events[3].data).toMatchObject({ medicineId: 'aspirin81', units: 4 })
+  expect(e.events.map((x) => x.kind)).toEqual(['answer', 'dose_given'])
+  expect(e.events[1].data).toMatchObject({ medicineId: 'aspirin81', units: 4 })
 })

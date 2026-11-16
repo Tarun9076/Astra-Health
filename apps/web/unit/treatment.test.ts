@@ -75,6 +75,6 @@ test('the device engine words the plan exactly like the server (dose, withheld, 
   const a = assess(protocols, routine, formulary, situation({ symptoms: { chest_pain: 7, neuro_deficit: 6 } }), 'AST-001')
   const aspirin = a.critical[0].steps.find((s) => s.id === 'aspirin')!
   assert.match(aspirin.withheld!, /^No safe medicine in the kit for this step\. Do not give: No aspirin or ibuprofen with stroke signs/)
-  assert.equal(a.critical[0].steps.find((s) => s.id === 'call')!.next, 'stroke')
+  assert.equal(a.critical[0].steps[0].id, 'stroke') // the first screen is the decision that matters
   assert.deepEqual(a.critical.map((p) => p.matchedBy), [['symptom chest_pain 7/10'], ['symptom neuro_deficit 6/10']])
 })

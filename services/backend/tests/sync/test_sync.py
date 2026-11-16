@@ -434,12 +434,12 @@ def test_protocol_update_from_earth_is_checked_and_used_onboard(nodes: dict[str,
     assert n["gnd"].post(url, json={"protocol": original}, headers=surgeon).status_code == 409  # not newer
     morphine = [{"medicine": "morphine"}]
     steps = [s | {"medicines": morphine} if s["kind"] == "medicine" else s for s in original["steps"]]
-    bad = original | {"version": "1.1.0", "steps": steps}
+    bad = original | {"version": "1.2.0", "steps": steps}
     r = n["gnd"].post(url, json={"protocol": bad}, headers=surgeon)
     assert r.status_code == 422 and "unknown medicine 'morphine'" in r.json()["detail"]
     assert n["gnd"].post(url, json={"protocol": original}, headers=_auth(n["gnd"], "ast1")).status_code == 403
     better = original | {
-        "version": "1.1.0",
+        "version": "1.2.0",
         "escalation": "Updated from Earth: call the CMO at 38.5 °C or more after an hour.",
     }
     r = n["gnd"].post(url, json={"protocol": better}, headers=surgeon)
@@ -450,19 +450,19 @@ def test_protocol_update_from_earth_is_checked_and_used_onboard(nodes: dict[str,
     n["hab_sync"].run_once(n["gnd"], now=datetime.now(UTC) + timedelta(seconds=DELAY + 5))
     plan = n["hab"].post("/api/astronauts/AST-001/treatment/assess", json={"protocolId": "TX-HIGH-FEVER"},
                          headers=ast1).json()["critical"][0]  # fmt: skip
-    assert (plan["version"], plan["escalation"]) == ("1.1.0", better["escalation"])
+    assert (plan["version"], plan["escalation"]) == ("1.2.0", better["escalation"])
     files = n["hab"].get("/api/treatment/protocols", headers=ast1).json()["files"]
-    assert next(f for f in files if f["id"] == "TX-HIGH-FEVER")["version"] == "1.1.0"
+    assert next(f for f in files if f["id"] == "TX-HIGH-FEVER")["version"] == "1.2.0"
 
     # a copy whose content was changed after signing is never used
     with Session(n["hab"].app.state.engine) as session:  # type: ignore[attr-defined]
-        row = session.get(ProtocolUpdate, "TX-HIGH-FEVER@1.1.0")
+        row = session.get(ProtocolUpdate, "TX-HIGH-FEVER@1.2.0")
         assert row is not None
-        forged = json.loads(row.protocol_json) | {"version": "1.2.0", "escalation": "Forged."}
-        session.add(ProtocolUpdate(id="TX-HIGH-FEVER@1.2.0", protocol_id="TX-HIGH-FEVER", version="1.2.0",
+        forged = json.loads(row.protocol_json) | {"version": "1.3.0", "escalation": "Forged."}
+        session.add(ProtocolUpdate(id="TX-HIGH-FEVER@1.3.0", protocol_id="TX-HIGH-FEVER", version="1.3.0",
                                    protocol_json=json.dumps(forged), signature=row.signature,
                                    uploaded_by="?", node_id="X"))  # fmt: skip
         session.commit()
     plan = n["hab"].post("/api/astronauts/AST-001/treatment/assess", json={"protocolId": "TX-HIGH-FEVER"},
                          headers=ast1).json()["critical"][0]  # fmt: skip
-    assert plan["version"] == "1.1.0"
+    assert plan["version"] == "1.2.0"

@@ -1,8 +1,8 @@
 {
   "id": "TX-LOW-OXYGEN",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Low oxygen",
-  "plain": "The body is not getting enough oxygen. Start oxygen, then find out why: the person or the cabin air.",
+  "plain": "Your body is not getting enough oxygen. Oxygen first, then find out why.",
   "tier": 3,
   "priority": 1,
   "triggers": {
@@ -27,29 +27,19 @@
   ],
   "steps": [
     {
-      "id": "stop",
-      "kind": "action",
-      "text": "Stop activity and sit upright."
-    },
-    {
       "id": "oxygen",
       "kind": "action",
-      "text": "Start oxygen by the onboard checklist."
-    },
-    {
-      "id": "call",
-      "kind": "action",
-      "text": "Call the crew medical officer."
+      "text": "Put on oxygen now and sit upright."
     },
     {
       "id": "cabin",
       "kind": "action",
-      "text": "Check the module's CO₂ and oxygen readings. If others feel unwell too, move everyone to a safe module."
+      "text": "Look at the cabin CO₂ and oxygen readings. If they are bad, move to a safe module."
     },
     {
       "id": "recheck",
       "kind": "recheck",
-      "text": "Measure oxygen again",
+      "text": "Measure your oxygen",
       "afterMinutes": 5,
       "passed": "watch",
       "failed": "recheck",
@@ -67,7 +57,7 @@
       "next": "done"
     }
   ],
-  "escalation": "Oxygen still below 92% after 15 minutes on oxygen: follow EMG-LOW-OXYGEN with the CMO. Earth is informed.",
+  "escalation": "Still below 92% after 15 minutes on oxygen: follow EMG-LOW-OXYGEN. The crew and Earth were alerted when you started.",
   "followUpHours": 12,
   "approval": {
     "status": "demo",

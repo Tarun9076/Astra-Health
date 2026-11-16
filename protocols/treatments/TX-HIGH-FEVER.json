@@ -1,8 +1,8 @@
 {
   "id": "TX-HIGH-FEVER",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "High fever",
-  "plain": "A temperature of 39.5 °C or more. Bring it down, drink, rest apart from the crew, and check it is falling.",
+  "plain": "Temperature 39.5 °C or more. Bring it down and check it is falling.",
   "tier": 3,
   "priority": 5,
   "triggers": {
@@ -21,14 +21,9 @@
   "doNotGive": [],
   "steps": [
     {
-      "id": "call",
-      "kind": "action",
-      "text": "Tell the crew medical officer."
-    },
-    {
       "id": "medicine",
       "kind": "medicine",
-      "text": "Give a fever medicine",
+      "text": "Take a fever medicine",
       "medicines": [
         {
           "medicine": "acetaminophen"
@@ -41,17 +36,12 @@
     {
       "id": "cool",
       "kind": "action",
-      "text": "Take off extra layers, cool the skin with a damp cloth and drink at least 250 mL of water now."
-    },
-    {
-      "id": "isolate",
-      "kind": "action",
-      "text": "Rest away from the crew and wash hands often: it may be an infection."
+      "text": "Take off extra layers, cool your skin with a damp cloth and drink 250 mL of water."
     },
     {
       "id": "recheck",
       "kind": "recheck",
-      "text": "Measure the temperature again",
+      "text": "Measure your temperature",
       "afterMinutes": 60,
       "passed": "watch",
       "failed": "escalate",
@@ -62,11 +52,11 @@
     {
       "id": "watch",
       "kind": "action",
-      "text": "Measure the temperature every 4 hours and keep drinking.",
+      "text": "Rest apart from the crew, keep drinking and measure every 4 hours.",
       "next": "done"
     }
   ],
-  "escalation": "Still 39.0 °C or higher after an hour, or confusion, a stiff neck, a rash or trouble breathing: follow EMG-FEVER with the CMO. Earth is informed.",
+  "escalation": "Still 39.0 °C or more after an hour, or confusion, a stiff neck, a rash or trouble breathing: follow EMG-FEVER. The crew and Earth were alerted when you started.",
   "followUpHours": 24,
   "approval": {
     "status": "demo",

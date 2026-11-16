@@ -644,7 +644,7 @@ def _dose_record(
         checks_json=json.dumps([{"level": "block", "code": "flag", "text": f} for f in flags]),
         status="Taken", requested_at=at, confirmed_at=at, confirmed_by=read_back or by, taken_at=at,
         self_confirmed=read_back is None,
-        self_confirm_reason=None if read_back else "Act Now: given without a second person checking the dose",
+        self_confirm_reason=None if read_back else "Act Now: taken on their own, from the protocol",
         node_id=request.app.state.settings.node_id,
     )  # fmt: skip
     return row

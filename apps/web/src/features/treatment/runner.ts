@@ -43,6 +43,14 @@ interface RunnerState {
   setReadAloud: (on: boolean) => void
 }
 
+// Every action is sent strictly after the previous one: the server must have the treatment before its
+// first step, and the log must arrive in the order it happened (the outbox keeps that order when offline).
+let sending: Promise<unknown> = Promise.resolve()
+function inOrder(send: () => Promise<unknown>): Promise<unknown> {
+  sending = sending.then(send, send).catch(() => undefined)
+  return sending
+}
+
 export function newId(prefix: string): string {
   try {
     return `${prefix}-${crypto.randomUUID()}`
@@ -82,19 +90,21 @@ export const useRunner = create<RunnerState>()(
         }
         set({ episode })
         if (!resume) {
-          await sendOrQueue('/api/treatment/episodes', {
+          await inOrder(() => sendOrQueue('/api/treatment/episodes', {
             id: episode.id, astronautCode, protocolIds: plan.critical.map((p) => p.id), tier: 3, source, plan, startedAt: now,
-          })
+          }))
         }
       },
       async log(kind, data = {}, where = {}) {
         const e = get().episode
         if (!e) return
-        await sendOrQueue(`/api/treatment/episodes/${e.id}/events`, {
+        const event = {
           id: newId('event'), kind, protocolId: where.protocolId ?? currentProtocol(e)?.id ?? null,
           stepId: where.stepId ?? (e.stepId === 'done' || e.stepId === 'escalate' ? null : e.stepId),
           at: new Date().toISOString(), data,
-        })
+        }
+        // the step changes on screen at once; sending happens in order in the background
+        void inOrder(() => sendOrQueue(`/api/treatment/episodes/${e.id}/events`, event))
       },
       goto(target) {
         const e = get().episode
@@ -158,7 +168,7 @@ export function describeEvent(kind: string, stepId: string | null, data: Record<
   switch (kind) {
     case 'dose_given': {
       const m = medicineById(String(data.medicineId))
-      return `gave ${data.units} × ${m?.name ?? data.medicineId}${data.readBackBy ? ` (checked by ${data.readBackBy})` : ' (no second check)'}`
+      return `took ${data.units} × ${m?.name ?? data.medicineId}${data.readBackBy ? ` (checked by ${data.readBackBy})` : ''}`
     }
     case 'answer': return `${what}: ${data.answer}`
     case 'recheck': return `${what}: ${data.value ?? data.answer ?? ''} → ${data.result === 'passed' ? 'better' : 'not better'}`

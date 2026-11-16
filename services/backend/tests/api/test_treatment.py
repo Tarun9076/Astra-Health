@@ -44,9 +44,10 @@ def test_checkin_returns_what_to_do_now(seeded_client: TestClient) -> None:
     glucose = _step(plan, "glucose")
     assert glucose["pick"]["doseText"] == "4 tablets (16 g)" and glucose["pick"]["route"] == "chew"
     assert glucose["pick"]["kitLocation"] == "Emergency kit, pocket E1" and glucose["ifNone"] == "glucagon"
-    assert _step(plan, "awake")["yes"] == "glucose" and _step(plan, "recheck")["afterMinutes"] == 15
+    assert _step(plan, "swallow")["yes"] == "glucose" and _step(plan, "recheck")["afterMinutes"] == 15
+    assert plan["steps"][0]["id"] == "swallow"  # self-rescue: the first screen is already the treatment
     assert _step(plan, "glucagon")["pick"]["doseText"] == "1 injection (1 mg)"
-    assert _step(plan, "glucagon")["givenBy"] == "crewmate" and _step(plan, "call")["next"] == "awake"
+    assert len(plan["steps"]) <= 8 and not any("Call the crew" in s["text"] for s in plan["steps"])
 
 
 def test_help_now_respects_the_profile_and_access(seeded_client: TestClient) -> None:

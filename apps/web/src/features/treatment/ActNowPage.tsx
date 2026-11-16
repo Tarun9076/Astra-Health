@@ -57,6 +57,7 @@ function HelpNow() {
   const queryClient = useQueryClient()
   const start = useRunner((s) => s.start)
   const [who, setWho] = useState(me?.astronautCode ?? '')
+  const [forOther, setForOther] = useState(false)
   const [busy, setBusy] = useState<string | null>(null)
   const [error, setError] = useState<unknown>(null)
   const people = crew.data?.crew ?? (me?.astronautCode ? [{ code: me.astronautCode, name: me.displayName }] : [])
@@ -71,7 +72,12 @@ function HelpNow() {
       let source: 'help-now' | 'device' = 'help-now'
       let profileKnown = true
       try {
-        plan = await unwrap(api.POST('/api/astronauts/{astronaut}/treatment/assess', { params: { path: { astronaut: who } }, body: { protocolId } }))
+        // the server has the latest record; if it doesn't answer within 2.5 s, this device decides
+        const timeout = new Promise<never>((_, reject) => window.setTimeout(() => reject(Object.assign(new Error('slow'), { status: 0 })), 2500))
+        plan = await Promise.race([
+          unwrap(api.POST('/api/astronauts/{astronaut}/treatment/assess', { params: { path: { astronaut: who } }, body: { protocolId } })),
+          timeout,
+        ])
       } catch (e) {
         if ((e as { status?: number }).status && (e as { status: number }).status < 500 && (e as { status: number }).status !== 0) throw e
         ;({ plan, profileKnown } = deviceAssess(queryClient, who, {}, protocolId)) // server down: this device's copy
@@ -88,20 +94,10 @@ function HelpNow() {
   return (
     <section aria-labelledby="help-now" className="space-y-4">
       <h1 id="help-now" className="flex items-center gap-2 text-2xl font-bold text-status-red"><Siren className="h-7 w-7" aria-hidden /> Help now</h1>
-      <p className="text-base text-ink-muted">For an emergency. The steps and doses come from the onboard protocols; nothing waits for Earth.</p>
-      <fieldset>
-        <legend className="mb-2 text-lg font-semibold">1. Who needs help?</legend>
-        <div className="flex flex-wrap gap-2">
-          {people.map((p) => (
-            <button key={p.code} type="button" aria-pressed={who === p.code} onClick={() => setWho(p.code)}
-              className={`min-h-12 rounded-lg border px-4 text-base font-semibold ${who === p.code ? 'border-ink bg-ink text-surface' : 'border-line-strong'}`}>
-              {p.code === me?.astronautCode ? `Me (${p.name})` : p.name}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <p className="text-base">Tap what is happening. You get the steps at once; the crew and Earth are told automatically.</p>
+      {who !== me?.astronautCode && <p className="text-lg font-semibold">For: {people.find((p) => p.code === who)?.name ?? who}</p>}
       <div>
-        <h2 className="mb-2 text-lg font-semibold">2. What is happening?</h2>
+        <h2 className="sr-only">What is happening?</h2>
         <ul className="space-y-2">
           {protocols.map((p) => (
             <li key={p.id}>
@@ -115,6 +111,21 @@ function HelpNow() {
         </ul>
       </div>
       {error !== null && <ErrorNote error={error} />}
+      {!forOther ? (
+        <button type="button" onClick={() => setForOther(true)} className="min-h-11 text-sm text-accent underline">Helping someone else?</button>
+      ) : (
+        <fieldset>
+          <legend className="mb-2 text-base font-semibold">Who needs help?</legend>
+          <div className="flex flex-wrap gap-2">
+            {people.map((p) => (
+              <button key={p.code} type="button" aria-pressed={who === p.code} onClick={() => setWho(p.code)}
+                className={`min-h-12 rounded-lg border px-4 text-base font-semibold ${who === p.code ? 'border-ink bg-ink text-surface' : 'border-line-strong'}`}>
+                {p.code === me?.astronautCode ? `Me (${p.name})` : p.name}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )}
       {crew.data && <p className="text-xs text-ink-muted">{crew.data.disclaimer}</p>}
     </section>
   )
@@ -206,6 +217,9 @@ function Runner({ episode }: { episode: Episode }) {
             {index >= 0 ? `Step ${index + 1} of ${protocol.steps.length}` : 'End of this protocol'}
             {episode.source === 'device' && ' · planned on this device (server not reachable)'}
           </p>
+          <p className="mt-1 text-sm font-semibold text-status-green">
+            {episode.source === 'device' ? 'Saved on this device; the crew and Earth are told when the server is back.' : 'The crew and Earth have been told automatically.'}
+          </p>
         </div>
         <div className="flex gap-2">
           <button type="button" onClick={() => setReadAloud(!readAloud)} aria-pressed={readAloud}
@@ -260,13 +274,12 @@ function StepCard({ episode, protocol, step }: { episode: Episode; protocol: Pro
   return (
     <section aria-live="polite" className="space-y-4 rounded-2xl border-2 border-ink/80 p-5">
       <p className="text-2xl font-bold leading-snug md:text-3xl">{step.text}</p>
-      {step.givenBy === 'crewmate' && <p className="text-base font-semibold">A crewmate does this step.</p>}
       {step.detail && <p className="text-lg">{step.detail}</p>}
       {step.kind === 'action' && (
-        <Choices>
+        <>
           <Big onClick={() => done('step_done', {}, step.next)}><Check className="h-6 w-6" aria-hidden /> Done</Big>
-          <Big variant="ghost" onClick={() => done('step_skipped', { reason: 'Could not do it' }, step.next)}>Can't do this</Big>
-        </Choices>
+          <Skip onClick={() => done('step_skipped', { reason: 'Could not do it' }, step.next)}>I can't do this: skip</Skip>
+        </>
       )}
       {step.kind === 'question' && (
         <>
@@ -288,6 +301,10 @@ function StepCard({ episode, protocol, step }: { episode: Episode; protocol: Pro
   )
 }
 
+function Skip({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+  return <button type="button" onClick={onClick} className="min-h-11 text-base text-ink-muted underline">{children}</button>
+}
+
 function Choices({ children }: { children: ReactNode }) {
   return <div className="grid gap-3 sm:grid-cols-2">{children}</div>
 }
@@ -300,17 +317,14 @@ function Big({ children, onClick, variant = 'primary', disabled, type = 'button'
 
 function MedicineStep({ episode, protocol, step }: { episode: Episode; protocol: ProtocolPlanOut; step: StepOut }) {
   const { log, goto, given } = useRunner()
-  const crew = useCrew()
   const me = useAuth((s) => s.user?.displayName ?? '')
   const now = useNow(1000)
-  const [confirming, setConfirming] = useState(false)
-  const [givenBy, setGivenBy] = useState(me)
   const pick = step.pick
   if (!pick) {
     return (
       <>
         <Warning>{step.withheld}</Warning>
-        <Big onClick={() => { void log('step_skipped', { reason: step.withheld }); goto(step.ifNone ?? step.next) }}>Continue</Big>
+        <Big onClick={() => { void log('step_skipped', { reason: step.withheld }); goto(step.ifNone ?? step.next) }}>Next step</Big>
       </>
     )
   }
@@ -321,19 +335,18 @@ function MedicineStep({ episode, protocol, step }: { episode: Episode; protocol:
   const readyAt = last !== null && med ? last + med.minIntervalHours * 3_600_000 : null
   const waiting = readyAt !== null && readyAt > now
   const overLimit = med ? earlier.reduce((n, d) => n + d.units, 0) + pick.units > med.maxUnitsPer24h : false
-  const names = [...new Set([me, ...(crew.data?.crew.map((c) => c.name) ?? [])])].filter(Boolean)
-  const record = (readBackBy: string | null) => {
+  const taken = () => {
     given({ protocolId: protocol.id, stepId: step.id, medicineId: pick.medicineId, units: pick.units })
-    void log('dose_given', { medicineId: pick.medicineId, units: pick.units, givenBy, readBackBy })
+    void log('dose_given', { medicineId: pick.medicineId, units: pick.units, givenBy: me, readBackBy: null })
     goto(step.next)
   }
   return (
     <>
       <div className="rounded-xl border-2 border-accent bg-accent-soft p-4">
-        <p className="text-3xl font-bold">{ROUTE[pick.route] ?? 'Give'} {pick.doseText}</p>
+        <p className="text-3xl font-bold">{ROUTE[pick.route] ?? 'Take'} {pick.doseText}</p>
         <p className="mt-1 text-xl font-semibold">{pick.name} {pick.strength}</p>
-        {pick.appearance && <p className="mt-1 text-base">Looks like: {pick.appearance}</p>}
         <p className="mt-1 inline-flex items-center gap-1 text-lg font-semibold"><MapPin className="h-5 w-5" aria-hidden /> {pick.kitLocation}</p>
+        {pick.appearance && <p className="mt-1 text-base">Looks like: {pick.appearance}</p>}
         <p className="mt-2 text-base">{pick.how}</p>
         {pick.checks.length > 0 && (
           <ul className="mt-2 space-y-1 text-base">
@@ -341,31 +354,14 @@ function MedicineStep({ episode, protocol, step }: { episode: Episode; protocol:
           </ul>
         )}
       </div>
+      {waiting && <Warning>Not yet: the next dose is safe from {clock(readyAt!)}. Wait for the timer.</Warning>}
+      {overLimit && <Warning>The 24-hour limit for {pick.name} is reached. Don't take more: go to the next step.</Warning>}
+      <Big disabled={waiting || overLimit} onClick={taken}><Check className="h-6 w-6" aria-hidden /> Done</Big>
+      <Skip onClick={() => { void log('step_skipped', { reason: overLimit ? 'Limit reached' : 'Could not take it' }); goto(step.ifNone ?? step.next) }}>
+        I can't take it: next step
+      </Skip>
       {step.rejected.length > 0 && (
         <p className="text-sm text-ink-muted">Not used: {step.rejected.map((r) => `${r.name} (${r.reasons.join(' ')})`).join('; ')}</p>
-      )}
-      {waiting && <Warning>Another dose only after {clock(readyAt!)}: the minimum time between doses. Wait for the timer.</Warning>}
-      {overLimit && <Warning>The 24-hour limit for {pick.name} is reached. Don't give more: go on to the next step.</Warning>}
-      {!confirming ? (
-        <Choices>
-          <Big disabled={waiting || overLimit} onClick={() => setConfirming(true)}><Check className="h-6 w-6" aria-hidden /> Given</Big>
-          <Big variant="ghost" onClick={() => { void log('step_skipped', { reason: overLimit ? 'Limit reached' : 'Could not give it' }); goto(step.ifNone ?? step.next) }}>
-            Couldn't give it
-          </Big>
-        </Choices>
-      ) : (
-        <div className="space-y-3 rounded-xl border-2 border-line-strong p-4">
-          <label className="block text-base font-semibold">Who gave it?
-            <select value={givenBy} onChange={(e) => setGivenBy(e.target.value)} className="mt-1 block min-h-12 w-full rounded-lg border border-line-strong bg-surface px-3 text-base">
-              {names.map((n) => <option key={n}>{n}</option>)}
-            </select>
-          </label>
-          <p className="text-base font-semibold">A second person checks the dose: {pick.doseText} of {pick.name}. Who checked it?</p>
-          <div className="flex flex-wrap gap-2">
-            {names.filter((n) => n !== givenBy).map((n) => <Button key={n} onClick={() => record(n)}>{n} checked it</Button>)}
-            <Button variant="ghost" onClick={() => record(null)}>No one else is here</Button>
-          </div>
-        </div>
       )}
     </>
   )
@@ -381,10 +377,8 @@ function MeasureStep({ step, onDone, onSkip }: { step: StepOut; onDone: (v: numb
         <input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} autoFocus
           className="mt-1 block min-h-14 w-full rounded-lg border-2 border-line-strong bg-surface px-3 text-2xl" />
       </label>
-      <Choices>
-        <Big type="submit" disabled={!value || !Number.isFinite(n)}>Save</Big>
-        <Big variant="ghost" onClick={onSkip}>Can't measure</Big>
-      </Choices>
+      <Big type="submit" disabled={!value || !Number.isFinite(n)}>Save</Big>
+      <Skip onClick={onSkip}>I can't measure it: skip</Skip>
     </form>
   )
 }
@@ -452,22 +446,17 @@ function RecheckStep({ episode, step }: { episode: Episode; step: StepOut }) {
 
 function ProtocolEnd({ protocol, escalate }: { protocol: ProtocolPlanOut; escalate: boolean }) {
   const log = useRunner((s) => s.log)
-  if (!escalate) {
-    return (
-      <section className="space-y-3 rounded-2xl border-2 border-status-green p-5">
-        <p className="text-2xl font-bold">{protocol.title}: all steps done</p>
-        <p className="text-lg">Keep watching the person. Earth gets the full log with the next link window.</p>
-        <Big onClick={advanceProtocol}>Continue</Big>
-      </section>
-    )
-  }
+  useEffect(() => {
+    if (!escalate) advanceProtocol()
+  }, [escalate])
+  if (!escalate) return null
   return (
     <section className="space-y-3 rounded-2xl border-2 border-status-red p-5" role="alert">
       <p className="flex items-center gap-2 text-2xl font-bold text-status-red"><AlertOctagon className="h-7 w-7" aria-hidden /> Not getting better</p>
       <p className="text-xl">{protocol.escalation}</p>
       {protocol.emergencyProtocol && <EmergencyProtocolCard id={protocol.emergencyProtocol} />}
       <Big variant="danger" onClick={() => { void log('note', { text: `Escalated: ${protocol.title}` }); advanceProtocol() }}>
-        The CMO is handling it: continue
+        I am doing this: continue
       </Big>
     </section>
   )
@@ -479,14 +468,14 @@ function AllProtocolsDone({ episode }: { episode: Episode }) {
   const escalated = Object.values(episode.outcomes).includes('escalate')
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-2xl font-bold">Treatment steps complete: {episode.astronautName}</h1>
+      <h1 className="text-2xl font-bold">All steps done</h1>
       <DoseSummary episode={episode} />
-      <label className="block text-base font-semibold">How is the person now? (optional)
+      <label className="block text-base font-semibold">How do you feel now? (optional)
         <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300}
           className="mt-1 block min-h-12 w-full rounded-lg border border-line-strong bg-surface px-3 text-base" />
       </label>
       <Big variant={escalated ? 'danger' : 'primary'} onClick={() => void finish(escalated ? 'escalated' : 'resolved', note.trim() || undefined)}>
-        Finish and send to Earth
+        Finish
       </Big>
     </div>
   )
@@ -508,8 +497,8 @@ function Finished({ episode }: { episode: Episode }) {
   const clear = useRunner((s) => s.clear)
   return (
     <div className="mx-auto max-w-3xl space-y-4">
-      <h1 className="text-2xl font-bold">Treatment finished: {episode.astronautName}</h1>
-      <p className="text-lg">Every step and dose is saved and sent to the flight surgeon. Follow up in {episode.plan.critical[0]?.followUpHours ?? 4} hours, or at once if it gets worse.</p>
+      <h1 className="text-2xl font-bold">Treatment finished</h1>
+      <p className="text-lg">Everything is saved and sent to the flight surgeon. If it gets worse, press Help now again.</p>
       <DoseSummary episode={episode} />
       <Big onClick={clear}>Close</Big>
     </div>

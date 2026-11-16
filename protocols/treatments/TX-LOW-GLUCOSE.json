@@ -1,8 +1,8 @@
 {
   "id": "TX-LOW-GLUCOSE",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Low blood sugar",
-  "plain": "Blood sugar is dangerously low. The brain needs sugar now: give fast sugar first, then check it is working.",
+  "plain": "Your blood sugar is dangerously low. Fast sugar first, then check it is working.",
   "tier": 3,
   "priority": 2,
   "triggers": {
@@ -22,74 +22,67 @@
   "doNotGive": [],
   "steps": [
     {
-      "id": "call",
-      "kind": "action",
-      "text": "Call the crew medical officer and a crewmate now. Stay with the person."
-    },
-    {
-      "id": "awake",
+      "id": "swallow",
       "kind": "question",
-      "text": "Check if it is safe to swallow",
-      "question": "Is the person fully awake and able to swallow safely?",
+      "text": "One check first",
+      "question": "Can you chew and swallow safely right now?",
       "yes": "glucose",
       "no": "glucagon"
     },
     {
       "id": "glucose",
       "kind": "medicine",
-      "text": "Give fast sugar to chew",
+      "text": "Chew fast sugar now",
       "medicines": [
         {
           "medicine": "glucosetabs"
         }
       ],
       "ifNone": "glucagon",
-      "detail": "No tablets? 150 mL of fruit juice or regular soda works too."
+      "detail": "No tablets? Drink 150 mL of juice or regular soda."
     },
     {
       "id": "recheck",
       "kind": "recheck",
-      "text": "Measure blood sugar again",
+      "text": "Measure your blood sugar",
       "afterMinutes": 15,
       "passed": "snack",
-      "failed": "awake",
+      "failed": "swallow",
       "indicator": "glucose",
       "op": "gte",
       "value": 70,
       "maxRepeats": 2,
-      "failedAfterMax": "glucagon",
-      "detail": "70 mg/dL or more means it is working. Below 70: give fast sugar again."
+      "failedAfterMax": "glucagon"
     },
     {
       "id": "snack",
       "kind": "action",
-      "text": "Eat a snack with starch and protein (for example crackers with peanut butter)",
+      "text": "Eat a snack with starch and protein, then rest for an hour",
       "next": "done",
-      "detail": "This keeps the sugar from dropping again. Rest for the next hour."
+      "detail": "For example crackers with peanut butter. It stops the sugar dropping again."
     },
     {
       "id": "glucagon",
       "kind": "medicine",
-      "text": "A crewmate gives glucagon",
+      "text": "Inject glucagon into your outer thigh",
       "medicines": [
         {
           "medicine": "glucagon"
         }
       ],
-      "givenBy": "crewmate",
       "ifNone": "side",
-      "detail": "Use this when the person cannot swallow safely or fast sugar did not work."
+      "detail": "If you might pass out, lie on your side first."
     },
     {
       "id": "side",
       "kind": "action",
-      "text": "Turn the person on their side (recovery position). Nothing by mouth until fully awake.",
+      "text": "Lie on your side. Don't eat or drink until you are fully awake.",
       "emergency": "EMG-LOW-GLUCOSE"
     },
     {
       "id": "recheck2",
       "kind": "recheck",
-      "text": "Measure blood sugar again",
+      "text": "Measure your blood sugar",
       "afterMinutes": 15,
       "passed": "wake",
       "failed": "glucagon",
@@ -102,11 +95,11 @@
     {
       "id": "wake",
       "kind": "action",
-      "text": "When fully awake and able to swallow: give fast sugar, then a snack",
+      "text": "When you are fully awake: chew fast sugar, then eat a snack",
       "next": "done"
     }
   ],
-  "escalation": "Still low after fast sugar twice and glucagon, or not waking up: keep the person on their side, follow EMG-LOW-GLUCOSE with the CMO, give oxygen by the checklist and measure every 5 minutes. Earth is informed.",
+  "escalation": "Still low after fast sugar twice and glucagon: stay on your side, keep sipping juice only if you can swallow safely, and follow EMG-LOW-GLUCOSE. The crew and Earth were alerted when you started.",
   "followUpHours": 4,
   "approval": {
     "status": "demo",

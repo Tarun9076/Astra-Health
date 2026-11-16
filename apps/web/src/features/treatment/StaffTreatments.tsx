@@ -15,7 +15,7 @@ function when(iso: string): string {
 }
 
 function flagged(e: EpisodeOut): boolean {
-  return e.events.some((x) => x.flags.length > 0 || (x.kind === 'dose_given' && !x.data.readBackBy)) || e.status === 'Escalated' || e.source === 'device'
+  return e.events.some((x) => x.flags.length > 0) || e.status === 'Escalated' || e.source === 'device'
 }
 
 /** Crew overview (flight surgeon): Act Now treatments not reviewed yet, those needing a look first. */
@@ -30,7 +30,7 @@ export function TreatmentsToReview() {
           <li key={e.id}>
             <Link to={`/staff/astronaut/${e.astronautCode}?view=treatments`} className="block rounded-lg border border-line px-3 py-2 text-sm hover:border-accent">
               <span className="font-semibold">{e.astronautCode}</span> · {e.title} · {e.status} · {when(e.startedAt)}
-              {flagged(e) && <span className="mt-0.5 block text-xs text-status-yellow">Needs a look: escalated, a flagged dose, no second check, or planned on a device</span>}
+              {flagged(e) && <span className="mt-0.5 block text-xs text-status-yellow">Needs a look: escalated, a flagged dose, or planned on a device</span>}
             </Link>
           </li>
         ))}

@@ -67,7 +67,9 @@ test('ask, confirm, take and review a medicine; an allergy blocks the first choi
   const status = await surgeon.evaluate(async () => {
     const token = JSON.parse(sessionStorage.getItem('astra-auth') ?? localStorage.getItem('astra-auth') ?? '{}').state?.token
     const doses = await (await fetch('/api/medication/doses', { headers: { Authorization: `Bearer ${token}` } })).json()
-    const r = await fetch(`/api/medication/doses/${doses[0].id}/review`, {
+    const mine = (doses as { id: string; astronautCode: string; medicineId: string }[])
+      .find((d) => d.astronautCode === 'AST-001' && d.medicineId === 'acetaminophen')!
+    const r = await fetch(`/api/medication/doses/${mine.id}/review`, {
       method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ note: 'Seen, fine.' }),
     })
     return r.status

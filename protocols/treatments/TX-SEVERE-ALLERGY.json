@@ -1,8 +1,8 @@
 {
   "id": "TX-SEVERE-ALLERGY",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Severe allergic reaction",
-  "plain": "Swelling of the lips, tongue or throat or trouble breathing after a food, medicine or contact. Epinephrine first: every minute counts.",
+  "plain": "Swelling of the lips, tongue or throat, or trouble breathing. Epinephrine first: every minute counts.",
   "tier": 3,
   "priority": 1,
   "triggers": {
@@ -19,7 +19,7 @@
     {
       "id": "epi",
       "kind": "medicine",
-      "text": "Inject epinephrine now",
+      "text": "Inject epinephrine into your outer thigh now",
       "medicines": [
         {
           "medicine": "epinephrine"
@@ -28,17 +28,12 @@
       "override": [
         "expired"
       ],
-      "detail": "Do this before anything else. An expired injector is still better than none."
-    },
-    {
-      "id": "call",
-      "kind": "action",
-      "text": "Call the crew medical officer. Say: severe allergy."
+      "detail": "Through clothing is fine. An expired injector is still better than none."
     },
     {
       "id": "position",
       "kind": "action",
-      "text": "Lie down with the legs raised. If breathing is hard, sit up instead. Do not stand or walk."
+      "text": "Lie down with your legs raised. If breathing is hard, sit up instead."
     },
     {
       "id": "better",
@@ -54,7 +49,7 @@
     {
       "id": "antihistamine",
       "kind": "medicine",
-      "text": "Then give an antihistamine for the itch and hives",
+      "text": "Take an antihistamine for the itch and hives",
       "medicines": [
         {
           "medicine": "diphenhydramine",
@@ -68,11 +63,11 @@
     {
       "id": "watch",
       "kind": "action",
-      "text": "Stay with a crewmate for at least 4 hours: symptoms can come back. Keep a second injector close.",
+      "text": "Stay near others for 4 hours and keep a second injector with you: it can come back.",
       "next": "done"
     }
   ],
-  "escalation": "Still struggling to breathe after 2 epinephrine doses: oxygen and the anaphylaxis checklist with the CMO (EMG-SEVERE-ALLERGY). Earth is informed.",
+  "escalation": "Still struggling to breathe after 2 injections: put on oxygen and follow EMG-SEVERE-ALLERGY. The crew and Earth were alerted when you started.",
   "followUpHours": 24,
   "approval": {
     "status": "demo",
