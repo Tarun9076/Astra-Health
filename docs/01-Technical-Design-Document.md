@@ -240,6 +240,11 @@ Four stacks were compared on 2026-11-14:
 **Decision:** a **formulary file** (`protocols/medications.json`) holds the kit medicines, doses, limits, allergy groups, conditions to avoid and interactions, plus the conditions with their safety questions. Fixed, tested checks (`core/medication.py`) pick the first medicine that is safe for this astronaut now; a red-flag "yes" stops the guide. The **crew medical officer confirms** every dose (or the astronaut alone, with a reason that the flight surgeon sees), and every dose syncs to Earth for review. The LLM keeps its rule *never choose a medicine or a dose*: it links to the guide and may only repeat a dose the CMO confirmed; the guard rejects any other.
 **Why:** the same authority order as ADR-03: a dose must be checkable, versioned and approved by a physician, never generated. **Limit:** the list in this repository is a demo built from US over-the-counter labels; a mission replaces it with the flight surgeons' approved formulary.
 
+### ADR-16 — Treatment at check-in and Act Now: act first, from signed protocols, on the device if needed (Step 21)
+**Context:** a round trip to Earth can take ~44 minutes; a critical problem (low blood sugar, severe allergy, chest pain) cannot wait.
+**Decision:** treatment protocols are data (`protocols/treatments/`): triggers, ordered steps with exact doses, rechecks with timers and repeat limits, "do not give" rules and an escalation. A deterministic engine (`core/treatment.py`) decides the tier at every check-in and builds one merged plan, explaining every choice; tier 3 opens **Act Now** at once. **The same engine runs on the device** (TypeScript copy, bundled protocols, cached profile), kept identical by one shared case file run against both. Every action is logged on the device first and sent to Earth with urgent priority; the flight surgeon reviews and can send **signed** protocol updates, which the Habitat checks before use. No AI in the decision.
+**Why:** reliability over looks: one source of truth, same input → same answer, works with the server, the link or the internet down, and nothing waits for Earth. **Limit:** demo protocols and doses until a flight surgeon approves them.
+
 ---
 
 ## 5. Technology stack (final)
